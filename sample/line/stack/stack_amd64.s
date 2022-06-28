@@ -36,8 +36,7 @@ TEXT ·GetPC(SB),NOSPLIT,$0-8
 	GO_RESULTS_INITIALIZED
 	NO_LOCAL_POINTERS
 	MOVQ	$0, ret+0(FP)
-	MOVQ	retpc-8(FP), AX 
-	SUBQ	$1, AX
+	MOVQ	retpc-8(FP), AX
 	MOVQ	AX, ret+0(FP)
 	RET
 
@@ -48,7 +47,6 @@ TEXT    ·NewLine(SB), NOSPLIT, $0-8
 	NO_LOCAL_POINTERS
 	MOVQ	$0, ret+0(FP)
     MOVQ 	retpc-8(FP), AX
-	SUBQ	$1, AX
 	MOVQ 	AX, ret+0(FP)
 	RET
 
