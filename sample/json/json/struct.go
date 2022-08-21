@@ -76,14 +76,16 @@ func LoadTagNodeStr(typ reflect.Type) (n *tagNodeStr) {
 }
 
 type tagNodeStr struct {
-	pkgPath  string
-	tagInfo  map[string]*TagInfo
+	pkgPath string
+	// tagInfo  map[string]*TagInfo
+	tagInfo  TagInfo
 	pkgCache cache[string, *tagNodeStr] //如果 name 相等，则从这个缓存中获取
 }
 
 type tagNode struct {
-	pkgPath  uintptr
-	tagInfo  map[string]*TagInfo
+	pkgPath uintptr
+	// tagInfo  map[string]*TagInfo
+	tagInfo  TagInfo
 	pkgCache cache[uintptr, *tagNode] //如果 name 相等，则从这个缓存中获取
 }
 
@@ -199,12 +201,15 @@ func (t *TagInfo) Get(pStruct unsafe.Pointer, pOut unsafe.Pointer) {
 		getField(t.StructField, pStruct, pOut)
 	}
 }
-func (tag *TagInfo) Store(tis map[string]*TagInfo) {
-	if _, ok := tis[tag.cacheKey()]; ok {
-		err := fmt.Errorf("error, tag[%s]类型配置出错,字段重复", tag.TagName)
+func (t *TagInfo) AddChild(c *TagInfo) {
+	if len(t.Children) == 0 {
+		t.Children = make(map[string]*TagInfo)
+	}
+	if _, ok := t.Children[c.TagName]; ok {
+		err := fmt.Errorf("error, tag[%s]类型配置出错,字段重复", c.TagName)
 		panic(err)
 	}
-	tis[tag.cacheKey()] = tag
+	t.Children[c.TagName] = c
 	return
 }
 
@@ -220,23 +225,23 @@ func baseElem(typ reflect.Type) reflect.Type {
 
 //tagParse 解析struct的tag字段，并返回解析的结果
 //只需要type, 不需要 interface 也可以? 不着急,分步来
-func tagParse(typIn reflect.Type, tagKey string) (tis map[string]*TagInfo, err error) {
+func tagParse(typIn reflect.Type, tagKey string) (ti TagInfo, err error) {
 	if typIn.Kind() != reflect.Struct {
 		err = fmt.Errorf("IfaceToHBaseMutation() only accepts structs; got %vFrom", typIn.Kind())
 		return
 	}
-	tis = make(map[string]*TagInfo)
+	ti.BaseKind = reflect.Struct
 
 	for i := 0; i < typIn.NumField(); i++ {
 		field := typIn.Field(i)
 		baseType := baseElem(field.Type)
 		if field.Anonymous { //匿名类型
 			if baseType.Kind() == reflect.Struct {
-				children, e := tagParse(baseType, tagKey)
+				c, e := tagParse(baseType, tagKey)
 				if err = e; err != nil {
 					return
 				}
-				for key, ti := range children {
+				for key, ti := range c.Children {
 					if field.Type.Kind() == reflect.Ptr {
 						fSet, fGet := ti.fSet, ti.fSet
 						ti.fSet = func(field reflect.StructField, pStruct, pIn unsafe.Pointer) {
@@ -288,13 +293,13 @@ func tagParse(typIn reflect.Type, tagKey string) (tis map[string]*TagInfo, err e
 			}
 		}
 		if baseType.Kind() == reflect.Struct {
-			children, e := tagParse(baseType, tagKey)
+			tiC, e := tagParse(baseType, tagKey)
 			if err = e; err != nil {
 				return
 			}
-			tagInfo.Children = children
+			tagInfo.Children = tiC.Children
 		}
-		tagInfo.Store(tis)
+		ti.AddChild(tagInfo)
 	}
 	return
 }
@@ -364,15 +369,6 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 	}
 
 	empty := (*emptyInterface)(unsafe.Pointer(&in))
-	switch bs[i] {
-	case '{':
-		parseObj(bs[i+1:], empty.word, n.tagInfo)
-	case '[':
-	default:
-		panicIncorrectFormat(bs[i+1:])
-		err = fmt.Errorf("json must start with '{' or '[', %s", ErrStream(bs[i:]))
-		return
-	}
-
+	err = parseRoot(bs[i:], empty.word, n.tagInfo)
 	return
 }

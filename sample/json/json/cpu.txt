@@ -123,7 +123,7 @@ ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/j
          .          .    241:		}
          .          .    242:	}()
          .          .    243:	empty := (*emptyInterface)(unsafe.Pointer(&in))
-         .      1.54s    244:	parseObj(bs, empty.word, tagInfo)
+         .      1.54s    244:	parseNextUnit(bs, empty.word, tagInfo)
          .          .    245:	if err != nil {
          .          .    246:		return
          .          .    247:	}
@@ -142,7 +142,7 @@ ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/j
          .          .    270:		}
          .          .    271:	}
          .          .    272:	raw = stream
-ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj in /Users/bytedance/go/src/github.com/lxt1045/Experiment/golang/json/pkg/json/json.go
+ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/json.parseNextUnit in /Users/bytedance/go/src/github.com/lxt1045/Experiment/golang/json/pkg/json/json.go
      220ms      2.09s (flat, cum) 100.97% of Total
          .          .    155:	if len(stream) < 2 || stream[0] != '{' {
          .          .    156:		panicIncorrectFormat(stream[:])
@@ -176,7 +176,7 @@ ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/j
       10ms       50ms    184:			if tag, ok := tis[string(key)]; ok {
       20ms      570ms    185:				i += setObjField(pObj, tag, stream[i:])
          .          .    186:			} else {
-         .          .    187:				i += parseObj(stream[i:], nil, tag.Children)
+         .          .    187:				i += parseNextUnit(stream[i:], nil, tag.Children)
          .          .    188:			}
          .          .    189:			key = nil
          .          .    190:		case '[': // obj
@@ -186,7 +186,7 @@ ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/j
          .          .    194:			if tag, ok := tis[string(key)]; ok {
          .          .    195:				i += setObjField(pObj, tag, stream[i:])
          .          .    196:			} else {
-         .          .    197:				i += parseObj(stream[i:], nil, tag.Children)
+         .          .    197:				i += parseNextUnit(stream[i:], nil, tag.Children)
          .          .    198:			}
          .          .    199:			key = nil
       10ms       10ms    200:		case 'n':
@@ -374,7 +374,7 @@ ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/j
          .          .    126:		panicIncorrectType(False, tag)
          .          .    127:	}
          .          .    128:	pField := unsafe.Pointer(uintptr(pObj) + uintptr(tag.StructField.Offset))
-         .      550ms    129:	size := parseObj(raw, pField, tag.Children)
+         .      550ms    129:	size := parseNextUnit(raw, pField, tag.Children)
          .          .    130:	i += size
          .          .    131:	return
          .          .    132:}
@@ -415,7 +415,7 @@ ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/j
          .          .    151:}
          .          .    152:
          .          .    153://解析 obj: {}, 或 []
-         .          .    154:func parseObj(stream []byte, pObj unsafe.Pointer, tis map[string]*TagInfo) (i int) {
+         .          .    154:func parseNextUnit(stream []byte, pObj unsafe.Pointer, tis map[string]*TagInfo) (i int) {
          .          .    155:	if len(stream) < 2 || stream[0] != '{' {
 ROUTINE ======================== memeqbody in /usr/local/go/src/internal/bytealg/equal_amd64.s
       40ms       40ms (flat, cum)  1.93% of Total

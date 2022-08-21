@@ -1,13 +1,191 @@
 package cache
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
+
+var j0x = `{
+	"id": "7028151259660092936",
+    "name": {
+        "zh-CN": "陈三",
+        "en-US": ""
+    },
+    "avatar": {
+        "avatar": "https://7b90749e-a6be-4a86-9f9b-7dce3d2ecf5g~?image_size=noop&cut_type=&quality=&format=png&sticker_format=.webp",
+        "avatar72": "https://7b90749e-a6be-4a86-9f9b-7dce3d2ecf5g~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
+        "avatar240": "https://7b90749e-a6be-4a86-9f9b-7dce3d2ecf5g~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
+        "avatar640": "https://7b90749e-a6be-4a86-9f9b-7dce3d2ecf5g~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
+    },
+    "department": {
+        "id": "6826585686905406989",
+        "name": {
+            "zh-CN": "研发部",
+            "en-US": "RD Department"
+        }
+    },
+    "email": "",
+    "mobile": {
+        "phone": "18030838810",
+        "code": "86"
+    },
+    "status": {
+        "accountStatus": false,
+        "employmentStatus": false,
+        "registerStatus": false
+    },
+    "employeeType": {
+        "id": 1,
+        "name": {
+            "zh-CN": "正式",
+            "en-US": "Regular"
+        },
+        "active": true
+    },
+    "isAdmin": false,
+    "isLeader": false,
+    "isManager": false,
+    "isAppManager": false,
+    "departmentList": {
+        "id": "6826585686905406989",
+        "name": {
+            "zh-CN": "研发部",
+            "en-US": "RD Department"
+        }
+    }
+}`
+
+func TestBytesIdx(t *testing.T) {
+	keys := []string{
+		"mobile", "phone", "code", "isLeader", "isManager", "isAppManager", "departmentList", "id", "name", "id", "avatar", "avatar", "avatar72", "avatar240", "avatar640", "email", "employeeType", "name", "active", "id", "isAdmin", "name", "zh-CN", "en-US", "department", "id", "name", "status", "accountStatus", "employmentStatus", "registerStatus",
+	}
+	bytes := make([]byte, 0, 1024)
+	nodes := make([]*Node, 0, 1024)
+	for i, k := range keys {
+		if j := strings.Index(string(bytes), k); j >= 0 {
+			continue
+		}
+		idx := len(bytes)
+		if len(nodes) <= idx {
+			nodes = append(nodes, make([]*Node, 1+idx*2-len(nodes))...)
+		}
+		nodes[idx] = &Node{
+			k: fmt.Sprintf("src/github.com/lxt1045/blog/sample:%s", k),
+			v: fmt.Sprintf("json.Test:%v", i),
+		}
+		bytes = append(bytes, k...)
+	}
+
+	t.Run("index", func(t *testing.T) {
+		for _, k := range keys {
+			if j := strings.Index(string(bytes), k); j >= 0 {
+				t.Logf("key:%v, node:%+v", k, *nodes[j])
+			}
+		}
+	})
+
+	t.Run("p", func(t *testing.T) {
+
+		m := map[string]interface{}{}
+		err := json.Unmarshal([]byte(j0x), &m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		keys := []string{}
+		for k, v := range m {
+			for _, kk := range keys {
+				if kk == k {
+					continue
+				}
+			}
+			keys = append(keys, k)
+			if mm, ok := v.(map[string]interface{}); ok {
+				for k := range mm {
+					for _, kk := range keys {
+						if kk == k {
+							continue
+						}
+					}
+					keys = append(keys, k)
+				}
+			}
+		}
+		for _, k := range keys {
+			fmt.Printf(` "%s",`, k)
+		}
+		t.Logf("keys:%v", keys)
+
+	})
+}
+
+func BenchmarkIdx(b *testing.B) {
+	keys := []string{
+		"mobile", "phone", "code", "isLeader", "isManager", "isAppManager", "departmentList", "id", "name", "avatar", "avatar72", "avatar240", "avatar640", "email", "employeeType", "name", "active", "isAdmin", "zh-CN", "en-US", "department", "status", "accountStatus", "employmentStatus", "registerStatus",
+	}
+	bytes := make([]byte, 0, 1024)
+	nodes := make([]*Node, 0, 1024)
+	for i, k := range keys {
+		if j := strings.Index(string(bytes), k); j >= 0 {
+			continue
+		}
+		idx := len(bytes)
+		if len(nodes) <= idx {
+			nodes = append(nodes, make([]*Node, 1+idx*2-len(nodes))...)
+		}
+		nodes[idx] = &Node{
+			k: fmt.Sprintf("src/github.com/lxt1045/blog/sample:%s", k),
+			v: fmt.Sprintf("json.Test:%v", i),
+		}
+		bytes = append(bytes, k...)
+	}
+	strs := string(bytes)
+	b.Logf("len(bytes):%d", len(bytes))
+	b.Logf("registerStatus:%d", strings.Index(strs, "isManager"))
+	b.Logf("id:%d", strings.Index(strs, "id"))
+	b.Logf("registerStatus:%d", strings.Index(strs, "registerStatus"))
+
+	b.Run("1", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if j := strings.Index(strs, "mobile"); j < 0 {
+				b.Fatal("errors!")
+			}
+		}
+	})
+	b.Run("2", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if j := strings.Index(strs, "isManager"); j < 0 {
+				b.Fatal("errors!")
+			}
+		}
+	})
+	b.Run("3", func(b *testing.B) {
+		strs := string(bytes)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if j := strings.Index(strs, "id"); j < 0 {
+				b.Fatal("errors!")
+			}
+		}
+	})
+	b.Run("4", func(b *testing.B) {
+		strs := string(bytes)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if j := strings.Index(strs, "registerStatus"); j < 0 {
+				b.Fatal("errors!")
+			}
+		}
+	})
+	// return
+}
 
 type Node struct {
 	k, v string

@@ -3,6 +3,7 @@ package json
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -205,6 +206,38 @@ func BenchmarkIsSpace(b *testing.B) {
 
 }
 
+func BenchmarkCron(b *testing.B) {
+	bss := [][]byte{
+		[]byte(":x"),
+		[]byte(": x"),
+		[]byte("    :    x"),
+		[]byte(" x"),
+	}
+	var j int
+	for x, bs := range bss {
+		ss := fmt.Sprintf("-%d", x)
+		b.Run("space"+ss, func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				j = trimSpace(bs)
+				if bs[j] != ':' {
+					b.Fatal("err")
+				}
+				j = trimSpace(bs[j+1:])
+			}
+			b.StopTimer()
+		})
+		b.Run("cron"+ss, func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				j = parseByte(bs, ':')
+				_ = j
+			}
+			b.StopTimer()
+		})
+	}
+}
+
 func TestLeft(t *testing.T) {
 	xs := [16]byte{}
 	Test2(' ', xs[:])
@@ -322,7 +355,7 @@ func BenchmarkUnmarshalStruct1x(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	bs, err = json.Marshal(&d)
+	_, err = json.Marshal(&d)
 	if err != nil {
 		b.Fatal(err)
 	}

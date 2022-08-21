@@ -119,19 +119,26 @@ func setFieldStringPointer(field reflect.StructField, pStruct unsafe.Pointer, pI
 	return
 }
 
-func setFieldString(field reflect.StructField, pStruct unsafe.Pointer, bs *[]byte) {
-	pValue := unsafe.Pointer(uintptr(pStruct) + uintptr(field.Offset))
-	*(*string)(pValue) = *(*string)(unsafe.Pointer(bs))
+func setFieldString(pValue unsafe.Pointer, str string) {
+	*(*string)(pValue) = str
 	return
 }
 
-func setFieldBool(field reflect.StructField, pStruct unsafe.Pointer, pIn unsafe.Pointer) {
-	pValue := unsafe.Pointer(uintptr(pStruct) + uintptr(field.Offset))
-	*(*bool)(pValue) = *(*bool)(pIn)
+func setBool(pValue unsafe.Pointer, b bool) {
+	*(*bool)(pValue) = b
 	return
 }
 func setFieldInt(field reflect.StructField, pStruct unsafe.Pointer, pIn unsafe.Pointer) {
 	pValue := unsafe.Pointer(uintptr(pStruct) + uintptr(field.Offset))
 	*(*int)(pValue) = *(*int)(pIn)
 	return
+}
+
+func setFieldSlice(pValue unsafe.Pointer, pIn unsafe.Pointer) {
+	*(*reflect.SliceHeader)(pValue) = *(*reflect.SliceHeader)(pIn)
+	return
+}
+
+func pointerOffset(p unsafe.Pointer, offset uintptr) (pOut unsafe.Pointer) {
+	return unsafe.Pointer(uintptr(p) + uintptr(offset))
 }
