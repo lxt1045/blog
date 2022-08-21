@@ -1,0 +1,2255 @@
+File: json.test
+Type: alloc_space
+Time: Nov 28, 2021 at 2:24pm (CST)
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   os.newFile
+             os.openFileNolog
+             os.OpenFile
+             os.Create (inline)
+             testing.(*M).writeProfiles
+             testing.(*M).after.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*M).after
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   os.newFile
+             os.openFileNolog
+             os.OpenFile
+             os.Create (inline)
+             testing.(*M).writeProfiles
+             testing.(*M).after.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*M).after
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   syscall.ByteSliceFromString (inline)
+             syscall.BytePtrFromString (inline)
+             syscall.Open
+             os.openFileNolog
+             os.OpenFile
+             os.Create (inline)
+             testing.(*M).writeProfiles
+             testing.(*M).after.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*M).after
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   fmt.Sprintf
+             testing.toOutputDir
+             testing.(*M).writeProfiles
+             testing.(*M).after.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*M).after
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.toOutputDir
+             testing.(*M).writeProfiles
+             testing.(*M).after.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*M).after
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.toOutputDir
+             testing.(*M).writeProfiles
+             testing.(*M).after.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*M).after
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   fmt.(*buffer).writeString (inline)
+             fmt.(*fmt).padString
+             fmt.(*fmt).fmtS
+             fmt.(*pp).fmtString
+             fmt.(*pp).printArg
+             fmt.(*pp).doPrintln
+             fmt.Fprintln
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  80B
+       80B   testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   fmt.Sprintf
+             testing.BenchmarkResult.MemString
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.BenchmarkResult.MemString
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   fmt.(*buffer).writeString (inline)
+             fmt.(*fmt).padString
+             fmt.(*fmt).fmtS
+             fmt.(*pp).fmtString
+             fmt.(*pp).printArg
+             fmt.(*pp).doPrintf
+             fmt.Fprintf
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  64B
+       64B   strings.(*Builder).Write
+             fmt.Fprintf
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   strings.(*Builder).Write
+             fmt.Fprintf
+             testing.prettyPrint
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   fmt.(*buffer).write (inline)
+             fmt.(*fmt).pad
+             fmt.(*fmt).fmtFloat
+             fmt.(*pp).fmtFloat
+             fmt.(*pp).printArg
+             fmt.(*pp).doPrintf
+             fmt.Fprintf
+             testing.prettyPrint
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.prettyPrint
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.prettyPrint
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   strings.(*Builder).WriteByte (inline)
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   fmt.(*buffer).write (inline)
+             fmt.(*fmt).pad
+             fmt.(*fmt).fmtInteger
+             fmt.(*pp).fmtInteger
+             fmt.(*pp).printArg
+             fmt.(*pp).doPrintf
+             fmt.Fprintf
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  208B
+      208B   fmt.glob..func1
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Fprintf
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  1.50kB
+    1.50kB   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Fprintf
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Fprintf
+             testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   testing.BenchmarkResult.String
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   runtime.adjusttimers
+             runtime.checkTimers
+             runtime.findrunnable
+             runtime.schedule
+             runtime.park_m
+             runtime.mcall
+-----------+-------------------------------------------------------
+     bytes:  16B
+  787.23kB   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  16B
+  787.34kB   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  16B
+  787.34kB   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  16B
+    2.31MB   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  16B
+  787.34kB   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.setObjField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  16B
+    3.08MB   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.setObjField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  16B
+  787.34kB   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  16B
+  787.45kB   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  64B
+    3.08MB   github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).launch
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   fmt.Sprintf
+             testing.benchmarkName (inline)
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  1.50kB
+    1.50kB   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Sprintf
+             testing.benchmarkName (inline)
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Sprintf
+             testing.benchmarkName (inline)
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.benchmarkName (inline)
+             testing.(*benchContext).processBench
+             testing.(*B).run
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.setObjField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       64B   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.setObjField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       32B   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  64B
+       64B   github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal.func1
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  8B
+       32B   runtime.doaddtimer
+             runtime.modtimer
+             runtime.resettimer (inline)
+             time.resetTimer (inline)
+             runtime.scavengeSleep
+             runtime.bgscavenge
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   testing.(*B).run1
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  576B
+      576B   testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  416B
+      416B   testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  1.50kB
+    1.50kB   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             regexp.newOnePassMachine (inline)
+             regexp.(*Regexp).doOnePass
+             regexp.(*Regexp).doExecute
+             regexp.(*Regexp).doMatch (inline)
+             regexp.(*Regexp).MatchString (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             regexp.newOnePassMachine (inline)
+             regexp.(*Regexp).doOnePass
+             regexp.(*Regexp).doExecute
+             regexp.(*Regexp).doMatch (inline)
+             regexp.(*Regexp).MatchString (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   strings.genSplit
+             strings.Split (inline)
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  208B
+      208B   testing.(*matcher).unique
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   fmt.Sprintf
+             testing.(*matcher).unique
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  1.50kB
+    1.50kB   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Sprintf
+             testing.(*matcher).unique
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Sprintf
+             testing.(*matcher).unique
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*matcher).unique
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*matcher).unique
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.rewrite
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.rewrite
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.setObjField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       64B   github.com/lxt1045/Experiment/golang/json/pkg/json.setStringField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.setObjField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   github.com/lxt1045/Experiment/golang/json/pkg/json.setNumberField
+             github.com/lxt1045/Experiment/golang/json/pkg/json.parseObj
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  160B
+      640B   github.com/lxt1045/Experiment/golang/json/pkg/json.TagInfo.Store
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       64B   strings.genSplit
+             strings.Split (inline)
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       32B   reflect.(*structType).Field
+             reflect.(*rtype).Field
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  24B
+       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  4kB
+       8kB   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  48B
+       96B   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  160B
+    1.09kB   github.com/lxt1045/Experiment/golang/json/pkg/json.TagInfo.Store
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+      112B   strings.genSplit
+             strings.Split (inline)
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       64B   reflect.(*structType).Field
+             reflect.(*rtype).Field
+             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  4kB
+       4kB   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  208B
+      208B   github.com/lxt1045/Experiment/golang/json/pkg/json.LoadTagNode
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.LoadTagNode
+             github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  64B
+       64B   github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
+             github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  128B
+      128B   github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  896B
+    1.75kB   testing.(*B).ResetTimer
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  48B
+       96B   testing.(*B).ResetTimer
+             testing.(*B).runN
+             testing.(*B).run1.func1
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   internal/cpu.Name
+             internal/sysinfo.(*cpuInfo).Name.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             internal/sysinfo.(*cpuInfo).Name
+             testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  64B
+       64B   fmt.(*buffer).writeString (inline)
+             fmt.(*fmt).padString
+             fmt.(*fmt).fmtS
+             fmt.(*pp).fmtString
+             fmt.(*pp).printArg
+             fmt.(*pp).doPrintf
+             fmt.Fprintf
+             fmt.Printf (inline)
+             testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   fmt.(*buffer).writeString (inline)
+             fmt.(*fmt).padString
+             fmt.(*fmt).fmtS
+             fmt.(*pp).fmtString
+             fmt.(*pp).printArg
+             fmt.(*pp).doPrintf
+             fmt.Fprintf
+             fmt.Printf (inline)
+             testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   fmt.(*buffer).writeString (inline)
+             fmt.(*pp).doPrintf
+             fmt.Fprintf
+             fmt.Printf (inline)
+             testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  208B
+      208B   fmt.glob..func1
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Fprintf
+             fmt.Printf (inline)
+             testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  1.50kB
+    1.50kB   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Fprintf
+             fmt.Printf (inline)
+             testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             fmt.newPrinter
+             fmt.Fprintf
+             fmt.Printf (inline)
+             testing.(*B).Run.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  576B
+      576B   testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  416B
+      416B   testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp.newOnePassMachine (inline)
+             regexp.(*Regexp).doOnePass
+             regexp.(*Regexp).doExecute
+             regexp.(*Regexp).doMatch (inline)
+             regexp.(*Regexp).MatchString (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  1.50kB
+    1.50kB   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             regexp.newOnePassMachine (inline)
+             regexp.(*Regexp).doOnePass
+             regexp.(*Regexp).doExecute
+             regexp.(*Regexp).doMatch (inline)
+             regexp.(*Regexp).MatchString (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             regexp.newOnePassMachine (inline)
+             regexp.(*Regexp).doOnePass
+             regexp.(*Regexp).doExecute
+             regexp.(*Regexp).doMatch (inline)
+             regexp.(*Regexp).MatchString (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   strings.genSplit
+             strings.Split (inline)
+             testing.(*matcher).fullName
+             testing.(*B).Run
+             testing.runBenchmarks.func1
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  896B
+      896B   testing.(*B).ResetTimer
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   testing.(*B).ResetTimer
+             testing.(*B).runN
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  256B
+      256B   runtime.allgadd
+             runtime.newproc1
+             runtime.newproc.func1
+             runtime.systemstack
+             runtime.mstart
+-----------+-------------------------------------------------------
+     bytes:  128B
+      128B   runtime.allgadd
+             runtime.newproc1
+             runtime.newproc.func1
+             runtime.systemstack
+             runtime.mstart
+-----------+-------------------------------------------------------
+     bytes:  32B
+      384B   runtime.gcBgMarkWorker
+-----------+-------------------------------------------------------
+     bytes:  384B
+    2.62kB   runtime.malg
+             runtime.allocm
+             runtime.newm
+             runtime.startm
+             runtime.wakep
+             runtime.resetspinning
+             runtime.schedule
+             runtime.park_m
+             runtime.mcall
+-----------+-------------------------------------------------------
+     bytes:  384B
+    2.62kB   runtime.malg
+             runtime.mpreinit
+             runtime.mcommoninit
+             runtime.allocm
+             runtime.newm
+             runtime.startm
+             runtime.wakep
+             runtime.resetspinning
+             runtime.schedule
+             runtime.park_m
+             runtime.mcall
+-----------+-------------------------------------------------------
+     bytes:  1.12kB
+    7.88kB   runtime.allocm
+             runtime.newm
+             runtime.startm
+             runtime.wakep
+             runtime.resetspinning
+             runtime.schedule
+             runtime.park_m
+             runtime.mcall
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   testing.newChattyPrinter (inline)
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  576B
+      576B   testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   fmt.Sprintf
+             testing.benchmarkName (inline)
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.benchmarkName (inline)
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+      128B   strings.genSplit
+             strings.Split (inline)
+             testing.(*matcher).fullName
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   strings.(*Builder).WriteRune
+             regexp.onePassPrefix
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       32B   strings.(*Builder).WriteRune
+             regexp.onePassPrefix
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  160B
+      160B   regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+      304B   regexp.makeOnePass.func1
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp.makeOnePass.func1
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp.makeOnePass.func1
+             regexp.makeOnePass.func1
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  576B
+      576B   regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp.newQueue (inline)
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp.newQueue (inline)
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp.newQueue (inline)
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp.newQueue (inline)
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   regexp.onePassCopy
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  1.50kB
+    1.50kB   regexp.onePassCopy
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  1.25kB
+    1.25kB   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).rune
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  640B
+      640B   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).rune
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  320B
+      320B   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).rune
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  160B
+      160B   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).rune
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  80B
+       80B   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).empty (inline)
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).init (inline)
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   regexp/syntax.(*compiler).init (inline)
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp/syntax.(*Regexp).CapNames
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   regexp/syntax.(*parser).collapse
+             regexp/syntax.(*parser).concat
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp/syntax.(*parser).collapse
+             regexp/syntax.(*parser).concat
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  128B
+      128B   regexp/syntax.(*parser).maybeConcat
+             regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).literal
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  64B
+       64B   regexp/syntax.(*parser).maybeConcat
+             regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).literal
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   regexp/syntax.(*parser).maybeConcat
+             regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).literal
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp/syntax.(*parser).maybeConcat
+             regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).literal
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).literal
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).literal
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  112B
+      336B   regexp/syntax.(*parser).newRegexp (inline)
+             regexp/syntax.(*parser).literal
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).op
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  112B
+      112B   regexp/syntax.(*parser).newRegexp (inline)
+             regexp/syntax.(*parser).op
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   testing.rewrite
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   testing.rewrite
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       32B   testing.rewrite
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.splitRegexp
+             testing.newMatcher
+             testing.runBenchmarks
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   testing.tRunner.func1.1
+             testing.tRunner.func1
+             testing.tRunner
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  384B
+    5.25kB   runtime.malg
+             runtime.newproc1
+             runtime.newproc.func1
+             runtime.systemstack
+             runtime.mstart
+-----------+-------------------------------------------------------
+     bytes:  16B
+    1.44kB   strings.genSplit
+             strings.Split (inline)
+             testing.(*matcher).fullName
+             testing.(*T).Run
+             testing.runTests.func1
+             testing.tRunner
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  208B
+      208B   testing.callerName
+             testing.tRunner
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   testing.newChattyPrinter (inline)
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  384B
+      384B   testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  80B
+       80B   testing.newTestContext (inline)
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   testing.newTestContext (inline)
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp.newOnePassMachine (inline)
+             regexp.(*Regexp).doOnePass
+             regexp.(*Regexp).doExecute
+             regexp.(*Regexp).doMatch (inline)
+             regexp.(*Regexp).MatchString (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  1.50kB
+    1.50kB   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             regexp.newOnePassMachine (inline)
+             regexp.(*Regexp).doOnePass
+             regexp.(*Regexp).doExecute
+             regexp.(*Regexp).doMatch (inline)
+             regexp.(*Regexp).MatchString (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  32B
+       32B   sync.(*Pool).pinSlow
+             sync.(*Pool).pin
+             sync.(*Pool).Get
+             regexp.newOnePassMachine (inline)
+             regexp.(*Regexp).doOnePass
+             regexp.(*Regexp).doExecute
+             regexp.(*Regexp).doMatch (inline)
+             regexp.(*Regexp).MatchString (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  160B
+      160B   regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp.makeOnePass.func1
+             regexp.makeOnePass.func1
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp.newQueue (inline)
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp.newQueue (inline)
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp.newQueue (inline)
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp.newQueue (inline)
+             regexp.makeOnePass
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   regexp.onePassCopy
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  256B
+      256B   regexp.onePassCopy
+             regexp.compileOnePass
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  160B
+      160B   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).empty (inline)
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  80B
+       80B   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).empty (inline)
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.(*compiler).compile
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   regexp/syntax.(*compiler).inst (inline)
+             regexp/syntax.(*compiler).init (inline)
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  48B
+       48B   regexp/syntax.(*compiler).init (inline)
+             regexp/syntax.Compile
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp/syntax.(*Regexp).CapNames
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp/syntax.(*parser).collapse
+             regexp/syntax.(*parser).concat
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  112B
+      112B   regexp/syntax.(*parser).newRegexp (inline)
+             regexp/syntax.(*parser).collapse
+             regexp/syntax.(*parser).concat
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).op
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  112B
+      112B   regexp/syntax.(*parser).newRegexp (inline)
+             regexp/syntax.(*parser).op
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   regexp/syntax.(*parser).push
+             regexp/syntax.(*parser).op
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  112B
+      112B   regexp/syntax.(*parser).newRegexp (inline)
+             regexp/syntax.(*parser).op
+             regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   regexp/syntax.Parse
+             regexp.compile
+             regexp.Compile (inline)
+             testing/internal/testdeps.TestDeps.MatchString
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.rewrite
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.splitRegexp
+             testing.newMatcher
+             testing.runTests
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  24B
+       24B   testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  8B
+        8B   time.startTimer
+             time.AfterFunc
+             testing.(*M).startAlarm
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  80B
+       80B   time.AfterFunc
+             testing.(*M).startAlarm
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  16B
+       16B   testing.(*M).startAlarm
+             testing.(*M).Run
+             main.main
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  552kB
+     552kB   os.ReadFile
+             io/ioutil.ReadFile (inline)
+             github.com/lxt1045/Experiment/golang/json/pkg/json_test.init.0.func1
+             github.com/lxt1045/Experiment/golang/json/pkg/json_test.init.0
+             runtime.doInit
+             runtime.doInit
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  624kB
+     624kB   os.ReadFile
+             io/ioutil.ReadFile (inline)
+             github.com/lxt1045/Experiment/golang/json/pkg/json_test.init.0.func1
+             github.com/lxt1045/Experiment/golang/json/pkg/json_test.init.0
+             runtime.doInit
+             runtime.doInit
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96kB
+      96kB   github.com/bytedance/sonic/internal/caching.newProgramMap (inline)
+             github.com/bytedance/sonic/internal/caching.CreateProgramCache (inline)
+             github.com/bytedance/sonic/encoder.init
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96B
+       96B   github.com/bytedance/sonic/decoder.(*_ValueDecoder).compile
+             github.com/bytedance/sonic/internal/jit.(*BaseAssembler).build.func1
+             sync.(*Once).doSlow
+             sync.(*Once).Do (inline)
+             github.com/bytedance/sonic/internal/jit.(*BaseAssembler).build
+             github.com/bytedance/sonic/internal/jit.(*BaseAssembler).LoadWithFaker
+             github.com/bytedance/sonic/decoder.(*_ValueDecoder).build
+             github.com/bytedance/sonic/decoder.init
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  96kB
+      96kB   github.com/bytedance/sonic/internal/caching.newProgramMap (inline)
+             github.com/bytedance/sonic/internal/caching.CreateProgramCache (inline)
+             github.com/bytedance/sonic/decoder.init
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.main
+-----------+-------------------------------------------------------
+     bytes:  5.25kB
+    5.25kB   math/rand.NewSource (inline)
+             math/rand.init
+             runtime.doInit
+             runtime.doInit
+             runtime.doInit
+             runtime.main
+-----------+-------------------------------------------------------

@@ -1,0 +1,678 @@
+# github.com/lxt1045/Experiment/golang/json/pkg/json
+./gjson.go:41:6: can inline Type.IsNull
+./gjson.go:46:6: can inline Type.String
+./gjson.go:123:28: inlining call to strconv.ParseBool
+./gjson.go:123:28: inlining call to strconv.syntaxError
+./gjson.go:2539:6: can inline parseInt
+./gjson.go:2564:6: can inline safeInt
+./gjson.go:138:19: inlining call to parseInt
+./gjson.go:142:19: inlining call to safeInt
+./gjson.go:147:19: inlining call to parseInt
+./gjson.go:2524:6: can inline parseUint
+./gjson.go:164:20: inlining call to parseUint
+./gjson.go:168:19: inlining call to safeInt
+./gjson.go:173:21: inlining call to parseUint
+./gjson.go:199:22: inlining call to time.Parse
+./gjson.go:225:6: can inline Result.IsArray
+./gjson.go:597:6: can inline tolit
+./gjson.go:2002:6: can inline runeit
+./gjson.go:2044:16: inlining call to runeit
+./gjson.go:2046:25: inlining call to utf16.IsSurrogate
+./gjson.go:2051:37: inlining call to runeit
+./gjson.go:2051:27: inlining call to utf16.DecodeRune
+./gjson.go:405:21: inlining call to tolit
+./gjson.go:409:21: inlining call to tolit
+./gjson.go:413:21: inlining call to tolit
+./gjson.go:212:15: inlining call to Result.IsArray
+./gjson.go:220:6: can inline Result.IsObject
+./gjson.go:655:6: can inline Result.Exists
+./gjson.go:3027:6: can inline fillIndex
+./gjson.go:743:6: can inline parseLiteral
+./gjson.go:731:6: can inline parseNumber
+./gjson.go:2143:13: inlining call to fillIndex
+./gjson.go:2177:25: inlining call to parseLiteral
+./gjson.go:2193:24: inlining call to parseNumber
+./gjson.go:236:14: inlining call to Result.Exists
+./gjson.go:310:6: can inline Result.Map
+./gjson.go:493:22: inlining call to tolit
+./gjson.go:497:21: inlining call to tolit
+./gjson.go:500:21: inlining call to tolit
+./gjson.go:509:17: inlining call to Result.Exists
+./gjson.go:2635:18: inlining call to Result.Exists
+./gjson.go:2642:29: inlining call to strings.IndexByte
+./gjson.go:1748:13: can inline parseSubSelectors.func1
+./gjson.go:1774:12: inlining call to parseSubSelectors.func1
+./gjson.go:1792:12: inlining call to parseSubSelectors.func1
+./gjson.go:2318:6: can inline validcolon
+./gjson.go:2331:6: can inline validcomma
+./gjson.go:2476:6: can inline validtrue
+./gjson.go:2483:6: can inline validfalse
+./gjson.go:2490:6: can inline validnull
+./gjson.go:2267:20: inlining call to validtrue
+./gjson.go:2269:21: inlining call to validfalse
+./gjson.go:2271:20: inlining call to validnull
+./gjson.go:2290:25: inlining call to validcolon
+./gjson.go:2296:25: inlining call to validcomma
+./gjson.go:2354:26: inlining call to validcomma
+./gjson.go:3038:6: can inline stringBytes
+./gjson.go:2506:35: inlining call to stringBytes
+./gjson.go:1802:6: can inline nameOfLast
+./gjson.go:1816:6: can inline isSimpleName
+./gjson.go:943:6: can inline isDotPiperChar
+./gjson.go:928:6: can inline trim
+./gjson.go:922:14: inlining call to trim
+./gjson.go:891:14: inlining call to trim
+./gjson.go:892:15: inlining call to trim
+./gjson.go:920:15: inlining call to trim
+./gjson.go:782:52: inlining call to isDotPiperChar
+./gjson.go:1238:6: can inline matchLimit
+./gjson.go:1254:18: inlining call to Result.Exists
+./gjson.go:1280:21: inlining call to matchLimit
+./gjson.go:1282:22: inlining call to matchLimit
+./gjson.go:966:40: inlining call to isDotPiperChar
+./gjson.go:996:43: inlining call to isDotPiperChar
+./gjson.go:1920:20: inlining call to Result.Exists
+./gjson.go:1932:28: inlining call to nameOfLast
+./gjson.go:1933:25: inlining call to isSimpleName
+./gjson.go:1991:11: inlining call to fillIndex
+./gjson.go:1335:21: inlining call to parseUint
+./gjson.go:1506:26: inlining call to parseLiteral
+./gjson.go:1561:23: inlining call to Result.Exists
+./gjson.go:1588:32: inlining call to strconv.Itoa
+./gjson.go:1592:23: inlining call to Result.Exists
+./gjson.go:1609:25: inlining call to parseNumber
+./gjson.go:1355:12: inlining call to fillIndex
+./gjson.go:1138:24: inlining call to matchLimit
+./gjson.go:1136:24: inlining call to matchLimit
+./gjson.go:1205:26: inlining call to parseLiteral
+./gjson.go:1221:25: inlining call to parseNumber
+./gjson.go:517:6: can inline ParseBytes
+./gjson.go:1724:17: inlining call to Result.Exists
+./gjson.go:1997:6: can inline GetBytes
+./gjson.go:2223:20: inlining call to GetBytes
+./gjson.go:2519:6: can inline ValidBytes
+./gjson.go:2658:6: can inline unwrap
+./gjson.go:2659:13: inlining call to trim
+./gjson.go:2684:6: can inline AddModifier
+./gjson.go:2689:6: can inline ModifierExists
+./gjson.go:2695:6: can inline cleanWS
+./gjson.go:3046:6: can inline bytesString
+./gjson.go:2731:54: inlining call to stringBytes
+./gjson.go:2731:21: inlining call to bytesString
+./gjson.go:2733:46: inlining call to stringBytes
+./gjson.go:2733:34: inlining call to pretty.Pretty
+./gjson.go:2733:20: inlining call to bytesString
+./gjson.go:2723:26: inlining call to cleanWS
+./gjson.go:2725:26: inlining call to cleanWS
+./gjson.go:2737:6: can inline modThis
+./gjson.go:2743:44: inlining call to stringBytes
+./gjson.go:2743:32: inlining call to pretty.Ugly
+./gjson.go:2743:20: inlining call to bytesString
+./gjson.go:2749:16: inlining call to Result.IsArray
+./gjson.go:2764:21: inlining call to bytesString
+./gjson.go:2766:17: inlining call to Result.IsObject
+./gjson.go:2783:21: inlining call to bytesString
+./gjson.go:2751:15: can inline modReverse.func1
+./gjson.go:2768:15: can inline modReverse.func2
+./gjson.go:2795:17: inlining call to Result.IsArray
+./gjson.go:2832:20: inlining call to bytesString
+./gjson.go:2812:19: inlining call to Result.IsArray
+./gjson.go:2816:17: inlining call to unwrap
+./gjson.go:2816:17: inlining call to trim
+./gjson.go:2814:17: inlining call to unwrap
+./gjson.go:2814:17: inlining call to trim
+./gjson.go:2839:14: inlining call to Result.Exists
+./gjson.go:2842:19: inlining call to Result.IsObject
+./gjson.go:2844:15: inlining call to strings.(*Builder).WriteByte
+./gjson.go:2844:15: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2844:15: inlining call to strings.noescape
+./gjson.go:2858:15: inlining call to strings.(*Builder).WriteByte
+./gjson.go:2858:15: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2858:15: inlining call to strings.noescape
+./gjson.go:2859:19: inlining call to strings.(*Builder).String
+./gjson.go:2848:17: inlining call to strings.(*Builder).WriteByte
+./gjson.go:2848:17: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2848:17: inlining call to strings.noescape
+./gjson.go:2853:19: inlining call to strings.(*Builder).WriteString
+./gjson.go:2853:19: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2853:19: inlining call to strings.noescape
+./gjson.go:2851:19: inlining call to strings.(*Builder).WriteString
+./gjson.go:2851:19: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2851:19: inlining call to strings.noescape
+./gjson.go:2866:14: inlining call to Result.Exists
+./gjson.go:2869:14: inlining call to Result.IsArray
+./gjson.go:2873:15: inlining call to strings.(*Builder).WriteByte
+./gjson.go:2873:15: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2873:15: inlining call to strings.noescape
+./gjson.go:2883:15: inlining call to strings.(*Builder).WriteByte
+./gjson.go:2883:15: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2883:15: inlining call to strings.noescape
+./gjson.go:2884:19: inlining call to strings.(*Builder).String
+./gjson.go:2877:17: inlining call to strings.(*Builder).WriteByte
+./gjson.go:2877:17: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2877:17: inlining call to strings.noescape
+./gjson.go:2879:18: inlining call to strings.(*Builder).WriteString
+./gjson.go:2879:18: inlining call to strings.(*Builder).copyCheck
+./gjson.go:2879:18: inlining call to strings.noescape
+./gjson.go:2896:17: inlining call to Result.IsArray
+./gjson.go:2952:20: inlining call to bytesString
+./gjson.go:2914:22: inlining call to Result.IsObject
+./gjson.go:2920:28: inlining call to unwrap
+./gjson.go:2920:28: inlining call to trim
+./gjson.go:2929:22: inlining call to Result.IsObject
+./gjson.go:2957:6: can inline modValid
+./gjson.go:3199:6: can inline isSafePathKeyChar
+./gjson.go:3209:24: inlining call to isSafePathKeyChar
+./gjson.go:3212:26: inlining call to isSafePathKeyChar
+./gjson.go:3123:23: inlining call to strings.HasPrefix
+./gjson.go:3165:40: inlining call to strconv.Itoa
+./gjson.go:3182:19: inlining call to Result.Exists
+./gjson.go:3103:12: can inline Result.Paths.func1
+./json.go:12:6: can inline parseValue
+./json.go:39:6: can inline panicIncorrectFormat
+./json.go:43:18: inlining call to "errors".New
+./json.go:136:6: can inline IsSpace
+./json.go:146:14: inlining call to IsSpace
+./json.go:264:6: can inline parseNum
+./json.go:267:13: inlining call to IsSpace
+./json.go:46:19: inlining call to strconv.Itoa
+./json.go:47:68: inlining call to reflect.Kind.String
+./json.go:47:68: inlining call to strconv.Itoa
+./json.go:47:18: inlining call to "errors".New
+./struct.go:132:6: can inline (*TagInfo).Set
+./json.go:62:44: inlining call to bytesString
+./json.go:64:23: inlining call to panicIncorrectFormat
+./json.go:64:23: inlining call to "errors".New
+./json.go:69:10: inlining call to (*TagInfo).Set
+./json.go:72:10: inlining call to (*TagInfo).Set
+./json.go:75:10: inlining call to (*TagInfo).Set
+./json.go:78:10: inlining call to (*TagInfo).Set
+./json.go:81:10: inlining call to (*TagInfo).Set
+./json.go:84:10: inlining call to (*TagInfo).Set
+./json.go:87:10: inlining call to (*TagInfo).Set
+./json.go:90:10: inlining call to (*TagInfo).Set
+./json.go:93:10: inlining call to (*TagInfo).Set
+./json.go:96:10: inlining call to (*TagInfo).Set
+./json.go:99:10: inlining call to (*TagInfo).Set
+./json.go:101:10: inlining call to (*TagInfo).Set
+./json.go:105:11: inlining call to (*TagInfo).Set
+./json.go:54:9: inlining call to (*TagInfo).Set
+./json.go:362:19: inlining call to "errors".New
+./json.go:366:19: inlining call to "errors".New
+./json.go:327:20: inlining call to "errors".New
+./json.go:332:23: inlining call to utf16.IsSurrogate
+./json.go:338:21: inlining call to "errors".New
+./json.go:342:25: inlining call to utf16.DecodeRune
+./json.go:354:19: inlining call to "errors".New
+./json.go:121:9: inlining call to (*TagInfo).Set
+./json.go:156:23: inlining call to panicIncorrectFormat
+./json.go:156:23: inlining call to "errors".New
+./json.go:178:25: inlining call to panicIncorrectFormat
+./json.go:178:25: inlining call to "errors".New
+./json.go:169:26: inlining call to panicIncorrectFormat
+./json.go:169:26: inlining call to "errors".New
+./json.go:171:26: inlining call to parseNum
+./json.go:171:26: inlining call to IsSpace
+./json.go:182:25: inlining call to panicIncorrectFormat
+./json.go:182:25: inlining call to "errors".New
+./json.go:192:25: inlining call to panicIncorrectFormat
+./json.go:192:25: inlining call to "errors".New
+./json.go:202:25: inlining call to panicIncorrectFormat
+./json.go:202:25: inlining call to "errors".New
+./json.go:205:25: inlining call to panicIncorrectFormat
+./json.go:205:25: inlining call to "errors".New
+./json.go:211:25: inlining call to panicIncorrectFormat
+./json.go:211:25: inlining call to "errors".New
+./json.go:214:25: inlining call to panicIncorrectFormat
+./json.go:214:25: inlining call to "errors".New
+./json.go:223:25: inlining call to panicIncorrectFormat
+./json.go:223:25: inlining call to "errors".New
+./json.go:226:25: inlining call to panicIncorrectFormat
+./json.go:226:25: inlining call to "errors".New
+./json.go:241:26: inlining call to panicIncorrectFormat
+./json.go:241:26: inlining call to "errors".New
+./marshalable_func.go:51:6: can inline getMarshalable
+./marshalable_func.go:59:6: can inline tryThrowErr
+./marshalable_func.go:69:14: inlining call to tryThrowErr
+./struct.go:19:17: inlining call to sync.(*RWMutex).RLock
+./struct.go:22:20: inlining call to sync.(*RWMutex).RUnlock
+./struct.go:25:19: inlining call to sync.(*RWMutex).RUnlock
+./struct.go:139:6: can inline (*TagInfo).cacheKey
+./struct.go:144:34: inlining call to getMarshalable
+./struct.go:146:30: inlining call to (*TagInfo).cacheKey
+./struct.go:150:18: inlining call to (*TagInfo).cacheKey
+./struct.go:182:24: inlining call to reflect.StructTag.Get
+./struct.go:188:23: inlining call to strings.Split
+./struct.go:43:14: inlining call to sync.(*RWMutex).RLock
+./struct.go:46:17: inlining call to sync.(*RWMutex).RUnlock
+./struct.go:49:16: inlining call to sync.(*RWMutex).RUnlock
+./struct.go:135:6: can inline (*TagInfo).Get
+./struct.go:218:23: inlining call to reflect.ValueOf
+./struct.go:218:23: inlining call to reflect.escapes
+./struct.go:218:23: inlining call to reflect.unpackEface
+./struct.go:218:23: inlining call to reflect.(*rtype).Kind
+./struct.go:218:23: inlining call to reflect.ifaceIndir
+./struct.go:219:23: inlining call to reflect.Indirect
+./struct.go:219:23: inlining call to reflect.Value.Kind
+./struct.go:219:23: inlining call to reflect.flag.kind
+./struct.go:220:15: inlining call to reflect.Value.CanSet
+./struct.go:239:20: inlining call to "github.com/lxt1045/errors".New
+./gjson.go:2669:5: can inline init
+./gjson.go:85:7: leaking param: t to result ~r0 level=0
+./gjson.go:116:7: t does not escape
+./gjson.go:123:28: &strconv.NumError{...} does not escape
+./gjson.go:131:7: t does not escape
+./gjson.go:157:7: t does not escape
+./gjson.go:183:7: leaking param: t
+./gjson.go:198:7: leaking param: t
+./gjson.go:574:12: leaking param: json
+./gjson.go:521:13: leaking param: json to result ~r1 level=0
+./gjson.go:2008:15: leaking param: json
+./gjson.go:2009:16: make([]byte, 0, len(json)) escapes to heap
+./gjson.go:2015:17: string(str) escapes to heap
+./gjson.go:2019:18: string(str) escapes to heap
+./gjson.go:2023:18: string(str) escapes to heap
+./gjson.go:2042:19: string(str) escapes to heap
+./gjson.go:2063:15: string(str) escapes to heap
+./gjson.go:606:12: leaking param: json
+./gjson.go:340:7: leaking param: t
+./gjson.go:669:7: leaking param: t
+./gjson.go:371:15: make(map[string]interface {}) escapes to heap
+./gjson.go:373:14: make(map[string]Result) escapes to heap
+./gjson.go:377:15: make([]interface {}, 0) escapes to heap
+./gjson.go:379:14: make([]Result, 0) escapes to heap
+./gjson.go:671:11: t.Str escapes to heap
+./gjson.go:677:3: false escapes to heap
+./gjson.go:679:11: t.Num escapes to heap
+./gjson.go:685:12: r.ai escapes to heap
+./gjson.go:689:3: true escapes to heap
+./gjson.go:208:7: leaking param: t
+./gjson.go:210:18: []Result{} escapes to heap
+./gjson.go:213:18: []Result{...} escapes to heap
+./gjson.go:220:7: t does not escape
+./gjson.go:225:7: t does not escape
+./gjson.go:693:18: leaking param: json to result ~r3 level=0
+./gjson.go:1024:18: leaking param: json to result ~r3 level=0
+./gjson.go:2131:15: leaking param: json
+./gjson.go:235:7: leaking param: t
+./gjson.go:235:25: iterator does not escape
+./gjson.go:310:7: leaking param: t
+./gjson.go:312:27: map[string]Result{} escapes to heap
+./gjson.go:468:12: leaking param: json
+./gjson.go:2607:19: leaking param: json
+./gjson.go:2607:25: leaking param: path
+./gjson.go:2575:17: json does not escape
+./gjson.go:2575:23: leaking param: path to result pathOut level=0
+./gjson.go:2575:23: leaking param: path to result res level=0
+./gjson.go:1742:24: leaking param: path
+./gjson.go:1748:13: func literal does not escape
+./gjson.go:2369:18: data does not escape
+./gjson.go:2401:18: data does not escape
+./gjson.go:2251:15: data does not escape
+./gjson.go:2276:18: data does not escape
+./gjson.go:2346:17: data does not escape
+./gjson.go:2228:19: data does not escape
+./gjson.go:2505:12: json does not escape
+./gjson.go:2506:35: &sliceHeader{...} does not escape
+./gjson.go:1829:23: leaking param: dst to result ~r2 level=0
+./gjson.go:1829:35: leaking param: s
+./gjson.go:1832:24: s escapes to heap
+./gjson.go:1833:29: string(d) does not escape
+./gjson.go:846:17: leaking param: query to result path level=0
+./gjson.go:846:17: leaking param: query to result op level=0
+./gjson.go:846:17: leaking param: query to result value level=0
+./gjson.go:846:17: leaking param: query to result remain level=0
+./gjson.go:772:21: leaking param: path
+./gjson.go:1243:19: leaking param content: rp
+./gjson.go:1243:40: value does not escape
+./gjson.go:1634:24: leaking param: path to result left level=0
+./gjson.go:1634:24: leaking param: path to result right level=0
+./gjson.go:956:22: leaking param: path to result r level=0
+./gjson.go:982:19: ([]byte)(path[:i]) does not escape
+./gjson.go:995:22: string(epart) escapes to heap
+./gjson.go:1005:22: string(epart) escapes to heap
+./gjson.go:1016:19: string(epart) escapes to heap
+./gjson.go:320:7: leaking param: t
+./gjson.go:320:21: leaking param: path
+./gjson.go:1884:10: leaking param: json
+./gjson.go:1884:16: leaking param: path
+./gjson.go:1325:17: leaking param content: c
+./gjson.go:1325:41: leaking param: path
+./gjson.go:1347:20: leaking param: qval
+./gjson.go:1072:18: leaking param content: c
+./gjson.go:1072:42: leaking param: path
+./gjson.go:1956:22: string(b) escapes to heap
+./gjson.go:1968:10: &parseContext{...} does not escape
+./gjson.go:1347:15: func literal does not escape
+./gjson.go:1544:25: make([]int, 0, 64) escapes to heap
+./gjson.go:1545:23: make([]byte, 0, 64) does not escape
+./gjson.go:1569:39: ([]byte)(raw) does not escape
+./gjson.go:1578:27: string(jsons) escapes to heap
+./gjson.go:1595:23: string(append(multires, ']')) escapes to heap
+./gjson.go:517:17: json does not escape
+./gjson.go:518:21: string(json) escapes to heap
+./gjson.go:597:12: leaking param: json to result raw level=0
+./gjson.go:655:7: t does not escape
+./gjson.go:731:18: leaking param: json to result ~r3 level=0
+./gjson.go:743:19: leaking param: json to result ~r3 level=0
+./gjson.go:928:11: leaking param: s to result ~r1 level=0
+./gjson.go:1238:17: str does not escape
+./gjson.go:1238:22: pattern does not escape
+./gjson.go:1719:18: leaking param: json
+./gjson.go:1719:31: iterator does not escape
+./gjson.go:1802:17: leaking param: path to result ~r1 level=0
+./gjson.go:1816:19: component does not escape
+./gjson.go:2980:15: leaking param: json
+./gjson.go:2980:28: leaking param: path
+./gjson.go:2998:24: string(*(*[]byte)(unsafe.Pointer(&rawh))) escapes to heap
+./gjson.go:3005:23: string(*(*[]byte)(unsafe.Pointer(&strh))) escapes to heap
+./gjson.go:3012:23: string(*(*[]byte)(unsafe.Pointer(&rawh))) escapes to heap
+./gjson.go:3017:23: string(*(*[]byte)(unsafe.Pointer(&rawh))) escapes to heap
+./gjson.go:3018:23: string(*(*[]byte)(unsafe.Pointer(&strh))) escapes to heap
+./gjson.go:1997:15: leaking param: json
+./gjson.go:1997:28: leaking param: path
+./gjson.go:2002:13: leaking param: json
+./gjson.go:2091:28: a does not escape
+./gjson.go:2091:31: b does not escape
+./gjson.go:2072:7: t does not escape
+./gjson.go:2072:22: token does not escape
+./gjson.go:2209:14: leaking param: json
+./gjson.go:2209:27: leaking param content: path
+./gjson.go:2210:13: make([]Result, len(path)) escapes to heap
+./gjson.go:2220:19: leaking param: json
+./gjson.go:2220:32: leaking param content: path
+./gjson.go:2221:13: make([]Result, len(path)) escapes to heap
+./gjson.go:2318:17: data does not escape
+./gjson.go:2331:17: data does not escape
+./gjson.go:2476:16: data does not escape
+./gjson.go:2483:17: data does not escape
+./gjson.go:2490:16: data does not escape
+./gjson.go:2519:17: json does not escape
+./gjson.go:2524:16: s does not escape
+./gjson.go:2539:15: s does not escape
+./gjson.go:2658:13: leaking param: json to result ~r1 level=0
+./gjson.go:2684:18: leaking param: name
+./gjson.go:2684:31: leaking param: fn
+./gjson.go:2689:21: name does not escape
+./gjson.go:2689:34: fn does not escape
+./gjson.go:2695:14: leaking param: s to result ~r1 level=0
+./gjson.go:2708:17: string(s2) escapes to heap
+./gjson.go:2715:16: leaking param: json
+./gjson.go:2715:22: leaking param: arg
+./gjson.go:2718:27: key does not escape
+./gjson.go:2718:32: leaking param: value
+./gjson.go:2718:22: func literal does not escape
+./gjson.go:2731:54: &sliceHeader{...} does not escape
+./gjson.go:2733:46: &sliceHeader{...} does not escape
+./gjson.go:2723:26: string(s2) escapes to heap
+./gjson.go:2725:26: string(s2) escapes to heap
+./gjson.go:2737:14: leaking param: json to result ~r2 level=0
+./gjson.go:2737:20: arg does not escape
+./gjson.go:2742:14: json does not escape
+./gjson.go:2742:20: arg does not escape
+./gjson.go:2743:44: &sliceHeader{...} does not escape
+./gjson.go:2743:32: make([]byte, int(0), len(pretty.json)) escapes to heap
+./gjson.go:2747:17: leaking param: json
+./gjson.go:2747:23: arg does not escape
+./gjson.go:2751:23: leaking param: value
+./gjson.go:2768:20: leaking param: key
+./gjson.go:2768:25: leaking param: value
+./gjson.go:2751:15: func literal does not escape
+./gjson.go:2755:14: make([]byte, 0, len(json)) escapes to heap
+./gjson.go:2768:15: func literal does not escape
+./gjson.go:2772:14: make([]byte, 0, len(json)) escapes to heap
+./gjson.go:2793:17: leaking param: json
+./gjson.go:2793:23: leaking param: arg
+./gjson.go:2800:27: key does not escape
+./gjson.go:2800:32: value does not escape
+./gjson.go:2810:22: leaking param: value
+./gjson.go:2800:22: func literal does not escape
+./gjson.go:2810:14: func literal does not escape
+./gjson.go:2837:14: leaking param: json
+./gjson.go:2837:20: arg does not escape
+./gjson.go:2846:17: key does not escape
+./gjson.go:2846:12: func literal does not escape
+./gjson.go:2864:16: leaking param: json
+./gjson.go:2864:22: arg does not escape
+./gjson.go:2875:20: value does not escape
+./gjson.go:2875:12: func literal does not escape
+./gjson.go:2894:14: leaking param: json
+./gjson.go:2894:20: leaking param: arg
+./gjson.go:2901:27: key does not escape
+./gjson.go:2901:32: value does not escape
+./gjson.go:2913:23: value does not escape
+./gjson.go:2928:23: leaking param: value
+./gjson.go:2932:23: leaking param: key
+./gjson.go:2932:28: leaking param: value
+./gjson.go:2901:22: func literal does not escape
+./gjson.go:2913:15: func literal does not escape
+./gjson.go:2927:16: make(map[string]Result) does not escape
+./gjson.go:2928:15: func literal does not escape
+./gjson.go:2932:18: func literal does not escape
+./gjson.go:2957:15: leaking param: json to result ~r2 level=0
+./gjson.go:2957:21: arg does not escape
+./gjson.go:3027:16: json does not escape
+./gjson.go:3027:29: c does not escape
+./gjson.go:3038:18: leaking param: s to result ~r1 level=0
+./gjson.go:3039:35: &sliceHeader{...} does not escape
+./gjson.go:3046:18: leaking param: b to result ~r1 level=0
+./gjson.go:3050:16: leaking param: json to result ~r1 level=0
+./gjson.go:3207:17: leaking param: comp to result ~r1 level=0
+./gjson.go:3210:19: ([]byte)(comp[:i]) does not escape
+./gjson.go:3217:17: string(ncomp) escapes to heap
+./gjson.go:3115:7: t does not escape
+./gjson.go:3115:22: leaking param: json
+./gjson.go:3192:15: string(path) escapes to heap
+./gjson.go:3098:7: leaking param: t
+./gjson.go:3098:23: leaking param: json
+./gjson.go:3103:20: value does not escape
+./gjson.go:3102:15: make([]string, 0, len(t.Indexes)) escapes to heap
+./gjson.go:3103:12: func literal does not escape
+./json.go:12:17: stream does not escape
+./json.go:12:32: value does not escape
+./json.go:144:16: stream does not escape
+./json.go:45:35: tag does not escape
+./json.go:47:51: "incorrect type: " + t + " to " + string(~R0) escapes to heap
+./json.go:47:68: string("kind") + string(~R0) does not escape
+./json.go:47:18: &"errors".errorString{...} escapes to heap
+./json.go:58:21: leaking param: pObj
+./json.go:58:42: leaking param content: tag
+./json.go:58:56: leaking param: raw
+./json.go:62:2: moved to heap: num
+./json.go:68:3: moved to heap: i8
+./json.go:71:3: moved to heap: u8
+./json.go:74:3: moved to heap: u
+./json.go:77:3: moved to heap: i
+./json.go:80:3: moved to heap: u
+./json.go:83:3: moved to heap: i
+./json.go:86:3: moved to heap: u
+./json.go:89:3: moved to heap: i
+./json.go:92:3: moved to heap: u
+./json.go:95:3: moved to heap: i
+./json.go:98:3: moved to heap: u
+./json.go:104:4: moved to heap: num
+./json.go:64:30: ([]byte)("error:" + err.Error() + ", stream:" + string(raw)) does not escape
+./json.go:64:68: "error:" + err.Error() + ", stream:" + string(raw) does not escape
+./json.go:64:76: string(raw) does not escape
+./json.go:64:23: "incorrect format: " + string(stream) escapes to heap
+./json.go:64:23: string(stream) does not escape
+./json.go:64:23: &"errors".errorString{...} escapes to heap
+./json.go:104:17: string(raw) escapes to heap
+./json.go:50:19: leaking param: pObj
+./json.go:50:40: leaking param content: tag
+./json.go:50:54: moved to heap: b
+./json.go:360:21: raw does not escape
+./json.go:362:40: "ncorrect format: " + string(raw) escapes to heap
+./json.go:362:48: string(raw) does not escape
+./json.go:362:19: &"errors".errorString{...} escapes to heap
+./json.go:364:36: string(raw[2:6]) escapes to heap
+./json.go:366:40: "ncorrect format: " + string(raw[:6]) escapes to heap
+./json.go:366:48: string(raw[:6]) does not escape
+./json.go:366:19: &"errors".errorString{...} escapes to heap
+./json.go:305:18: raw does not escape
+./json.go:309:22: []byte{...} escapes to heap
+./json.go:311:22: []byte{...} escapes to heap
+./json.go:313:22: []byte{...} escapes to heap
+./json.go:315:22: []byte{...} escapes to heap
+./json.go:317:22: []byte{...} escapes to heap
+./json.go:319:22: []byte{...} escapes to heap
+./json.go:321:22: []byte{...} escapes to heap
+./json.go:323:22: []byte{...} escapes to heap
+./json.go:327:44: "incorrect format: \\" + string(raw) escapes to heap
+./json.go:327:52: string(raw) does not escape
+./json.go:327:20: &"errors".errorString{...} escapes to heap
+./json.go:338:60: "incorrect format: \\" + string(last) + string(raw[:l]) escapes to heap
+./json.go:338:53: string(last) does not escape
+./json.go:338:68: string(raw[:l]) does not escape
+./json.go:338:21: &"errors".errorString{...} escapes to heap
+./json.go:346:14: make([]byte, 4) escapes to heap
+./json.go:354:41: "incorrect format: " + string(raw[:l]) escapes to heap
+./json.go:354:49: string(raw[:l]) does not escape
+./json.go:354:19: &"errors".errorString{...} escapes to heap
+./json.go:277:15: leaking param: stream to result raw level=0
+./json.go:115:21: leaking param: pObj
+./json.go:115:42: leaking param content: tag
+./json.go:115:56: moved to heap: raw
+./json.go:154:15: leaking param: stream
+./json.go:154:30: leaking param: pObj
+./json.go:154:51: tis does not escape
+./json.go:124:18: leaking param: pObj
+./json.go:124:39: tag does not escape
+./json.go:124:53: leaking param: raw
+./json.go:156:23: "incorrect format: " + string(stream) escapes to heap
+./json.go:156:23: string(stream) does not escape
+./json.go:156:23: &"errors".errorString{...} escapes to heap
+./json.go:169:26: "incorrect format: " + string(stream) escapes to heap
+./json.go:169:26: string(stream) does not escape
+./json.go:169:26: &"errors".errorString{...} escapes to heap
+./json.go:173:29: string(key) does not escape
+./json.go:178:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:178:25: string(stream) does not escape
+./json.go:178:25: &"errors".errorString{...} escapes to heap
+./json.go:182:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:182:25: string(stream) does not escape
+./json.go:182:25: &"errors".errorString{...} escapes to heap
+./json.go:184:28: string(key) does not escape
+./json.go:192:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:192:25: string(stream) does not escape
+./json.go:192:25: &"errors".errorString{...} escapes to heap
+./json.go:194:28: string(key) does not escape
+./json.go:202:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:202:25: string(stream) does not escape
+./json.go:202:25: &"errors".errorString{...} escapes to heap
+./json.go:205:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:205:25: string(stream) does not escape
+./json.go:205:25: &"errors".errorString{...} escapes to heap
+./json.go:211:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:211:25: string(stream) does not escape
+./json.go:211:25: &"errors".errorString{...} escapes to heap
+./json.go:214:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:214:25: string(stream) does not escape
+./json.go:214:25: &"errors".errorString{...} escapes to heap
+./json.go:217:28: string(key) does not escape
+./json.go:223:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:223:25: string(stream) does not escape
+./json.go:223:25: &"errors".errorString{...} escapes to heap
+./json.go:226:25: "incorrect format: " + string(stream) escapes to heap
+./json.go:226:25: string(stream) does not escape
+./json.go:226:25: &"errors".errorString{...} escapes to heap
+./json.go:229:28: string(key) does not escape
+./json.go:241:26: "incorrect format: " + string(stream) escapes to heap
+./json.go:241:26: string(stream) does not escape
+./json.go:241:26: &"errors".errorString{...} escapes to heap
+./json.go:249:29: string(key) does not escape
+./json.go:17:20: key does not escape
+./json.go:17:32: leaking param: pObj
+./json.go:17:53: leaking param: stream
+./json.go:17:78: leaking param content: tag
+./json.go:17:92: leaking param: curType
+./json.go:39:27: stream does not escape
+./json.go:43:40: "incorrect format: " + string(stream) escapes to heap
+./json.go:43:48: string(stream) does not escape
+./json.go:43:18: &"errors".errorString{...} escapes to heap
+./json.go:264:15: leaking param: stream to result raw level=0
+./marshalable_func.go:118:22: leaking param: field
+./marshalable_func.go:118:49: leaking param: pStruct
+./marshalable_func.go:118:73: leaking param content: pIn
+./marshalable_func.go:122:7: moved to heap: p
+./marshalable_func.go:97:15: leaking param: field
+./marshalable_func.go:97:42: leaking param: pStruct
+./marshalable_func.go:97:66: leaking param content: pIn
+./marshalable_func.go:59:18: leaking param: err
+./marshalable_func.go:64:30: leaking param content: pTag
+./marshalable_func.go:64:45: bs does not escape
+./marshalable_func.go:67:20: ... argument does not escape
+./marshalable_func.go:68:20: pTag.StructField.Name escapes to heap
+./marshalable_func.go:68:36: t.Size() escapes to heap
+./marshalable_func.go:68:43: len(bs) escapes to heap
+./marshalable_func.go:73:15: leaking param: field
+./marshalable_func.go:73:42: pStruct does not escape
+./marshalable_func.go:73:66: pOut does not escape
+./marshalable_func.go:131:21: leaking param: field
+./marshalable_func.go:131:48: leaking param: pStruct
+./marshalable_func.go:131:72: leaking param content: pIn
+./struct.go:18:18: leaking param: key
+./struct.go:29:7: &tagNode{} escapes to heap
+./struct.go:154:18: leaking param: typ
+./struct.go:157:15: leaking param: typ
+./struct.go:143:7: leaking param: tag
+./struct.go:143:27: tis does not escape
+./struct.go:147:20: ... argument does not escape
+./struct.go:147:73: tag.TagName escapes to heap
+./struct.go:166:15: leaking param: typIn
+./struct.go:166:35: tagKey does not escape
+./struct.go:168:19: ... argument does not escape
+./struct.go:168:89: typIn.Kind() escapes to heap
+./struct.go:171:12: make(map[string]*TagInfo, 64) escapes to heap
+./struct.go:176:14: &TagInfo{...} escapes to heap
+./struct.go:42:7: leaking param: n
+./struct.go:42:30: leaking param: typ
+./struct.go:132:7: leaking param content: t
+./struct.go:132:23: leaking param: pStruct
+./struct.go:132:47: leaking param: pIn
+./struct.go:135:7: leaking param content: t
+./struct.go:135:23: leaking param: pStruct
+./struct.go:135:47: leaking param: pOut
+./struct.go:139:7: leaking param: p to result k level=1
+./struct.go:217:16: leaking param: bs
+./struct.go:217:27: leaking param: in
+./struct.go:221:19: ... argument does not escape
+./struct.go:230:42: typ.PkgPath() + "." + typ.Name() escapes to heap
+./struct.go:236:8: func literal does not escape
+./struct.go:239:20: &"github.com/lxt1045/errors".Err{...} escapes to heap
+./gjson.go:2669:57: map[string]func(string, string) string{...} escapes to heap
+./marshalable_func.go:43:50: map[reflect.Kind]marshalable{...} escapes to heap
+./struct.go:14:27: make(map[string]*tagNode) escapes to heap
+<autogenerated>:1: leaking param: .this
+<autogenerated>:1: inlining call to Type.IsNull
+<autogenerated>:1: .this does not escape
+<autogenerated>:1: inlining call to Type.String
+<autogenerated>:1: .this does not escape
+<autogenerated>:1: leaking param content: .this
+<autogenerated>:1: .this does not escape
+<autogenerated>:1: inlining call to Result.Exists
+<autogenerated>:1: .this does not escape
+<autogenerated>:1: leaking param content: .this
+<autogenerated>:1: leaking param content: .this
+./gjson.go:235:25: iterator does not escape
+<autogenerated>:1: leaking param content: .this
+./gjson.go:320:21: leaking param: path
+<autogenerated>:1: .this does not escape
+<autogenerated>:1: inlining call to Result.IsArray
+<autogenerated>:1: .this does not escape
+<autogenerated>:1: inlining call to Result.IsObject
+<autogenerated>:1: .this does not escape
+<autogenerated>:1: .this does not escape
+./gjson.go:2072:22: token does not escape
+<autogenerated>:1: inlining call to Result.Map
+<autogenerated>:1: leaking param content: .this
+<autogenerated>:1: map[string]Result{} escapes to heap
+<autogenerated>:1: .this does not escape
+./gjson.go:3115:22: leaking param: json
+<autogenerated>:1: leaking param content: .this
+./gjson.go:3098:23: leaking param: json
+<autogenerated>:1: leaking param: .this to result ~r0 level=1
+<autogenerated>:1: leaking param content: .this
+<autogenerated>:1: .this does not escape
+<autogenerated>:1: leaking param content: .this
+<autogenerated>:1: leaking param content: .this
