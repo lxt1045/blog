@@ -3043,10 +3043,6 @@ func stringBytes(s string) []byte {
 	}))
 }
 
-func bytesString(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
-}
-
 func revSquash(json string) string {
 	// reverse squash
 	// expects that the tail character is a ']' or '}' or ')' or '"'

@@ -56,100 +56,6 @@ func panicIncorrectType(typ Type, tag *TagInfo) {
 	panic(errors.New("incorrect type: " + t + " to " + tag.BaseKind.String()))
 }
 
-func setNumberField(pObj unsafe.Pointer, tag *TagInfo, raw []byte, typ Type) (i int) {
-	if tag.BaseKind > reflect.Struct {
-		panicIncorrectType(typ, tag)
-	}
-
-	if tag.BaseKind < reflect.Int || tag.BaseKind > reflect.Float64 {
-		panicIncorrectType(False, tag)
-	}
-	var f float64
-	var num int64
-	var err error
-	if tag.BaseKind == reflect.Float32 || tag.BaseKind == reflect.Float64 {
-		f, err = strconv.ParseFloat(bytesString(raw), 64)
-		if err != nil {
-			panicIncorrectFormat([]byte("error:" + err.Error() + ", stream:" + string(raw)))
-		}
-	} else {
-		num, err = strconv.ParseInt(bytesString(raw), 10, 64)
-		if err != nil {
-			panicIncorrectFormat([]byte("error:" + err.Error() + ", stream:" + string(raw)))
-		}
-	}
-
-	switch tag.BaseKind {
-	case reflect.Int:
-		i := int(num)
-		setFieldInt(tag.StructField, pObj, unsafe.Pointer(&i))
-	case reflect.Int8:
-		u8 := int8(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-		return
-	case reflect.Int16:
-		u8 := int16(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Int32:
-		u8 := int32(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Int64:
-		u8 := int64(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Uint:
-		u8 := uint(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Uint8:
-		u8 := uint8(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Uint16:
-		u8 := uint16(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Uint32:
-		u8 := uint32(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Uint64:
-		u8 := uint64(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Uintptr:
-		u8 := uintptr(num)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Float32:
-		u8 := float32(f)
-		tag.Set(pObj, unsafe.Pointer(&u8))
-	case reflect.Float64:
-		tag.Set(pObj, unsafe.Pointer(&num))
-	case reflect.Struct:
-		//json.Number
-		if tag.StructField.Type.PkgPath() == "encoding/json" && tag.StructField.Type.Name() == "Number" {
-			num := string(raw)
-			tag.Set(pObj, unsafe.Pointer(&num))
-		}
-		panicIncorrectType(typ, tag)
-		return
-	}
-	return
-}
-func setStringField(pObj unsafe.Pointer, tag *TagInfo, raw []byte) (err error) {
-	if tag.BaseKind != reflect.String {
-		err = lxterrs.New("should be [%v], not [string]", tag.BaseKind.String())
-		return
-	}
-	str := *(*string)(unsafe.Pointer(&raw))
-	p := pointerOffset(pObj, tag.Offset)
-	setFieldString(p, str)
-	return
-}
-
-func setBoolField(pObj unsafe.Pointer, tag *TagInfo, b bool) (err error) {
-	if tag.BaseKind != reflect.Bool {
-		err = lxterrs.New("should be [%v], not [bool]", tag.BaseKind.String())
-		return
-	}
-	p := pointerOffset(pObj, tag.Offset)
-	setBool(p, b)
-	return
-}
 func setObjField(pObj unsafe.Pointer, tag *TagInfo, raw []byte) (i int) {
 	if tag.BaseKind != reflect.Struct {
 		panicIncorrectType(False, tag)
@@ -315,7 +221,6 @@ func parseKey(stream []byte) (key []byte, i int, err error) {
 
 // 解析 {}
 func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err error) {
-	i = trimSpace(stream)
 	for i < len(stream) && stream[i] != '}' {
 		key, n, err := parseKey(stream[i+1:])
 		if err != nil {
@@ -345,7 +250,7 @@ func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err erro
 
 func parseSlice(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err error) {
 	size := int(tag.StructField.Type.Size())
-	raw := make([]byte, size, 8*size) //先分配 8 个
+	raw := make([]byte, 0, 8*size) //先分配 8 个
 	s := reflect.SliceHeader{
 		Data: uintptr(unsafe.Pointer(&raw[0])),
 		Len:  0,
@@ -457,12 +362,15 @@ func parseValue(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err er
 
 //解析 obj: {}, 或 []
 func parseRoot(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (err error) {
-	i := trimSpace(stream)
+	i := 1
+	n := trimSpace(stream[i:])
+	i += n
 	if stream[i] == '{' {
 		for i < len(stream) {
 			n, err := parseObj(stream[i:], pObj, tag)
 			if err != nil {
-
+				err = lxterrs.Wrap(err, "parseObj")
+				return err
 			}
 			i += n
 			i += trimSpace(stream[i:])

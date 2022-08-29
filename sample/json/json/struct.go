@@ -1,12 +1,15 @@
 package json
 
 import (
+	"encoding/base64"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"unsafe"
 
 	"github.com/lxt1045/errors"
+	lxterrs "github.com/lxt1045/errors"
 )
 
 var (
@@ -30,7 +33,7 @@ func LoadTagNode(typ reflect.Type) (n *tagNode, err error) {
 			return n, nil
 		}
 	}
-	ti, err := tagParse(typ, "json")
+	ti, err := tagParse(typ)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +61,7 @@ func LoadTagNodeStr(typ reflect.Type) (n *tagNodeStr) {
 			return n
 		}
 	}
-	ti, err := tagParse(typ, "json")
+	ti, err := tagParse(typ)
 	if err != nil {
 		panic(err)
 	}
@@ -76,16 +79,14 @@ func LoadTagNodeStr(typ reflect.Type) (n *tagNodeStr) {
 }
 
 type tagNodeStr struct {
-	pkgPath string
-	// tagInfo  map[string]*TagInfo
-	tagInfo  TagInfo
+	pkgPath  string
+	tagInfo  *TagInfo
 	pkgCache cache[string, *tagNodeStr] //如果 name 相等，则从这个缓存中获取
 }
 
 type tagNode struct {
-	pkgPath uintptr
-	// tagInfo  map[string]*TagInfo
-	tagInfo  TagInfo
+	pkgPath  uintptr
+	tagInfo  *TagInfo
 	pkgCache cache[uintptr, *tagNode] //如果 name 相等，则从这个缓存中获取
 }
 
@@ -169,9 +170,10 @@ type TagInfo struct {
 	StringTag    bool         // `json:"field,string"`: 此情形下,需要把struct的int转成json的string
 	OmitemptyTag bool         //  `json:"some_field,omitempty"`
 	Children     map[string]*TagInfo
+	ChildList    []*TagInfo // 遍历的顺序和速度
 
-	fSet func(field reflect.StructField, pStruct unsafe.Pointer, pIn unsafe.Pointer)
-	fGet func(field reflect.StructField, pStruct unsafe.Pointer, pOut unsafe.Pointer)
+	fSet func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error)
+	fGet func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte)
 }
 
 func (p *TagInfo) cacheKey() (k string) {
@@ -179,27 +181,6 @@ func (p *TagInfo) cacheKey() (k string) {
 }
 func (t *TagInfo) GetChild(key []byte) *TagInfo {
 	return t.Children[string(key)]
-}
-
-func (t *TagInfo) Set(pStruct unsafe.Pointer, pIn unsafe.Pointer) {
-	switch t.BaseKind {
-	case reflect.String:
-		// setFieldString(t.StructField, pStruct, pIn)
-	case reflect.Int:
-		setFieldInt(t.StructField, pStruct, pIn)
-	case reflect.Bool:
-		setFieldBool(t.StructField, pStruct, pIn)
-	default:
-		setField(t.StructField, pStruct, pIn)
-	}
-}
-func (t *TagInfo) Get(pStruct unsafe.Pointer, pOut unsafe.Pointer) {
-	switch t.BaseKind {
-	case reflect.String:
-		getField(t.StructField, pStruct, pOut)
-	default:
-		getField(t.StructField, pStruct, pOut)
-	}
 }
 func (t *TagInfo) AddChild(c *TagInfo) {
 	if len(t.Children) == 0 {
@@ -209,69 +190,495 @@ func (t *TagInfo) AddChild(c *TagInfo) {
 		err := fmt.Errorf("error, tag[%s]类型配置出错,字段重复", c.TagName)
 		panic(err)
 	}
+	t.ChildList = append(t.ChildList, c)
 	t.Children[c.TagName] = c
+	return
+}
+
+// []byte 是一种特殊的底层数据类型，需要 base64 编码
+func isBytes(typ reflect.Type) bool {
+	bsType := reflect.TypeOf(&[]byte{})
+	return typ.PkgPath() == bsType.PkgPath() && typ.Name() == bsType.Name()
+}
+func (ti *TagInfo) setFuncs() (err error) {
+	ptrDeep, baseType := 0, ti.StructField.Type
+	for typ := ti.StructField.Type; ; typ = typ.Elem() {
+		if typ.Kind() == reflect.Ptr {
+			ptrDeep++
+			continue
+		}
+		baseType = typ
+		break
+	}
+
+	// 先从最后一个基础类型开始处理
+	var fSet func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error)
+	var fGet func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte)
+
+	// 先从最后一个基础类型开始处理
+	switch baseType.Kind() {
+	case reflect.Bool:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			if raw[0] == 't' {
+				*(*bool)(pObj) = true
+			} else {
+				*(*bool)(pObj) = false
+			}
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			if *(*bool)(pObj) {
+				out = append(in, []byte("false")...)
+			} else {
+				out = append(in, []byte("true")...)
+			}
+			return
+		}
+		if ptrDeep > 0 {
+			if ptrDeep > 0 {
+				fSet, fGet = getBaseTypeFuncs[bool](ptrDeep, fSet, fGet)
+			}
+		}
+	case reflect.Uint, reflect.Uint64, reflect.Uintptr:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			num, err := strconv.ParseUint(bytesString(raw), 10, 64)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*uint64)(pObj) = num
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*uint64)(pObj)
+			str := strconv.FormatUint(num, 10)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[uint64](ptrDeep, fSet, fGet)
+		}
+	case reflect.Int, reflect.Int64:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			num, err := strconv.ParseInt(bytesString(raw), 10, 64)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*int64)(pObj) = num
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*int64)(pObj)
+			str := strconv.FormatInt(num, 10)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[int64](ptrDeep, fSet, fGet)
+		}
+	case reflect.Uint32:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			num, err := strconv.ParseUint(bytesString(raw), 10, 32)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*uint32)(pObj) = uint32(num)
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*uint32)(pObj)
+			str := strconv.FormatUint(uint64(num), 10)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[uint32](ptrDeep, fSet, fGet)
+		}
+	case reflect.Int32:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			num, err := strconv.ParseInt(bytesString(raw), 10, 32)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*int32)(pObj) = int32(num)
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*int32)(pObj)
+			str := strconv.FormatInt(int64(num), 10)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[int32](ptrDeep, fSet, fGet)
+		}
+	case reflect.Uint16:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			num, err := strconv.ParseUint(bytesString(raw), 10, 32)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*uint16)(pObj) = uint16(num)
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*uint16)(pObj)
+			str := strconv.FormatUint(uint64(num), 10)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[uint16](ptrDeep, fSet, fGet)
+		}
+	case reflect.Int16:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			num, err := strconv.ParseInt(bytesString(raw), 10, 32)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*int16)(pObj) = int16(num)
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*int16)(pObj)
+			str := strconv.FormatInt(int64(num), 10)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[int16](ptrDeep, fSet, fGet)
+		}
+	case reflect.Uint8:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			num, err := strconv.ParseUint(bytesString(raw), 10, 32)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*uint8)(pObj) = uint8(num)
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*uint8)(pObj)
+			str := strconv.FormatUint(uint64(num), 10)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[uint8](ptrDeep, fSet, fGet)
+		}
+	case reflect.Int8:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			num, err := strconv.ParseInt(bytesString(raw), 10, 32)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*int8)(pObj) = int8(num)
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*int8)(pObj)
+			str := strconv.FormatInt(int64(num), 10)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[int8](ptrDeep, fSet, fGet)
+		}
+	case reflect.Float64:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			f, err := strconv.ParseFloat(bytesString(raw), 64)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*float64)(pObj) = f
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*float64)(pObj)
+			out = strconv.AppendFloat(in, float64(num), 'f', -1, 64)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[float64](ptrDeep, fSet, fGet)
+		}
+	case reflect.Float32:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			f, err := strconv.ParseFloat(bytesString(raw), 64)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(raw))
+				return
+			}
+			*(*float64)(pObj) = f
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			num := *(*float64)(pObj)
+			out = strconv.AppendFloat(in, float64(num), 'f', -1, 64)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[float32](ptrDeep, fSet, fGet)
+		}
+	case reflect.Complex64:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase, out = pObj, in
+			return
+		}
+	case reflect.String:
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+			pBase = pObj
+			*(*string)(pObj) = *(*string)(unsafe.Pointer(&raw))
+			return
+		}
+		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			pBase = pObj
+			str := *(*string)(pObj)
+			out = append(in, str...)
+			return
+		}
+		if ptrDeep > 0 {
+			fSet, fGet = getBaseTypeFuncs[string](ptrDeep, fSet, fGet)
+		}
+	case reflect.Slice: // &[]byte
+		if isBytes(baseType) {
+			// []byte 是一种特殊的底层数据类型，需要 base64 编码
+			fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+				pBase = pObj
+				pbs := (*[]byte)(pObj)
+				*pbs = make([]byte, len(raw)*2)
+				n, err := base64.StdEncoding.Decode(*pbs, raw)
+				if err != nil {
+					err = lxterrs.Wrap(err, ErrStream(raw))
+					return
+				}
+				*pbs = (*pbs)[:n]
+				return
+			}
+			fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+				pBase = pObj
+				bs := *(*[]byte)(pObj)
+				l, need := len(in), base64.StdEncoding.EncodedLen(len(bs))
+				if l+need > cap(in) {
+					//没有足够空间
+					in = append(in, make([]byte, need)...)
+				}
+				base64.StdEncoding.Encode(in[l:l+need], bs)
+				out = in[:l+need]
+				return
+			}
+			if ptrDeep > 0 {
+				fSet, fGet = getBaseTypeFuncs[[]byte](ptrDeep, fSet, fGet)
+			}
+		}
+
+	case reflect.Struct:
+		son, e := tagParse(baseType)
+		if err = e; err != nil {
+			return lxterrs.Wrap(err, "Struct")
+		}
+		// 匿名成员的处理; 这里只能处理费指针嵌入，指针嵌入逻辑在上一层
+		if !ti.StructField.Anonymous {
+			ti.AddChild(son)
+			if ptrDeep > 0 {
+				//
+				fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+					p := *(*unsafe.Pointer)(pObj)
+					if p == nil {
+						v := reflect.New(baseType)
+						p = reflectValueToPointer(&v)
+						*(*unsafe.Pointer)(pObj) = p
+					}
+					return unsafe.Pointer(p), nil
+				}
+				fGet := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+					p := *(*unsafe.Pointer)(pObj)
+					return p, in
+				}
+
+				for i := 0; i < ptrDeep; i++ {
+					fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+						var p unsafe.Pointer
+						*(**unsafe.Pointer)(pObj) = &p
+						return fSet(unsafe.Pointer(&p), bs)
+					}
+					fGet1 := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+						p := *(*unsafe.Pointer)(pObj)
+						return fGet(p, in)
+					}
+					fSet, fGet = fSet1, fGet1
+				}
+			}
+		} else {
+			if ptrDeep <= 0 {
+				for _, c := range son.Children {
+					fSet := func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+						pBase = pObj
+						pSon := pointerOffset(pObj, ti.Offset)
+						return c.fSet(pSon, raw)
+					}
+					fGet := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+						pBase = pObj
+						pSon := pointerOffset(pObj, ti.Offset)
+						return c.fGet(pSon, in)
+					}
+					c.fSet, c.fGet = fSet, fGet
+					ti.AddChild(c)
+				}
+			} else {
+				// 指针匿名嵌入数据结构
+				for _, c := range son.Children {
+					fSet := func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+						p := *(*unsafe.Pointer)(pObj)
+						if p == nil {
+							v := reflect.New(baseType)
+							p = reflectValueToPointer(&v)
+							*(*unsafe.Pointer)(pObj) = p
+						}
+						return c.fSet(p, raw)
+					}
+					fGet := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+						p := *(*unsafe.Pointer)(pObj)
+						if p != nil {
+							return c.fGet(p, in)
+						}
+						return nil, in
+					}
+
+					for i := 0; i < ptrDeep; i++ {
+						fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+							var p unsafe.Pointer
+							*(**unsafe.Pointer)(pObj) = &p
+							return fSet(unsafe.Pointer(&p), bs)
+						}
+						fGet1 := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+							p := *(*unsafe.Pointer)(pObj)
+							return fGet(p, in)
+						}
+						fSet, fGet = fSet1, fGet1
+					}
+					c.fSet, c.fGet = fSet, fGet
+					ti.AddChild(c)
+				}
+			}
+		}
+
+	case reflect.Interface:
+		// Interface 需要根据实际类型创建
+	case reflect.Map:
+		// Map 要怎么处理？
+		if ptrDeep <= 0 {
+			fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+				p := (*map[string]interface{})(pObj)
+				*p = make(map[string]interface{})
+				return pObj, nil
+			}
+		} else {
+			// 指针匿名嵌入数据结构
+			fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+				p := (**map[string]interface{})(pObj)
+				m := make(map[string]interface{})
+				*p = &m
+				return unsafe.Pointer(&m), nil
+			}
+			fGet := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+				p := *(*unsafe.Pointer)(pObj)
+				return p, in
+			}
+
+			for i := 0; i < ptrDeep; i++ {
+				fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+					var p unsafe.Pointer
+					*(**unsafe.Pointer)(pObj) = &p
+					return fSet(unsafe.Pointer(&p), bs)
+				}
+				fGet1 := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+					p := *(*unsafe.Pointer)(pObj)
+					return fGet(p, in)
+				}
+				fSet, fGet = fSet1, fGet1
+			}
+		}
+	default:
+		// Array
+		// Interface
+		// Map
+		// Ptr
+		// Slice
+		// String,[]byte
+		// Struct
+		// UnsafePointer
+	}
+	ti.fSet, ti.fGet = fSet, fGet
+
+	//一些共同的操作
 	return
 }
 
 func hasBaseElem(typ reflect.Type) bool {
 	return typ.Kind() == reflect.Ptr || typ.Kind() == reflect.Map || typ.Kind() == reflect.Slice || typ.Kind() == reflect.Array
 }
-func baseElem(typ reflect.Type) reflect.Type {
+func baseElem(typ reflect.Type) (typ2 reflect.Type) {
+	typ2 = typ
 	for hasBaseElem(typ) {
 		typ = typ.Elem()
 	}
-	return typ
+	return
 }
 
 //tagParse 解析struct的tag字段，并返回解析的结果
 //只需要type, 不需要 interface 也可以? 不着急,分步来
-func tagParse(typIn reflect.Type, tagKey string) (ti TagInfo, err error) {
+func tagParse(typIn reflect.Type) (ret *TagInfo, err error) {
 	if typIn.Kind() != reflect.Struct {
 		err = fmt.Errorf("IfaceToHBaseMutation() only accepts structs; got %vFrom", typIn.Kind())
 		return
 	}
-	ti.BaseKind = reflect.Struct
+	ret = &TagInfo{
+		TagName:  typIn.Name(),
+		BaseKind: typIn.Kind(), // 解析出最内层类型
+	}
 
 	for i := 0; i < typIn.NumField(); i++ {
 		field := typIn.Field(i)
-		baseType := baseElem(field.Type)
-		if field.Anonymous { //匿名类型
-			if baseType.Kind() == reflect.Struct {
-				c, e := tagParse(baseType, tagKey)
-				if err = e; err != nil {
-					return
-				}
-				for key, ti := range c.Children {
-					if field.Type.Kind() == reflect.Ptr {
-						fSet, fGet := ti.fSet, ti.fSet
-						ti.fSet = func(field reflect.StructField, pStruct, pIn unsafe.Pointer) {
-							// TODO
-							if fSet != nil {
-								fSet(field, pStruct, pIn)
-							}
-						}
-						ti.fGet = func(field reflect.StructField, pStruct, pOut unsafe.Pointer) {
-							// TODO
-							if fGet != nil {
-								fGet(field, pStruct, pOut)
-							}
-						}
-					} else {
-						ti.Offset += field.Offset
-					}
-					tis[key] = ti
-				}
-			}
-			continue
-		}
 		tagInfo := &TagInfo{
 			StructField: field,
 			TagName:     field.Name,
 			Offset:      field.Offset,
-			BaseKind:    baseType.Kind(), // 解析出最内层类型
 		}
 
-		tagv := field.Tag.Get(tagKey)  //从tag列表中取出下标为i的tag //json:"field,string"
+		tagv := field.Tag.Get("json")  //从tag列表中取出下标为i的tag //json:"field,string"
 		tagv = strings.TrimSpace(tagv) //去除两头的空格
 		if len(tagv) <= 0 || tagv == "-" {
 			continue //如果tag字段没有内容，则不处理
@@ -292,14 +699,15 @@ func tagParse(typIn reflect.Type, tagKey string) (ti TagInfo, err error) {
 				continue
 			}
 		}
-		if baseType.Kind() == reflect.Struct {
-			tiC, e := tagParse(baseType, tagKey)
-			if err = e; err != nil {
-				return
-			}
-			tagInfo.Children = tiC.Children
+
+		err = tagInfo.setFuncs()
+		if err != nil {
+			err = lxterrs.Wrap(err, "tagInfo.setFuncs")
+			return
 		}
-		ti.AddChild(tagInfo)
+		if !tagInfo.StructField.Anonymous {
+			ret.AddChild(tagInfo)
+		}
 	}
 	return
 }
@@ -371,4 +779,18 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 	empty := (*emptyInterface)(unsafe.Pointer(&in))
 	err = parseRoot(bs[i:], empty.word, n.tagInfo)
 	return
+}
+
+type Value struct {
+	typ  uintptr
+	ptr  unsafe.Pointer
+	flag uintptr
+}
+
+func reflectValueToPointer(v *reflect.Value) unsafe.Pointer {
+	return (*Value)(unsafe.Pointer(v)).ptr
+}
+
+func bytesString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }

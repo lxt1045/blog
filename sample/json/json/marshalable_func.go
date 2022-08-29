@@ -142,3 +142,35 @@ func setFieldSlice(pValue unsafe.Pointer, pIn unsafe.Pointer) {
 func pointerOffset(p unsafe.Pointer, offset uintptr) (pOut unsafe.Pointer) {
 	return unsafe.Pointer(uintptr(p) + uintptr(offset))
 }
+
+func getBaseTypeFuncs[T any](ptrDeep int,
+	fSet func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error),
+	fGet func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte),
+) (
+	fSet1 func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error),
+	fGet1 func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte),
+) {
+	fSet1 = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+		var obj T
+		*(**T)(pObj) = &obj
+		return fSet(unsafe.Pointer(&obj), bs)
+	}
+	fGet1 = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+		p := *(*unsafe.Pointer)(pObj)
+		return fGet(p, in)
+	}
+	fSet, fGet = fSet1, fGet1
+	for i := 1; i < ptrDeep; i++ {
+		fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+			var p unsafe.Pointer
+			*(**unsafe.Pointer)(pObj) = &p
+			return fSet(unsafe.Pointer(&p), bs)
+		}
+		fGet1 := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			p := *(*unsafe.Pointer)(pObj)
+			return fGet(p, in)
+		}
+		fSet, fGet = fSet1, fGet1
+	}
+	return
+}

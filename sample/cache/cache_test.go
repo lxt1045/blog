@@ -1,8 +1,10 @@
 package cache
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -124,6 +126,16 @@ func TestBytesIdx(t *testing.T) {
 	})
 }
 
+func TestTTTl(t *testing.T) {
+	str := []byte("7b226964223a363933353939313438343833313536353332362c226372656174655f74696d65223a22323032312d30332d30355431383a32353a34372b30383a3030222c227570646174655f74696d65223a22323032312d30332d30355431383a32353a34372b30383a3030222c2274656e616e745f6964223a2236363939333932333139323331343238313039222c226170705f6964223a2236393335323938323030393833303435363639227dc3e303630000000000")
+	dest := make([]byte, len(str))
+	_, err := hex.Decode(dest, str)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("dest:%s", string(dest))
+}
 func BenchmarkIdx(b *testing.B) {
 	keys := []string{
 		"mobile", "phone", "code", "isLeader", "isManager", "isAppManager", "departmentList", "id", "name", "avatar", "avatar72", "avatar240", "avatar640", "email", "employeeType", "name", "active", "isAdmin", "zh-CN", "en-US", "department", "status", "accountStatus", "employmentStatus", "registerStatus",
@@ -355,6 +367,93 @@ func BenchmarkCache(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			lock.RLock()
 			lock.RUnlock()
+		}
+		b.StopTimer()
+	})
+}
+
+type TestStruct struct {
+	ItemID         int64  `json:"ItemID"`
+	BizName        string `json:"BizName"`
+	BizCode        string `json:"BizCode"`
+	Description    string `json:"Description"`
+	Type           int    `json:"Type"`
+	ItemManagerURL string `json:"ItemManagerURL"`
+	ItemEnumURL    string `json:"ItemEnumURL"`
+}
+
+type Value struct {
+	typ  uintptr
+	ptr  unsafe.Pointer
+	flag uintptr
+}
+
+func reflectValueToPointer(v *reflect.Value) unsafe.Pointer {
+	return (*Value)(unsafe.Pointer(v)).ptr
+}
+
+func BenchmarkNew(b *testing.B) {
+	var p *TestStruct
+	_ = p
+	b.Run("raw", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			p = &TestStruct{}
+		}
+		b.StopTimer()
+	})
+	b.Run("raw-0", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			_ = TestStruct{}
+		}
+		b.StopTimer()
+	})
+	b.Run("reflect.New", func(b *testing.B) {
+		typ := reflect.TypeOf(&TestStruct{})
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			v := reflect.New(typ)
+			p = (*TestStruct)(unsafe.Pointer(v.Pointer()))
+		}
+		b.StopTimer()
+	})
+	b.Run("reflect.New-1", func(b *testing.B) {
+		typ := reflect.TypeOf(&TestStruct{})
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			pp := reflect.New(typ)
+			p = (*TestStruct)(reflectValueToPointer(&pp))
+		}
+		b.StopTimer()
+	})
+	b.Run("reflect.NewAt", func(b *testing.B) {
+		typ := reflect.TypeOf(&TestStruct{})
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			s := make([]byte, typ.Size())
+			pp := reflect.NewAt(typ, unsafe.Pointer(&s[0]))
+			p = (*TestStruct)(reflectValueToPointer(&pp))
+		}
+		b.StopTimer()
+	})
+	b.Run("reflect.NewAt-0", func(b *testing.B) {
+		typ := reflect.TypeOf(&TestStruct{})
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			s := make([]byte, typ.Size())
+			slice := *(*reflect.SliceHeader)(unsafe.Pointer(&s))
+			reflect.NewAt(typ, unsafe.Pointer(slice.Data))
+			// _ = *(*TestStruct)(unsafe.Pointer(&s[0]))
+		}
+		b.StopTimer()
+	})
+	b.Run("make", func(b *testing.B) {
+		typ := reflect.TypeOf(&TestStruct{})
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			s := make([]byte, typ.Size())
+			_ = s
 		}
 		b.StopTimer()
 	})

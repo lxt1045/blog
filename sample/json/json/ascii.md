@@ -15,6 +15,8 @@ JSON交换时必须编码为UTF-8。[2]转义序列可以为：“\\”、“\"�
 // or
 { "face": "\uD83D\uDE02" }
 
+注意：golang 的 []byte 比较特殊，会被编码为 base64 形式，需要特殊处理
+
 
 Dec	Hex	Binary  	HTML	Char	Description
 0 	00	00000000	&#0;	NUL 	Null
