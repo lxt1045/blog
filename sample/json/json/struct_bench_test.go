@@ -2,6 +2,7 @@ package json
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -11,7 +12,6 @@ import (
 	"unsafe"
 
 	"github.com/bytedance/sonic"
-	lxtjson "github.com/lxt1045/Experiment/golang/json/pkg/json"
 )
 
 var j = `{
@@ -49,32 +49,36 @@ type Description struct {
 }
 
 func Test_Unmarshal_0(t *testing.T) {
+	type Name struct {
+		ZHCN  string `json:"ZH_CN"`
+		ENUS  string `json:"EN_US"`
+		ZHCN1 string
+		ZHCN2 string
+		ZHCN3 string
+		ZHCN4 string
+		ZHCN5 string
+		ZHCN6 string
+		Count int `json:"count"`
+	}
+	bs := []byte(`{
+		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN2":"chinesechinesechinesechines",
+		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
+		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZH_CN":"chinesechinesec",
+		"EN_US":"English",
+		"count":8
+	}`)
+
 	t.Run("map", func(t *testing.T) {
-		bs := []byte(j0)
-		d := make(map[string]interface{})
+		d := Name{}
 		err := Unmarshal(bs, &d)
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("to:%s", string(bs))
-	})
-}
-func Test_tagParse(t *testing.T) {
-	t.Run("map", func(t *testing.T) {
-		type DataSt struct {
-			ItemID  []int64   `json:"ItemID"`
-			BizName []BizName `json:"BizName"`
-			BizCode string    `json:"BizCode"`
-		}
-		d := DataSt{}
-		typ := reflect.TypeOf(&d)
-		typ = baseElem(typ)
-		to, err := tagParse(typ, "json")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		bs, err := json.Marshal(to)
+		bs, err = json.Marshal(&d)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -82,217 +86,86 @@ func Test_tagParse(t *testing.T) {
 	})
 }
 
-func BenchmarkStruct(b *testing.B) {
-	name := "tagParse"
-	d := DataSt{}
-	typ := reflect.TypeOf(&d)
-	typ = baseElem(typ)
-	_, _ = LoadTagNode(typ)
-	b.Run("LoadTagNode", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_, _ = LoadTagNode(typ)
-		}
-	})
-	b.Run("LoadTagNodeStr", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_ = LoadTagNodeStr(typ)
-		}
-	})
-	b.Run(name, func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			tagParse(typ, "json")
-		}
-	})
-}
-
-func TestMyUnmarshal(t *testing.T) {
-	d := J0{}
-	err := Unmarshal([]byte(j0), &d)
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-
-	bs, err := json.Marshal(d)
+func TestState(t *testing.T) {
+	//https://okr.feishu-pre.cn/onboarding/api/entrance?redirect_uri=https%3A%2F%2Fokr.feishu-pre.cn%2Fonboarding%2Ffront%2Frouter&channel_id=ch_92b4875ca574a0d6&state=eyJhcHAiOiI2NzAzMDYxNjI3MjE1ODI0Mzg3IiwiaXNfaW5zdGFsbGluZyI6dHJ1ZSwicmVkaXJlY3RfdXJsIjoiaHR0cHM6Ly9va3IuZmVpc2h1LXByZS5jbi9va3IvP29uYm9hcmRpbmc9cmVnaXN0ZXIiLCJjaGFuZWxJZCI6ImNoXzkyYjQ4NzVjYTU3NGEwZDYifQ%3D%3D&entrance=okr_officialwebsite_clickexperience&lang=zh
+	stateEncoded := `eyJhcHAiOiI2NzAzMDYxNjI3MjE1ODI0Mzg3IiwiaXNfaW5zdGFsbGluZyI6dHJ1ZSwicmVkaXJlY3RfdXJsIjoiaHR0cHM6Ly9va3IuZmVpc2h1LXByZS5jbi9va3IvP29uYm9hcmRpbmc9cmVnaXN0ZXIiLCJjaGFuZWxJZCI6ImNoXzkyYjQ4NzVjYTU3NGEwZDYifQ==`
+	stateDecoded, err := base64.URLEncoding.DecodeString(stateEncoded)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("to:%s", string(bs))
-}
+	state := map[string]interface{}{}
 
-var bGlobal = false
-
-func BenchmarkIsSpace(b *testing.B) {
-	bs := make([]byte, 10240)
-	for i := range bs {
-		bs[i] = byte(rand.Uint32())
-	}
-	const charSpace uint32 = 1<<('\t'-1) | 1<<('\n'-1) | 1<<('\v'-1) | 1<<('\f'-1) | 1<<('\r'-1) | 1<<(' '-1)
-
-	b.Run("1", func(b *testing.B) {
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			b := bs[i%10240]
-			bGlobal = b == 0x85 || b == 0xA0 || (charSpace>>(b-1)&0x1 > 0)
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("2", func(b *testing.B) {
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			b := bs[i%10240]
-			bGlobal = b == 0x85 || b == 0xA0 || b == '\t' || b == '\n' || b == '\v' || b == '\f' || b == '\r' || b == ' '
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("3", func(b *testing.B) {
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			b := bs[i%10240]
-			switch b {
-			// toto: 用bitmap加速:
-			case '\t', '\n', '\v', '\f', '\r', ' ', 0x85, 0xA0:
-				bGlobal = true
-			}
-			bGlobal = false
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("4", func(b *testing.B) {
-		table := [256]bool{}
-		for i := range table {
-			b := byte(i)
-			if b == 0x85 || b == 0xA0 || b == '\t' || b == '\n' || b == '\v' || b == '\f' || b == '\r' || b == ' ' {
-				table[i] = true
-			}
-		}
-
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			b := bs[i%10240]
-			bGlobal = table[b]
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("5", func(b *testing.B) {
-		table := [4]uint64{}
-		for i := range table {
-			b := byte(i)
-			if b == 0x85 || b == 0xA0 || b == '\t' || b == '\n' || b == '\v' || b == '\f' || b == '\r' || b == ' ' {
-				idx := i / 64
-				n := i % 64
-				table[idx] |= 1 << n
-			}
-		}
-
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			b := bs[i%10240]
-			idx := b / 64
-			n := b % 64
-			bGlobal = table[idx]&(1<<n) > 0
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-
-}
-
-func BenchmarkCron(b *testing.B) {
-	bss := [][]byte{
-		[]byte(":x"),
-		[]byte(": x"),
-		[]byte("    :    x"),
-		[]byte(" x"),
-	}
-	var j int
-	for x, bs := range bss {
-		ss := fmt.Sprintf("-%d", x)
-		b.Run("space"+ss, func(b *testing.B) {
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				j = trimSpace(bs)
-				if bs[j] != ':' {
-					b.Fatal("err")
-				}
-				j = trimSpace(bs[j+1:])
-			}
-			b.StopTimer()
-		})
-		b.Run("cron"+ss, func(b *testing.B) {
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				j = parseByte(bs, ':')
-				_ = j
-			}
-			b.StopTimer()
-		})
-	}
-}
-
-func TestLeft(t *testing.T) {
-	xs := [16]byte{}
-	Test2(' ', xs[:])
-	t.Logf("b:%v", xs)
-
-	t.Logf("b:%v", InSpaceQ(' '))
-	t.Logf("b:%v", InSpaceQ('q'))
-}
-func TestMyUnmarshalStd(t *testing.T) {
-	var j = `{
-		"BizName": {
-			"ZH_CN": "职级",
-			"EN_US": "job-level"
-		},
-		"Description": {
-			"ZH_CN": "",
-			"EN_US": ""
-		}
-	}`
-	type I18N struct {
-		ZH_CN, EN_US string
-	}
-	// m := map[string]interface{}{}
-	m := map[string]I18N{
-		"test": {
-			"1", "2",
-		},
-	}
-	err := json.Unmarshal([]byte(j), &m)
+	err = json.Unmarshal(stateDecoded, &state)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%T:%+v", m, m)
+
+	t.Logf("%+v", state)
 }
 
-// go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshal$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
-// go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshal$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
-// go tool pprof ./json.test cpu.prof
-// web
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshal$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshal$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+web
+//   */
 // TODO:
 //    1. SIMD 加速
 //    2. reflect.Type 的 PC来缓存 Type
 //    3. 异或 8 字节，（得比较 n 次一次，然后 用 或运算 检查是否 n 次是否有一次结果为 0），压缩成 8bit 后打表？
 //        可以参考 rust 的 hashmap 实现; 参考 strings.Index()（优化过的），获取 next " \ \n \t ... 的位置
 //    4. 用bytes.IndexString 来替代 map
+//	  5. 全部 key 找出来之后，再排序，再从 bytes 中找出对应的 key?
+//	  6. 用 bin-tree（字典树），先构造，在优化聚合，实现快速查找？ 找一行 self 状态，最终只是用区分度最大的字母，让状态行大幅减少
+// 	  7.  指针分配消除术：在 tagInfo 中添加 chan 用于分配 struct 和 子struct 中的所有指针，struct 上下层级有分界线便于兼容内层 struct
 func BenchmarkMyUnmarshal(b *testing.B) {
-	bsJSON := []byte(j0)
-	d := J0{}
-	err := Unmarshal(bsJSON, &d)
-	if err != nil {
-		b.Fatal(err)
+	type Name struct {
+		ZHCN  string `json:"ZH_CN"`
+		ENUS  string `json:"EN_US"`
+		ZHCN1 string
+		ZHCN2 string
+		ZHCN3 string
+		ZHCN4 string
+		ZHCN5 string
+		ZHCN6 string
+		Count int `json:"count"`
 	}
+	bs := []byte(`{
+		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN2":"chinesechinesechinesechines",
+		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
+		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZH_CN":"chinesechinesec",
+		"EN_US":"English",
+		"count":8
+	}`)
 	{
-		d := lxtjson.J0{}
-		err := Unmarshal(bsJSON, &d)
+		d := Name{}
+		err := Unmarshal(bs, &d)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	name := "Unmarshal"
+	b.Run(name, func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			Unmarshal(bs, &d)
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+}
+func BenchmarkMyUnmarshal2(b *testing.B) {
+	bs := []byte(j0)
+	d := J0{}
+	{
+		err := Unmarshal(bs, &d)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -304,33 +177,62 @@ func BenchmarkMyUnmarshal(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			Unmarshal(bsJSON, &d)
+			Unmarshal(bs, &d)
 		}
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
 }
 
-func BenchmarkMarshalStruct20(b *testing.B) {
-	bs := []byte(j0)
-	d := J0{}
-	err := Unmarshal(bs, &d)
-	if err != nil {
-		b.Fatal(err)
+func BenchmarkUnMarshalStruct(b *testing.B) {
+	type Name1 struct {
+		ZHCN  *string `json:"ZH_CN"`
+		ENUS  *string `json:"EN_US"`
+		ZHCN1 *string
+		ZHCN2 *string
+		ZHCN3 *string
+		ZHCN4 *string
+		ZHCN5 *string
+		ZHCN6 *string
+		Count *int `json:"count"`
 	}
+	type Name struct {
+		ZHCN  string `json:"ZH_CN"`
+		ENUS  string `json:"EN_US"`
+		ZHCN1 string
+		ZHCN2 string
+		ZHCN3 string
+		ZHCN4 string
+		ZHCN5 string
+		ZHCN6 string
+		Count int `json:"count"`
+	}
+	bs := []byte(`{
+		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN2":"chinesechinesechinesechines",
+		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
+		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZH_CN":"chinesechinesec",
+		"EN_US":"English",
+		"count":8
+	}`)
+	str := string(bs)
+	var d Name
 	runs := []struct {
 		name string
 		f    func()
 	}{
-		{"std-st",
+		{"lxt-st",
 			func() {
-				json.Marshal(&d)
+				Unmarshal(bs, &d)
 			},
 		},
 		{
 			"sonic-st",
 			func() {
-				sonic.MarshalString(&d)
+				sonic.UnmarshalString(str, &d)
 			},
 		},
 	}
@@ -473,6 +375,220 @@ func BenchmarkUnmarshalStruct20(b *testing.B) {
 			b.SetBytes(int64(b.N))
 		})
 	}
+}
+
+func Test_tagParse(t *testing.T) {
+	t.Run("map", func(t *testing.T) {
+		type DataSt struct {
+			ItemID   []int64   `json:"ItemID,string"`
+			BizName  []BizName `json:"BizName"`
+			BizCode  string    `json:"BizCode"`
+			BizCode1 string
+		}
+		d := DataSt{}
+		typ := reflect.TypeOf(&d)
+		typ = typ.Elem()
+		to, err := NewTagInfo(typ)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		bs, err := json.Marshal(to)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("to:%s", string(bs))
+	})
+}
+
+func BenchmarkStruct(b *testing.B) {
+	name := "NewTagInfo"
+	d := DataSt{}
+	typ := reflect.TypeOf(&d)
+	typ = typ.Elem()
+	_, _ = LoadTagNode(typ)
+	b.Run("LoadTagNode", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = LoadTagNode(typ)
+		}
+	})
+	b.Run(name, func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			NewTagInfo(typ)
+		}
+	})
+}
+
+func TestMyUnmarshal(t *testing.T) {
+	d := J0{}
+	err := Unmarshal([]byte(j0), &d)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	bs, err := json.Marshal(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("to:%s", string(bs))
+}
+
+var bGlobal = false
+
+func BenchmarkIsSpace(b *testing.B) {
+	bs := make([]byte, 10240)
+	for i := range bs {
+		bs[i] = byte(rand.Uint32())
+	}
+	const charSpace uint32 = 1<<('\t'-1) | 1<<('\n'-1) | 1<<('\v'-1) | 1<<('\f'-1) | 1<<('\r'-1) | 1<<(' '-1)
+
+	b.Run("1", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b := bs[i%10240]
+			bGlobal = b == 0x85 || b == 0xA0 || (charSpace>>(b-1)&0x1 > 0)
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("2", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b := bs[i%10240]
+			bGlobal = b == 0x85 || b == 0xA0 || b == '\t' || b == '\n' || b == '\v' || b == '\f' || b == '\r' || b == ' '
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("3", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b := bs[i%10240]
+			switch b {
+			// toto: 用bitmap加速:
+			case '\t', '\n', '\v', '\f', '\r', ' ', 0x85, 0xA0:
+				bGlobal = true
+			}
+			bGlobal = false
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("4", func(b *testing.B) {
+		table := [256]bool{}
+		for i := range table {
+			b := byte(i)
+			if b == 0x85 || b == 0xA0 || b == '\t' || b == '\n' || b == '\v' || b == '\f' || b == '\r' || b == ' ' {
+				table[i] = true
+			}
+		}
+
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b := bs[i%10240]
+			bGlobal = table[b]
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("5", func(b *testing.B) {
+		table := [4]uint64{}
+		for i := range table {
+			b := byte(i)
+			if b == 0x85 || b == 0xA0 || b == '\t' || b == '\n' || b == '\v' || b == '\f' || b == '\r' || b == ' ' {
+				idx := i / 64
+				n := i % 64
+				table[idx] |= 1 << n
+			}
+		}
+
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b := bs[i%10240]
+			idx := b / 64
+			n := b % 64
+			bGlobal = table[idx]&(1<<n) > 0
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+
+}
+
+func BenchmarkCron(b *testing.B) {
+	bss := [][]byte{
+		[]byte(":x"),
+		[]byte(": x"),
+		[]byte("    :    x"),
+		[]byte(" x"),
+	}
+	var j int
+	for x, bs := range bss {
+		ss := fmt.Sprintf("-%d", x)
+		b.Run("space"+ss, func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				j = trimSpace(bs)
+				if bs[j] != ':' {
+					b.Fatal("err")
+				}
+				j = trimSpace(bs[j+1:])
+			}
+			b.StopTimer()
+		})
+		b.Run("cron"+ss, func(b *testing.B) {
+			var err error
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				j, err = parseByte(bs, ':')
+				if err != nil {
+					b.Fatal(err)
+				}
+				_ = j
+			}
+			b.StopTimer()
+		})
+	}
+}
+
+func TestLeft(t *testing.T) {
+	xs := [16]byte{}
+	Test2(' ', xs[:])
+	t.Logf("b:%v", xs)
+
+	t.Logf("b:%v", InSpaceQ(' '))
+	t.Logf("b:%v", InSpaceQ('q'))
+}
+func TestMyUnmarshalStd(t *testing.T) {
+	var j = `{
+		"BizName": {
+			"ZH_CN": "职级",
+			"EN_US": "job-level"
+		},
+		"Description": {
+			"ZH_CN": "",
+			"EN_US": ""
+		}
+	}`
+	type I18N struct {
+		ZH_CN, EN_US string
+	}
+	// m := map[string]interface{}{}
+	m := map[string]I18N{
+		"test": {
+			"1", "2",
+		},
+	}
+	err := json.Unmarshal([]byte(j), &m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%T:%+v", m, m)
 }
 
 func TestCtz64(t *testing.T) {

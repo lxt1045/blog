@@ -14,54 +14,6 @@ import (
 	"github.com/tidwall/pretty"
 )
 
-// Type is Result type
-type Type int
-
-const (
-	// Null is a null json value
-	Null Type = iota
-	// False is a json false boolean
-	False
-	// Number is json number
-	Number
-	// String is a json string
-	String
-	// True is a json true boolean
-	True
-	// JSON is a raw block of JSON
-	JSON
-
-	Slice
-	// False/True is a json boolean
-	Bool
-
-	MaxType
-)
-
-func (t Type) IsNull() bool {
-	return t <= Null
-}
-
-// String returns a string representation of the type.
-func (t Type) String() string {
-	switch t {
-	default:
-		return ""
-	case Null:
-		return "Null"
-	case False:
-		return "False"
-	case Number:
-		return "Number"
-	case String:
-		return "String"
-	case True:
-		return "True"
-	case JSON:
-		return "JSON"
-	}
-}
-
 // Result represents a json value that is returned from Get().
 type Result struct {
 	// Type is the json type

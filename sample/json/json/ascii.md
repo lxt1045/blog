@@ -8,6 +8,7 @@ JSON的基本数据类型：
 数组：有序的零个或者多个值。每个值可以为任意类型。序列表使用方括号[，]括起来。元素之间用逗号,分割。形如：[value, value]
 对象：若干无序的“键-值对”(key-value pairs)，其中键只能是字符串[1]。建议但不强制要求对象中的键是独一无二的。对象以花括号{开始，并以}结束。键-值对之间使用逗号分隔。键与值之间用冒号:分割。
 空值：值写为null
+
 token（6种标点符号、字符串、数值、3种字面量）之间可以存在有限的空白符并被忽略。四个特定字符被认为是空白符：空格符、水平制表符、回车符、换行符。空白符不能出现在token内部（但空格符可以出现在字符串内部）。JSON标准不允许有字节序掩码，不提供注释的句法。 一个有效的JSON文档的根节点必须是一个对象或一个数组。
 
 JSON交换时必须编码为UTF-8。[2]转义序列可以为：“\\”、“\"”、“\/”、“\b”、“\f”、“\n”、“\r”、“\t”，或Unicode16进制转义字符序列（\u后面跟随4位16进制数字）。对于不在基本多文种平面上的码位，必须用UTF-16代理对（surrogate pair）表示，例如对于Emoji字符——喜极而泣的表情（U+1F602 😂 face with tears of joy）在JSON中应表示为：
@@ -16,6 +17,60 @@ JSON交换时必须编码为UTF-8。[2]转义序列可以为：“\\”、“\"�
 { "face": "\uD83D\uDE02" }
 
 注意：golang 的 []byte 比较特殊，会被编码为 base64 形式，需要特殊处理
+
+
+------------
+在 Go 中并不是所有的类型都能进行序列化：
+	JSON object key 只支持 string
+	Channel、complex、function 等 type 无法进行序列化
+	数据中如果存在循环引用，则不能进行序列化，因为序列化时会进行递归
+	Pointer 序列化之后是其指向的值或者是 nil
+	只有 struct 中支持导出的 field 才能被 JSON package 序列化，即首字母大写的 field。
+反序列化:
+	`json:"field,string"`
+	`json:"some_field,omitempty"`
+	`json:"-"`
+默认的 JSON 只支持以下几种 Go 类型：
+	bool for JSON booleans
+	float64 for JSON numbers
+	string for JSON strings
+	nil for JSON null
+反序列化对 slice、map、pointer 的处理:
+如果我们序列化之前不知道其数据格式，我们可以使用 interface{} 来存储我们的 decode 之后的数据：
+	var f interface{}
+	err := json.Unmarshal(b, &f)
+	key 是 string，value 是存储在 interface{} 内的。想要获得 f 中的数据，我们首先需要进行 type assertion，
+然后通过 range 迭代获得 f 中所有的 key ：
+		m := f.(map[string]interface{})
+		for k, v := range m {
+			switch vv := v.(type) {
+			case string:
+				fmt.Println(k, "is string", vv)
+			case float64:
+				fmt.Println(k, "is float64", vv)
+			case []interface{}:
+				fmt.Println(k, "is an array:")
+				for i, u := range vv {
+					fmt.Println(i, u)
+				}
+			default:
+				fmt.Println(k, "is of a type I don't know how to handle")
+			}
+		}
+Stream JSON:
+	除了 marshal 和 unmarshal 函数，Go 还提供了 Decoder 和 Encoder 对 stream JSON 进行处理，常见 request
+中的 Body、文件等
+
+嵌入式 struct 的序列化:
+	Go 支持对 nested struct 进行序列化和反序列化:
+自定义序列化函数:
+	Go JSON package 中定了两个 Interface Marshaler 和 Unmarshaler ，实现这两个 Interface 可以让你定义的
+type 支持序列化操作。
+
+-----
+
+1. 可以使用缓存池 sync.Pool(不合适，没有合适的回收时机，，，)， 或者自己实现生成池
+2. 用 string 替换[]byte，因为前者可以复用 string 给输出端
 
 
 Dec	Hex	Binary  	HTML	Char	Description

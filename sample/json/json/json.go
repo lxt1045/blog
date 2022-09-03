@@ -3,8 +3,6 @@ package json
 import (
 	"bytes"
 	"errors"
-	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"unicode/utf16"
@@ -13,29 +11,6 @@ import (
 
 	lxterrs "github.com/lxt1045/errors"
 )
-
-//解析 []: curType 因为可能 StructField 可能包含了baseElem,所以需要这个参数
-func setSliceField(key string, pObj unsafe.Pointer, stream []byte, typ Type, tag *TagInfo, curType reflect.Type) (i int) {
-	if len(stream) < 2 || stream[0] != '[' {
-		// 此 struct 结束语法分析
-	}
-	for i < len(stream) {
-		switch tag.StructField.Type.Kind() {
-		case reflect.Struct:
-			pField := unsafe.Pointer(uintptr(pObj) + uintptr(tag.StructField.Offset))
-			size := parseNextUnit(stream, pField, tag.Children)
-			i += size
-		case reflect.Slice:
-			curType = curType.Elem()
-			size := setSliceField(key, pObj, stream, typ, tag, curType)
-			i += size
-		}
-		if stream[i] == ']' {
-			// 此 slice 结束语法分析
-		}
-	}
-	return
-}
 
 func panicIncorrectFormat(stream []byte) {
 	if len(stream[:]) > 128 {
@@ -56,16 +31,6 @@ func panicIncorrectType(typ Type, tag *TagInfo) {
 	panic(errors.New("incorrect type: " + t + " to " + tag.BaseKind.String()))
 }
 
-func setObjField(pObj unsafe.Pointer, tag *TagInfo, raw []byte) (i int) {
-	if tag.BaseKind != reflect.Struct {
-		panicIncorrectType(False, tag)
-	}
-	pField := unsafe.Pointer(uintptr(pObj) + uintptr(tag.StructField.Offset))
-	size := parseNextUnit(raw, pField, tag.Children)
-	i += size
-	return
-}
-
 var spaceTable = [256]bool{'\t': true, '\n': true, '\v': true, '\f': true, '\r': true, ' ': true, 0x85: true, 0xA0: true}
 
 //inline
@@ -78,20 +43,22 @@ func trimSpace(stream []byte) (i int) {
 	return
 }
 
+var NotTargetChar = errors.New("not the target character")
+
 // 解析：冒号 和 逗号 等单字符
-func parseByte(stream []byte, b byte) (i int) {
+func parseByte(stream []byte, b byte) (i int, err error) {
 	var n byte = 0
 	for ; ; i++ {
 		if stream[i] == b {
 			n++
-			i++
+			continue
 		}
 		if !spaceTable[stream[i]] {
 			break
 		}
 	}
 	if n != 1 {
-		panicIncorrectFormat(stream[i:])
+		err = NotTargetChar
 	}
 	return
 }
@@ -103,177 +70,132 @@ func parseObjToSlice(stream []byte, s []interface{}) (i int) {
 	return 0
 }
 
-//解析 obj: {}, 或 []
-func parseNextUnit(stream []byte, pObj unsafe.Pointer, tis map[string]*TagInfo) (i int) {
-	var key []byte
-	i++
-	for i < len(stream) {
-		// i += trimSpace(stream[i:])
-		switch stream[i] {
-		default:
-			if (stream[i] >= '0' && stream[i] <= '9') || stream[i] == '-' {
-				if len(key) <= 0 {
-					panicIncorrectFormat(stream[i:])
-				}
-				raw, size := parseNum(stream[i:])
-				i += size
-				if tag := tis[string(key)]; tag != nil {
-					setNumberField(pObj, tag, raw, Number)
-				}
-				key = nil
-			} else {
-				log.Printf("error byte:%x", stream[i])
-				panicIncorrectFormat(stream[i:])
-			}
-		case '}', ']':
-			i++
-			return // 此 struct 结束语法分析
-		case '{': // obj
-			if len(key) <= 0 {
-				panicIncorrectFormat(stream[i:])
-			}
-			// i++
-			if tag := tis[string(key)]; tag != nil {
-				i += setObjField(pObj, tag, stream[i:])
-			} else {
-				i += parseNextUnit(stream[i:], nil, tag.Children)
-			}
-			key = nil
-		case '[': // obj
-			if len(key) <= 0 {
-				panicIncorrectFormat(stream[i:])
-			}
-			i++
-			if tag := tis[string(key)]; tag != nil {
-				i += setObjField(pObj, tag, stream[i:])
-			} else {
-				i += parseNextUnit(stream[i:], nil, tag.Children)
-			}
-			key = nil
-		case 'n':
-			if len(key) <= 0 {
-				panicIncorrectFormat(stream[i:])
-			}
-			if stream[i+1] != 'u' || stream[i+2] != 'l' || stream[i+3] != 'l' {
-				panicIncorrectFormat(stream[i:])
-			}
-			i += 4
-			key = nil
-		case 't':
-			if len(key) <= 0 {
-				panicIncorrectFormat(stream[i:])
-			}
-			if stream[i+1] != 'r' || stream[i+2] != 'u' || stream[i+3] != 'e' {
-				panicIncorrectFormat(stream[i:])
-			}
-			i += 4
-			if tag := tis[string(key)]; tag != nil {
-				setBoolField(pObj, tag, true)
-			}
-			key = nil
-		case 'f':
-			if len(key) <= 0 {
-				panicIncorrectFormat(stream[i:])
-			}
-			if stream[i+1] != 'a' || stream[i+2] != 'l' || stream[i+3] != 's' || stream[i+4] != 'e' {
-				panicIncorrectFormat(stream[i:])
-			}
-			i += 5
-			if tag := tis[string(key)]; tag != nil {
-				setBoolField(pObj, tag, false)
-			}
-			key = nil
-		case '"':
-			if len(key) <= 0 {
-				// i += trimSpace(stream[i:])
-				size := 0
-				key, size = parseStr(stream[i:]) //先解析key 再解析value
-				i += size
-				i += parseByte(stream[i:], ':')
-				continue
-			} else {
-				raw, size := parseStr(stream[i:])
-				i += size
-				if tag := tis[string(key)]; tag != nil {
-					setStringField(pObj, tag, raw)
-				}
-				key = nil
-			}
-		}
-		i += trimSpace(stream[i:])
-		if stream[i] == ',' {
-			i++
-			continue
-		}
-	}
-	return
-}
-
 func parseKey(stream []byte) (key []byte, i int, err error) {
 	if stream[i] != '"' {
 		lxterrs.New("errors key:%s", ErrStream(stream))
 		return
 	}
-	key, size := parseStr(stream[i+1:]) //先解析key 再解析value
+	i++
+	key, size := parseStr(stream[i:]) //先解析key 再解析value
 	i += size
 	return
+}
+
+func bsToStr(bs []byte) string {
+	return *(*string)(unsafe.Pointer(&bs))
 }
 
 // 解析 {}
 func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err error) {
 	for i < len(stream) && stream[i] != '}' {
-		key, n, err := parseKey(stream[i+1:])
+		i += trimSpace(stream[i:])
+		key, n, err := parseKey(stream[i:])
 		if err != nil {
 			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
 			return i, err
 		}
-		tag := tag.Children[string(key)]
+		i += n
+		var son *TagInfo
+		if tag != nil {
+			son = tag.Children[string(key)]
+			// son = tag.Children[bsToStr(key)]
+		}
+
+		n, err = parseByte(stream[i:], ':')
+		if err != nil {
+			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
+			return i, err
+		}
+		i += n
+		n, err = parseValue(stream[i:], pObj, son)
+		if err != nil {
+			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
+			return i, err
+		}
+		i += n
+		n, _ = parseByte(stream[i:], ',')
+		i += n
 		key = nil
-
-		n = parseByte(stream[i+1:], ':')
-		i += n
-		n, err = parseValue(stream[i+1:], pObj, tag)
-		if err != nil {
-			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
-			return i, err
-		}
-
-		n = parseByte(stream[i+1:], ',')
-		i += n
 	}
 	if stream[i] == '}' {
+		i++
 		return
 	}
-	panicIncorrectFormat(stream[i:])
+	err = lxterrs.New("errors json string:%s", ErrStream(stream))
 	return
 }
 
-func parseSlice(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err error) {
-	size := int(tag.StructField.Type.Size())
-	raw := make([]byte, 0, 8*size) //先分配 8 个
-	s := reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(&raw[0])),
-		Len:  0,
-		Cap:  8,
-	}
-	for i < len(stream) && stream[i] != ']' {
-		if s.Len >= s.Cap {
-			raw = append(raw, make([]byte, s.Len*2*size)...)
-			s.Data = uintptr(unsafe.Pointer(&raw[0]))
-			s.Cap = s.Len * 2
-		}
-		p := unsafe.Pointer(&raw[s.Len*size])
-		n, err := parseValue(stream[i+1:], p, tag)
+// 解析 {}
+func parseMap(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err error) {
+	m := *(*map[string]interface{})(pObj)
+	for i < len(stream) && stream[i] != '}' {
+		i += trimSpace(stream[i:])
+		key, n, err := parseKey(stream[i:])
 		if err != nil {
 			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
 			return i, err
 		}
-		s.Len++
-
-		n = parseByte(stream[i+1:], ',')
 		i += n
+		n, err = parseByte(stream[i:], ':')
+		if err != nil {
+			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
+			return i, err
+		}
+		i += n
+		var value interface{}
+		pValue := unsafe.Pointer(&value)
+		son := tag.ChildList[0]
+		n, err = parseValue(stream[i:], pValue, son)
+		if err != nil {
+			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
+			return i, err
+		}
+		i += n
+		m[string(key)] = value
+		n, _ = parseByte(stream[i:], ',')
+		i += n
+		key = nil
 	}
+	if stream[i] == '}' {
+		i++
+		return
+	}
+	err = lxterrs.New("errors json string:%s", ErrStream(stream))
+	return
+}
+func parseSlice(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err error) {
+	i = trimSpace(stream[i:])
+	pBase, err := tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:])
+	if err != nil {
+		lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
+		return i, err
+	}
+	son := tag.ChildList[0]
+	size := int(son.Type.Size())
+	pSlice := (*[]uint8)(pBase)
+	pHeader := (*reflect.SliceHeader)(pBase)
+	for i < len(stream) && stream[i] != ']' {
+		if pHeader.Len+size >= pHeader.Cap {
+			*pSlice = append(*pSlice, make([]uint8, size)...)
+		} else {
+			pHeader.Len += size
+		}
+		p := pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len-size))
+		n, err := parseValue(stream[i:], p, son)
+		if err != nil {
+			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
+			return i, err
+		}
+		i += n
+		n, err = parseByte(stream[i:], ',')
+		i += n
+		if err != nil {
+			break
+		}
+	}
+	pHeader.Len, pHeader.Cap = pHeader.Len/size, pHeader.Cap/size
 	if stream[i] == ']' {
+		i++
 		return
 	}
 	panicIncorrectFormat(stream[i:])
@@ -290,32 +212,54 @@ func parseValue(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err er
 			raw, size := parseNum(stream[i:])
 			i += size
 			if tag != nil {
-				if tag.fSet != nil {
-					// TODO:
-					// tag.fSet()
-				} else {
-					setNumberField(pObj, tag, raw, Number)
+				if tag.JSONType != Number {
+					err = lxterrs.New("error type:%s", ErrStream(stream[i:]))
+					return
 				}
+				tag.fSet(pointerOffset(pObj, tag.Offset), raw)
 			}
 		} else {
-			log.Printf("error byte:%x", stream[i])
-			panicIncorrectFormat(stream[i:])
+			err = lxterrs.New("error type:%s", ErrStream(stream[i:]))
+			return
 		}
 	case '{': // obj
-		if tag != nil && (tag.BaseKind == reflect.Map || tag.BaseKind == reflect.Struct) {
-			n, err = parseObj(stream[i:], pObj, tag)
-
-			i += n
-		} else {
-			n, err = parseObj(stream[i:], pObj, nil)
-
-			i += n
+		i++
+		tagObj := tag
+		if tagObj != nil && tagObj.JSONType != Map && tagObj.JSONType != Struct {
+			err = lxterrs.New("error type:%s", ErrStream(stream[i:]))
+			return
 		}
+		if tagObj == nil {
+			pObj = nil // TODO
+		} else {
+			pObj = pointerOffset(pObj, tagObj.Offset)
+			if tagObj.fSet != nil {
+				pObj, err = tag.fSet(pObj, stream[i:])
+				if err != nil {
+					err = lxterrs.Wrap(err, "error fSet, tag:%s", tagObj)
+					return
+				}
+			}
+		}
+		if tagObj != nil && tagObj.JSONType == Map {
+			n, err = parseMap(stream[i:], pObj, tagObj)
+		} else {
+			n, err = parseObj(stream[i:], pObj, tagObj)
+		}
+		if err != nil {
+			err = lxterrs.Wrap(err, "error type:%s", ErrStream(stream[i:]))
+			return
+		}
+		i += n
 	case '[': // slice
 		// TODO
-		n = trimSpace(stream[i+1:])
+		i++
+		n, err = parseSlice(stream[i:], pObj, tag)
+		if err != nil {
+			err = lxterrs.New("error type:%s", ErrStream(stream[i:]))
+			return
+		}
 		i += n
-		parseSlice(stream[i:], pObj, tag)
 	case 'n':
 		if stream[i+1] != 'u' || stream[i+2] != 'l' || stream[i+3] != 'l' {
 			err = lxterrs.New("should be \"null\", not [%s]", ErrStream(stream))
@@ -327,31 +271,31 @@ func parseValue(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err er
 			err = lxterrs.New("should be \"true\", not [%s]", ErrStream(stream))
 			return
 		}
-		i += 4
-		if tag != nil {
-			err = setBoolField(pObj, tag, true)
-			if err != nil {
-				return
-			}
+		_, err = tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:i+4])
+		if err != nil {
+			err = lxterrs.New("error type:%s", ErrStream(stream[i:]))
+			return
 		}
+		i += 4
 	case 'f':
 		if stream[i+1] != 'a' || stream[i+2] != 'l' || stream[i+3] != 's' || stream[i+4] != 'e' {
 			err = lxterrs.New("should be \"true\", not [%s]", ErrStream(stream))
 			return
 		}
-		i += 5
-		if tag != nil {
-			err = setBoolField(pObj, tag, false)
-			if err != nil {
-				return
-			}
+		_, err = tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:i+5])
+		if err != nil {
+			err = lxterrs.New("error type:%s", ErrStream(stream[i:]))
+			return
 		}
+		i += 5
 	case '"':
+		i++
 		raw, n := parseStr(stream[i:])
 		i += n
 		if tag != nil {
-			err = setStringField(pObj, tag, raw)
+			_, err = tag.fSet(pointerOffset(pObj, tag.Offset), raw)
 			if err != nil {
+				err = lxterrs.New("error type:%s", ErrStream(stream[i:]))
 				return
 			}
 		}
@@ -363,9 +307,7 @@ func parseValue(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err er
 //解析 obj: {}, 或 []
 func parseRoot(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (err error) {
 	i := 1
-	n := trimSpace(stream[i:])
-	i += n
-	if stream[i] == '{' {
+	if stream[0] == '{' {
 		for i < len(stream) {
 			n, err := parseObj(stream[i:], pObj, tag)
 			if err != nil {
@@ -373,23 +315,18 @@ func parseRoot(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (err error) {
 				return err
 			}
 			i += n
-			i += trimSpace(stream[i:])
 		}
-		if stream[i] == '}' {
-			return
-		}
-		panicIncorrectFormat(stream[i:])
+		return
 	}
-	if stream[i] == '[' {
+	if stream[0] == '[' {
+		i += trimSpace(stream[i:])
 		i += parseObjToSlice(stream[i:], nil)
 		i += trimSpace(stream[i:])
 		if stream[i] == ']' {
 			return
 		}
-		panicIncorrectFormat(stream[i:])
+		return
 	}
-	panicIncorrectFormat(stream[i:])
-	err = fmt.Errorf("json must start with '{' or '[', %s", ErrStream(bs[i:]))
 	return
 }
 
@@ -397,7 +334,7 @@ func parseNum(stream []byte) (raw []byte, i int) {
 	for ; i < len(stream); i++ {
 		c := stream[i]
 		if spaceTable[c] || c == ']' || c == '}' || c == ',' {
-			raw, i = stream[:i], i+1
+			raw = stream[:i]
 			return
 		}
 	}
@@ -467,7 +404,7 @@ func parseStr(stream []byte) (raw []byte, i int) {
 		return raw, nextQuotesIdx + 1 + 1
 	}
 
-	raw = stream[1 : 1+nextQuotesIdx]
+	raw = stream[:nextQuotesIdx]
 	return raw, nextQuotesIdx + 1
 }
 

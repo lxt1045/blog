@@ -723,8 +723,8 @@ Time: Nov 28, 2021 at 2:24pm (CST)
 -----------+-------------------------------------------------------
      bytes:  160B
       640B   github.com/lxt1045/Experiment/golang/json/pkg/json.TagInfo.Store
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -734,8 +734,8 @@ Time: Nov 28, 2021 at 2:24pm (CST)
      bytes:  16B
        64B   strings.genSplit
              strings.Split (inline)
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -745,8 +745,8 @@ Time: Nov 28, 2021 at 2:24pm (CST)
      bytes:  16B
        32B   reflect.(*structType).Field
              reflect.(*rtype).Field
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -754,8 +754,8 @@ Time: Nov 28, 2021 at 2:24pm (CST)
              testing.(*B).run1.func1
 -----------+-------------------------------------------------------
      bytes:  24B
-       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -763,8 +763,8 @@ Time: Nov 28, 2021 at 2:24pm (CST)
              testing.(*B).run1.func1
 -----------+-------------------------------------------------------
      bytes:  4kB
-       8kB   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+       8kB   github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -772,8 +772,8 @@ Time: Nov 28, 2021 at 2:24pm (CST)
              testing.(*B).run1.func1
 -----------+-------------------------------------------------------
      bytes:  48B
-       96B   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+       96B   github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -782,7 +782,7 @@ Time: Nov 28, 2021 at 2:24pm (CST)
 -----------+-------------------------------------------------------
      bytes:  160B
     1.09kB   github.com/lxt1045/Experiment/golang/json/pkg/json.TagInfo.Store
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -792,7 +792,7 @@ Time: Nov 28, 2021 at 2:24pm (CST)
      bytes:  16B
       112B   strings.genSplit
              strings.Split (inline)
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -802,7 +802,7 @@ Time: Nov 28, 2021 at 2:24pm (CST)
      bytes:  16B
        64B   reflect.(*structType).Field
              reflect.(*rtype).Field
-             github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+             github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -810,7 +810,7 @@ Time: Nov 28, 2021 at 2:24pm (CST)
              testing.(*B).run1.func1
 -----------+-------------------------------------------------------
      bytes:  24B
-       24B   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+       24B   github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -818,7 +818,7 @@ Time: Nov 28, 2021 at 2:24pm (CST)
              testing.(*B).run1.func1
 -----------+-------------------------------------------------------
      bytes:  4kB
-       4kB   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+       4kB   github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
@@ -826,7 +826,7 @@ Time: Nov 28, 2021 at 2:24pm (CST)
              testing.(*B).run1.func1
 -----------+-------------------------------------------------------
      bytes:  48B
-       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.tagParse
+       48B   github.com/lxt1045/Experiment/golang/json/pkg/json.NewTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal
              github.com/lxt1045/Experiment/golang/json/pkg/json.BenchmarkMyUnmarshal
