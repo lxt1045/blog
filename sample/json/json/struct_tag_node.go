@@ -2,8 +2,131 @@ package json
 
 import (
 	"reflect"
+	"sync/atomic"
 	"unsafe"
 )
+
+const N = 1024
+
+// /*
+
+var (
+	bsCache        = NewSliceCache[[]byte](N)
+	strCache       = NewSliceCache[string](N)
+	interfaceCache = NewSliceCache[interface{}](N)
+	mapCache       = NewSliceCache[map[string]interface{}](N)
+)
+
+type sliceCache[T any] struct {
+	c []T
+	i int32
+}
+
+type SliceCache[T any] struct {
+	c      unsafe.Pointer
+	n      int32
+	ch     chan *sliceCache[T]
+	makeTs func() (ts []T)
+}
+
+//go:inline
+func (s *SliceCache[T]) Get() (p *T) {
+	c := (*sliceCache[T])(atomic.LoadPointer(&s.c))
+	i := atomic.AddInt32(&c.i, 1)
+	if i <= s.n {
+		p = &c.c[i-1]
+		return
+	}
+	c = <-s.ch
+	// c = &sliceCache[T]{
+	// 	c: s.makeTs(),
+	// 	i: 1,
+	// }
+	p = &c.c[0]
+	atomic.StorePointer(&s.c, unsafe.Pointer(c))
+	return
+}
+func (s *SliceCache[T]) GetT() (p T) {
+	c := (*sliceCache[T])(atomic.LoadPointer(&s.c))
+	i := atomic.AddInt32(&c.i, 1)
+	if i <= s.n {
+		p = c.c[i-1]
+		return
+	}
+	c = <-s.ch
+	p = c.c[0]
+	atomic.StorePointer(&s.c, unsafe.Pointer(c))
+	return
+}
+func (s *SliceCache[T]) GetP() (p unsafe.Pointer) {
+	c := (*sliceCache[T])(atomic.LoadPointer(&s.c))
+	i := atomic.AddInt32(&c.i, 1)
+	if i <= s.n {
+		p = unsafe.Pointer(&c.c[i-1])
+		return
+	}
+	c = <-s.ch
+	p = unsafe.Pointer(&c.c[0])
+	atomic.StorePointer(&s.c, unsafe.Pointer(c))
+	return
+}
+func NewSliceCache[T any](n int32) (s *SliceCache[T]) {
+	var t T
+	var value interface{} = t
+	_, bMap := value.(map[string]interface{})
+
+	makeTs := func() (ts []T) {
+		ts = make([]T, n)
+		return
+	}
+	if bMap {
+		makeTs = func() (ts []T) {
+			m := make([]map[string]interface{}, n)
+			for i := range m {
+				m[i] = make(map[string]interface{})
+			}
+			p := (*[]map[string]interface{})(unsafe.Pointer(&ts))
+			*p = m
+			return
+		}
+	}
+
+	s = &SliceCache[T]{
+		c: unsafe.Pointer(&sliceCache[T]{
+			c: makeTs(),
+		}),
+		n: int32(n),
+	}
+	s.makeTs = makeTs
+	s.ch = make(chan *sliceCache[T], 8)
+
+	{
+		sc := make([]sliceCache[T], cap(s.ch))
+		for i := range sc {
+			sc[i].i = 1
+			sc[i].c = makeTs()
+			s.ch <- &sc[i]
+		}
+	}
+	N := 1
+	if bMap {
+		//单独测试 cache 时，单协程生产速度太慢
+		// N = 48
+	}
+	for i := 0; i < N; i++ {
+		go func() {
+			for {
+				sc := make([]sliceCache[T], cap(s.ch))
+				for i := range sc {
+					sc[i].i = 1
+					sc[i].c = makeTs()
+					s.ch <- &sc[i]
+				}
+			}
+		}()
+	}
+	return
+}
 
 // Type is Result type
 type Type int
@@ -79,7 +202,7 @@ func LoadTagNode(typ reflect.Type) (n *tagNode, err error) {
 			return n, nil
 		}
 	}
-	ti, err := NewTagInfo(typ)
+	ti, err := NewStructTagInfo(typ)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +230,7 @@ func LoadTagNodeStr(typ reflect.Type) (n *tagNodeStr) {
 			return n
 		}
 	}
-	ti, err := NewTagInfo(typ)
+	ti, err := NewStructTagInfo(typ)
 	if err != nil {
 		panic(err)
 	}

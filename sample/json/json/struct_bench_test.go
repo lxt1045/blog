@@ -108,6 +108,7 @@ go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshal$ github.com/lxt1045/blog/
 go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshal$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
 go tool pprof ./json.test cpu.prof
 web
+go build -gcflags=-m ./     2> ./gc.log
 //   */
 // TODO:
 //    1. SIMD 加速
@@ -118,7 +119,7 @@ web
 //	  5. 全部 key 找出来之后，再排序，再从 bytes 中找出对应的 key?
 //	  6. 用 bin-tree（字典树），先构造，在优化聚合，实现快速查找？ 找一行 self 状态，最终只是用区分度最大的字母，让状态行大幅减少
 // 	  7.  指针分配消除术：在 tagInfo 中添加 chan 用于分配 struct 和 子struct 中的所有指针，struct 上下层级有分界线便于兼容内层 struct
-func BenchmarkMyUnmarshal(b *testing.B) {
+func BenchmarkMyUnmarshal1(b *testing.B) {
 	type Name struct {
 		ZHCN  string `json:"ZH_CN"`
 		ENUS  string `json:"EN_US"`
@@ -161,7 +162,7 @@ func BenchmarkMyUnmarshal(b *testing.B) {
 		b.SetBytes(int64(b.N))
 	})
 }
-func BenchmarkMyUnmarshal2(b *testing.B) {
+func BenchmarkMyUnmarshal(b *testing.B) {
 	bs := []byte(j0)
 	d := J0{}
 	{
@@ -178,6 +179,32 @@ func BenchmarkMyUnmarshal2(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			Unmarshal(bs, &d)
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+}
+
+func BenchmarkMyUnmarshal2(b *testing.B) {
+	bs := []byte(j0)
+	d := J0{}
+	{
+		err := Unmarshal(bs, &d)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	name := "Unmarshal"
+	b.Run(name, func(b *testing.B) {
+		d := map[string]interface{}{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := Unmarshal(bs, &d)
+			if err != nil {
+				b.Fatal(err)
+			}
 		}
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
@@ -231,6 +258,71 @@ func BenchmarkUnMarshalStruct(b *testing.B) {
 		},
 		{
 			"sonic-st",
+			func() {
+				sonic.UnmarshalString(str, &d)
+			},
+		},
+		{"lxt-st",
+			func() {
+				Unmarshal(bs, &d)
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				sonic.UnmarshalString(str, &d)
+			},
+		},
+	}
+
+	for _, r := range runs {
+		b.Run(r.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				r.f()
+			}
+			b.SetBytes(int64(b.N))
+			b.StopTimer()
+		})
+	}
+}
+
+func BenchmarkUnMarshalStructMap(b *testing.B) {
+	bs := []byte(`{
+		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN2":"chinesechinesechinesechines",
+		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
+		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZH_CN":"chinesechinesec",
+		"EN_US":"English",
+		"count":8
+	}`)
+	str := string(bs)
+	var d map[string]interface{}
+	runs := []struct {
+		name string
+		f    func()
+	}{
+		{"lxt-map",
+			func() {
+				Unmarshal(bs, &d)
+			},
+		},
+		{
+			"sonic-map",
+			func() {
+				sonic.UnmarshalString(str, &d)
+			},
+		},
+		{"lxt-map",
+			func() {
+				Unmarshal(bs, &d)
+			},
+		},
+		{
+			"sonic-map",
 			func() {
 				sonic.UnmarshalString(str, &d)
 			},
@@ -300,6 +392,202 @@ func BenchmarkUnmarshalStruct1x(b *testing.B) {
 			}
 		})
 	}
+}
+
+func BenchmarkUnmarshalStruct1xMap(b *testing.B) {
+	bs := []byte(j0)
+	data := string(bs)
+	d := J0{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	_, err = json.Marshal(&d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	runs := []struct {
+		name string
+		f    func()
+	}{
+		{"lxt-map",
+			func() {
+				m := map[string]interface{}{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					b.Fatal(err)
+				}
+			},
+		},
+		{
+			"sonic-map",
+			func() {
+				m := map[string]interface{}{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					b.Fatal(err)
+				}
+			},
+		},
+		{"lxt-map",
+			func() {
+				m := map[string]interface{}{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					b.Fatal(err)
+				}
+			},
+		},
+		{
+			"sonic-map",
+			func() {
+				m := map[string]interface{}{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					b.Fatal(err)
+				}
+			},
+		},
+		{"lxt-st",
+			func() {
+				m := J0{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					b.Fatal(err)
+				}
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				m := J0{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					b.Fatal(err)
+				}
+			},
+		},
+	}
+
+	for _, r := range runs {
+		b.Run(r.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				r.f()
+			}
+		})
+	}
+}
+
+var pp unsafe.Pointer
+var pm *map[string]interface{}
+var m map[string]interface{}
+var str *string
+var pbs *[]byte
+var bs []byte
+var pbool *bool
+var iface *interface{}
+
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkCache$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkCache$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+*/
+func BenchmarkCache(b *testing.B) {
+	boolCache := NewSliceCache[bool](N)
+	bsCache := NewSliceCache[[]byte](N)
+	b.Run("map-cache", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			pm = mapCache.Get()
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("map-cache-m", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			m = *mapCache.Get()
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	// return
+	b.Run("map", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			m1 := make(map[string]interface{})
+			m = m1
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("string-cache", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			str = strCache.Get()
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("string", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			s := ""
+			str = &s
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("[]byte-cache", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			bs = *bsCache.Get()
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("[]byte", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			pbs = &[]byte{}
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("bool-cache", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			pbool = boolCache.Get()
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("bool", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			bb := true
+			pbool = &bb
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("interface-cache", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			iface = interfaceCache.Get()
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("interface", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			var bb interface{}
+			iface = &bb
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
 }
 
 func BenchmarkUnmarshalStruct20(b *testing.B) {
@@ -388,7 +676,7 @@ func Test_tagParse(t *testing.T) {
 		d := DataSt{}
 		typ := reflect.TypeOf(&d)
 		typ = typ.Elem()
-		to, err := NewTagInfo(typ)
+		to, err := NewStructTagInfo(typ)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -402,7 +690,7 @@ func Test_tagParse(t *testing.T) {
 }
 
 func BenchmarkStruct(b *testing.B) {
-	name := "NewTagInfo"
+	name := "NewStructTagInfo"
 	d := DataSt{}
 	typ := reflect.TypeOf(&d)
 	typ = typ.Elem()
@@ -414,7 +702,7 @@ func BenchmarkStruct(b *testing.B) {
 	})
 	b.Run(name, func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			NewTagInfo(typ)
+			NewStructTagInfo(typ)
 		}
 	})
 }

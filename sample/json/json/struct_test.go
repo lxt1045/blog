@@ -3,22 +3,24 @@ package json
 import (
 	"encoding/json"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"testing"
 
-	lxterrs "github.com/lxt1045/errors"
 	asrt "github.com/stretchr/testify/assert"
 )
 
 func TestStruct(t *testing.T) {
-	getFile := func(l string) (f string) {
-		_, f = filepath.Split(l)
-		f = "(" + f
-		return
-	}
 	type Anonymous struct {
 		Count int `json:"count"`
 		X     string
 	}
+	fLine := func() string {
+		_, file, line, _ := runtime.Caller(1)
+		_, file = filepath.Split(file)
+		return file + ":" + strconv.Itoa(line)
+	}
+	idx := -1
 
 	datas := []struct {
 		name   string
@@ -27,20 +29,25 @@ func TestStruct(t *testing.T) {
 		data   interface{}
 	}{
 
-		// //Map
-		// {
-		// 	name:   getFile(lxterrs.NewLine("map").Error()),
-		// 	bs:     `{"out": 11 , "map_0": { "count":8,"y":"yyy"}}`,
-		// 	target: `{"out":11,"map_0":{"count":8,"y":"yyy"}}`,
-		// 	data: &struct {
-		// 		Out int                    `json:"out"`
-		// 		Map map[string]interface{} `json:"map_0"`
-		// 	}{},
-		// },
+		{
+			name:   "interface:" + fLine(),
+			bs:     `{"out": 11 , "struct_0": { "count":8}}`,
+			target: `{"out":11,"struct_0":{"count":8}}`,
+			data: &struct {
+				Out    int         `json:"out"`
+				Struct interface{} `json:"struct_0"`
+			}{},
+		},
+		{
+			name:   "map" + fLine(),
+			bs:     `{"out": 11 , "map_0": { "count":8,"y":"yyy"}}`,
+			target: `{"out":11,"map_0":{"count":8,"y":"yyy"}}`,
+			data:   &map[string]interface{}{},
+		},
 
 		// 匿名类型; 指针匿名类型
 		{
-			name:   getFile(lxterrs.NewLine("struct").Error()),
+			name:   "struct-Anonymous:" + fLine(),
 			bs:     `{"out": 11 , "count":8,"X":"xxx"}`,
 			target: `{"out":11,"count":8,"X":"xxx"}`,
 			data: &struct {
@@ -49,7 +56,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("struct").Error()),
+			name:   "struct:" + fLine(),
 			bs:     `{"out": 11 , "struct_0": { "count":8}}`,
 			target: `{"out":11,"struct_0":{"count":8}}`,
 			data: &struct {
@@ -60,7 +67,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("struct").Error()),
+			name:   "struct:" + fLine(),
 			bs:     `{"out": 11 , "struct_0": { "count":8,"slice":[1,2,3]}}`,
 			target: `{"out":11,"struct_0":{"count":8,"slice":[1,2,3]}}`,
 			data: &struct {
@@ -72,7 +79,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("slice").Error()),
+			name:   "slice:" + fLine(),
 			bs:     `{"count":8 , "slice":[1,2,3] }`,
 			target: `{"count":8,"slice":[1,2,3]}`,
 			data: &struct {
@@ -81,7 +88,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("bool").Error()),
+			name:   "bool:" + fLine(),
 			bs:     `{"count":true , "false_0":false }`,
 			target: `{"count":true,"false_0":false}`,
 			data: &struct {
@@ -90,7 +97,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("bool-ptr").Error()),
+			name:   "bool-ptr:" + fLine(),
 			bs:     `{"count":true , "false_0":false }`,
 			target: `{"count":true,"false_0":false}`,
 			data: &struct {
@@ -99,7 +106,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("bool-ptr-null").Error()),
+			name:   "bool-ptr-null:" + fLine(),
 			bs:     `{"count":true , "false_0":null }`,
 			target: `{"count":true,"false_0":null}`,
 			data: &struct {
@@ -108,7 +115,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("bool-ptr-empty").Error()),
+			name:   "bool-ptr-empty:" + fLine(),
 			bs:     `{"count":true }`,
 			target: `{"count":true,"false_0":null}`,
 			data: &struct {
@@ -117,7 +124,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("float64").Error()),
+			name:   "float64:" + fLine(),
 			bs:     `{"count":8.11 }`,
 			target: `{"count":8.11}`,
 			data: &struct {
@@ -125,7 +132,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("float64-ptr").Error()),
+			name:   "float64-ptr:" + fLine(),
 			bs:     `{"count":8.11 }`,
 			target: `{"count":8.11}`,
 			data: &struct {
@@ -133,7 +140,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("int-ptr").Error()),
+			name:   "int-ptr:" + fLine(),
 			bs:     `{"count":8 }`,
 			target: `{"count":8}`,
 			data: &struct {
@@ -141,7 +148,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("int").Error()),
+			name:   "int:" + fLine(),
 			bs:     `{"count":8 }`,
 			target: `{"count":8}`,
 			data: &struct {
@@ -149,7 +156,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("string-ptr").Error()),
+			name:   "string-ptr:" + fLine(),
 			bs:     `{ "ZHCN":"chinese"}`,
 			target: `{"ZHCN":"chinese"}`,
 			data: &struct {
@@ -157,7 +164,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("string-notag").Error()),
+			name:   "string-notag:" + fLine(),
 			bs:     `{ "ZHCN":"chinese"}`,
 			target: `{"ZHCN":"chinese"}`,
 			data: &struct {
@@ -165,7 +172,7 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 		{
-			name:   getFile(lxterrs.NewLine("string").Error()),
+			name:   "string:" + fLine(),
 			bs:     `{ "ZH_CN":"chinese", "ENUS":"English", "count":8 }`,
 			target: `{"ZH_CN":"chinese"}`,
 			data: &struct {
@@ -173,18 +180,29 @@ func TestStruct(t *testing.T) {
 			}{},
 		},
 	}
+	if idx >= 0 {
+		datas = datas[idx : idx+1]
+	}
 
-	for _, d := range datas[:] {
+	for i, d := range datas {
 		t.Run(d.name, func(t *testing.T) {
 			err := Unmarshal([]byte(d.bs), d.data)
 			if err != nil {
-				t.Fatalf("%s:%v\n", d.name, err)
+				t.Fatalf("[%d]%s, error:%v\n", i, d.name, err)
 			}
 			bs, err := json.Marshal(d.data)
 			if err != nil {
 				t.Fatalf("%s:%v\n", d.name, err)
 			}
-			asrt.Equalf(t, d.target, string(bs), d.name)
+			if _, ok := (d.data).(*map[string]interface{}); ok {
+				t.Logf("\n%s\n%s", string(d.target), string(bs))
+				// asrt.EqualValuesf(t, d.target, string(bs), d.name)
+			} else if _, ok := (d.data).(*interface{}); ok {
+				t.Logf("\n%s\n%s", string(d.target), string(bs))
+				// asrt.EqualValuesf(t, d.target, string(bs), d.name)
+			} else {
+				asrt.Equalf(t, d.target, string(bs), d.name)
+			}
 		})
 	}
 }

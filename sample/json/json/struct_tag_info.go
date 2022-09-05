@@ -23,11 +23,11 @@ type TagInfo struct {
 	Children     map[string]*TagInfo
 	ChildList    []*TagInfo // 遍历的顺序和速度
 
-	fSet func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error)
-	fGet func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte)
+	fSet setFunc
+	fGet getFunc
 
-	Unmarshal func(pObj unsafe.Pointer, stream []byte) (i int, err error)
-	Marshal   func(pObj unsafe.Pointer, in []byte) (out []byte)
+	fUnm unmFunc
+	fM   mFunc
 }
 
 func (p *TagInfo) cacheKey() (k string) {
@@ -70,40 +70,53 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 	case reflect.Bool:
 		ti.JSONType = Bool
 		ti.fSet, ti.fGet = boolFuncs(ptrDeep)
+		ti.fUnm, ti.fM = boolMFuncs()
 	case reflect.Uint, reflect.Uint64, reflect.Uintptr:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = uint64Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int, reflect.Int64:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = int64Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint32:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = uint32Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int32:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = int32Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint16:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = uint16Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int16:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = int16Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint8:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = uint8Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int8:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = int8Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Float64:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = float64Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Float32:
 		ti.JSONType = Number
 		ti.fSet, ti.fGet = float32Funcs(ptrDeep)
+		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.String:
 		ti.JSONType = String
 		ti.fSet, ti.fGet = stringFuncs(ptrDeep)
+		ti.fUnm, ti.fM = stringMFuncs()
 	case reflect.Slice: // &[]byte; Array
+		ti.fUnm, ti.fM = sliceMFuncs()
 		if isBytes(baseType) {
 			ti.JSONType = Bytes
 			ti.fSet, ti.fGet = bytesFuncs(ptrDeep)
@@ -124,10 +137,10 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			}
 			ti.fSet, ti.fGet = sliceFuncs(ptrDeep)
 		}
-
 	case reflect.Struct:
+		ti.fUnm, ti.fM = structMFuncs()
 		ti.JSONType = Struct
-		son, e := NewTagInfo(baseType)
+		son, e := NewStructTagInfo(baseType)
 		if err = e; err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
@@ -159,6 +172,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		ti.JSONType = Interface
 		// Interface 需要根据实际类型创建
 		ti.fSet, ti.fGet = iterfaceFuncs(ptrDeep)
+		ti.fUnm, ti.fM = interfaceMFuncs()
 	case reflect.Map:
 		ti.JSONType = Map
 		ti.fSet, ti.fGet = mapFuncs(ptrDeep)
@@ -183,11 +197,11 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 	return
 }
 
-//NewTagInfo 解析struct的tag字段，并返回解析的结果
+//NewStructTagInfo 解析struct的tag字段，并返回解析的结果
 //只需要type, 不需要 interface 也可以? 不着急,分步来
-func NewTagInfo(typIn reflect.Type) (ti *TagInfo, err error) {
+func NewStructTagInfo(typIn reflect.Type) (ti *TagInfo, err error) {
 	if typIn.Kind() != reflect.Struct {
-		err = lxterrs.New("NewTagInfo only accepts structs; got %v", typIn.Kind())
+		err = lxterrs.New("NewStructTagInfo only accepts structs; got %v", typIn.Kind())
 		return
 	}
 	ti = &TagInfo{
@@ -266,14 +280,18 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 	}()
 	i := trimSpace(bs)
 
-	if _, ok := in.(*map[string]interface{}); ok {
+	if mIn, ok := in.(*map[string]interface{}); ok {
 		if bs[i] != '{' {
 			err = fmt.Errorf("json must start with '{' or '[', %s", ErrStream(bs[i:]))
 			return
 		}
-		out := make(map[string]interface{})
-		parseObjToMap(bs[i+1:], out)
-		return
+		m, _, err := parseMapInterface(bs[i+1:])
+		if err != nil {
+			err = lxterrs.Wrap(err, "parseMapInterface")
+			return err
+		}
+		*mIn = m
+		return nil
 	}
 	if _, ok := in.(*[]interface{}); ok {
 		if bs[i] != '[' {

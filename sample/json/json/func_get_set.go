@@ -441,8 +441,6 @@ func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getF
 }
 func iterfaceFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
-		p := (*map[string]interface{})(pObj)
-		*p = make(map[string]interface{})
 		return pObj, nil
 	}
 	if ptrDeep > 0 {
