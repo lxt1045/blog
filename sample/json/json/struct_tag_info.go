@@ -274,7 +274,11 @@ func NewStructTagInfo(typIn reflect.Type) (ti *TagInfo, err error) {
 func Unmarshal(bs []byte, in interface{}) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
-			err = errors.New("%+v", e)
+			if err1, ok := e.(error); ok {
+				err = err1
+			} else {
+				err = errors.New("%+v", e)
+			}
 			return
 		}
 	}()
@@ -285,11 +289,7 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 			err = fmt.Errorf("json must start with '{' or '[', %s", ErrStream(bs[i:]))
 			return
 		}
-		m, _, err := parseMapInterface(bs[i+1:])
-		if err != nil {
-			err = lxterrs.Wrap(err, "parseMapInterface")
-			return err
-		}
+		m, _ := parseMapInterface(bs[i+1:])
 		*mIn = m
 		return nil
 	}
@@ -307,7 +307,6 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 	vi = reflect.Indirect(vi)
 	if !vi.CanSet() {
 		err = fmt.Errorf("%T cannot set", in)
-		tryPanic(err)
 		return
 	}
 	typ := vi.Type()
@@ -318,7 +317,6 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 	}
 	n, err := LoadTagNode(typ)
 	if err != nil {
-		tryPanic(err)
 		return
 	}
 

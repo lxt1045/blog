@@ -8,7 +8,7 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
-type setFunc = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error)
+type setFunc = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer)
 type getFunc = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte)
 
 func pointerOffset(p unsafe.Pointer, offset uintptr) (pOut unsafe.Pointer) {
@@ -16,7 +16,7 @@ func pointerOffset(p unsafe.Pointer, offset uintptr) (pOut unsafe.Pointer) {
 }
 
 func ptrTypeFuncs[T any](ptrDeep int, fSet setFunc, fGet getFunc) (fSet1 setFunc, fGet1 getFunc) {
-	fSet1 = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+	fSet1 = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer) {
 		var obj T
 		*(**T)(pObj) = &obj
 		return fSet(unsafe.Pointer(&obj), bs)
@@ -27,7 +27,7 @@ func ptrTypeFuncs[T any](ptrDeep int, fSet setFunc, fGet getFunc) (fSet1 setFunc
 	}
 	for i := 1; i < ptrDeep; i++ {
 		fSet0, fGet0 := fSet1, fGet1
-		fSet1 = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+		fSet1 = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer) {
 			var p unsafe.Pointer
 			*(**unsafe.Pointer)(pObj) = &p
 			return fSet0(unsafe.Pointer(&p), bs)
@@ -41,7 +41,7 @@ func ptrTypeFuncs[T any](ptrDeep int, fSet setFunc, fGet getFunc) (fSet1 setFunc
 }
 
 func boolFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		if raw[0] == 't' {
 			*(*bool)(pObj) = true
@@ -66,7 +66,7 @@ func boolFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 }
 
 func uint64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		num, err := strconv.ParseUint(bytesString(raw), 10, 64)
 		if err != nil {
@@ -90,7 +90,7 @@ func uint64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 }
 
 func int64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		num, err := strconv.ParseInt(bytesString(raw), 10, 64)
 		if err != nil {
@@ -113,7 +113,7 @@ func int64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func uint32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		num, err := strconv.ParseUint(bytesString(raw), 10, 32)
 		if err != nil {
@@ -136,7 +136,7 @@ func uint32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func int32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		num, err := strconv.ParseInt(bytesString(raw), 10, 32)
 		if err != nil {
@@ -159,7 +159,7 @@ func int32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func uint16Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		num, err := strconv.ParseUint(bytesString(raw), 10, 32)
 		if err != nil {
@@ -182,7 +182,7 @@ func uint16Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func int16Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		num, err := strconv.ParseInt(bytesString(raw), 10, 32)
 		if err != nil {
@@ -205,7 +205,7 @@ func int16Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func uint8Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		num, err := strconv.ParseUint(bytesString(raw), 10, 32)
 		if err != nil {
@@ -228,7 +228,7 @@ func uint8Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func int8Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		num, err := strconv.ParseInt(bytesString(raw), 10, 32)
 		if err != nil {
@@ -251,7 +251,7 @@ func int8Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func float64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		f, err := strconv.ParseFloat(bytesString(raw), 64)
 		if err != nil {
@@ -273,7 +273,7 @@ func float64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func float32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		f, err := strconv.ParseFloat(bytesString(raw), 64)
 		if err != nil {
@@ -295,7 +295,7 @@ func float32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func stringFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		*(*string)(pObj) = *(*string)(unsafe.Pointer(&raw))
 		return
@@ -313,7 +313,7 @@ func stringFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 }
 func bytesFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	// []byte 是一种特殊的底层数据类型，需要 base64 编码
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		pbs := (*[]byte)(pObj)
 		*pbs = make([]byte, len(raw)*2)
@@ -343,7 +343,7 @@ func bytesFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 	return
 }
 func sliceFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		pBase = pObj
 		return
 	}
@@ -359,7 +359,7 @@ func sliceFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 
 func structChildFuncs(ptrDeep int, fNew func() unsafe.Pointer) (fSet setFunc, fGet getFunc) {
 	if ptrDeep > 0 {
-		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 			p := *(*unsafe.Pointer)(pObj)
 			if p == nil {
 				/*
@@ -368,7 +368,7 @@ func structChildFuncs(ptrDeep int, fNew func() unsafe.Pointer) (fSet setFunc, fG
 				p = fNew()
 				*(*unsafe.Pointer)(pObj) = p
 			}
-			return unsafe.Pointer(p), nil
+			return unsafe.Pointer(p)
 		}
 		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 			p := *(*unsafe.Pointer)(pObj)
@@ -377,7 +377,7 @@ func structChildFuncs(ptrDeep int, fNew func() unsafe.Pointer) (fSet setFunc, fG
 
 		for i := 0; i < ptrDeep; i++ {
 			fSet0, fGet0 := fSet, fGet
-			fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+			fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer) {
 				var p unsafe.Pointer
 				*(**unsafe.Pointer)(pObj) = &p
 				return fSet0(unsafe.Pointer(&p), bs)
@@ -396,7 +396,7 @@ func structChildFuncs(ptrDeep int, fNew func() unsafe.Pointer) (fSet setFunc, fG
 func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getFunc,
 	fNew func() unsafe.Pointer) (fSet setFunc, fGet getFunc) {
 	if ptrDeep <= 0 {
-		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 			pBase = pObj
 			pSon := pointerOffset(pObj, offset)
 			return fSet0(pSon, raw)
@@ -407,7 +407,7 @@ func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getF
 			return fGet0(pSon, in)
 		}
 	} else {
-		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 			p := *(*unsafe.Pointer)(pObj)
 			if p == nil {
 				p = fNew()
@@ -425,7 +425,7 @@ func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getF
 
 		for i := 0; i < ptrDeep; i++ {
 			fSet0, fGet0 := fSet, fGet
-			fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer, err error) {
+			fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer) {
 				var p unsafe.Pointer
 				*(**unsafe.Pointer)(pObj) = &p
 				return fSet0(unsafe.Pointer(&p), bs)
@@ -440,8 +440,8 @@ func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getF
 	return
 }
 func iterfaceFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
-		return pObj, nil
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
+		return pObj
 	}
 	if ptrDeep > 0 {
 		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -454,10 +454,10 @@ func iterfaceFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 }
 
 func mapFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer, err error) {
+	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
 		p := (*map[string]interface{})(pObj)
 		*p = make(map[string]interface{})
-		return pObj, nil
+		return pObj
 	}
 
 	if ptrDeep > 0 {

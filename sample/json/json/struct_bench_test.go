@@ -831,12 +831,12 @@ func BenchmarkCron(b *testing.B) {
 			b.StopTimer()
 		})
 		b.Run("cron"+ss, func(b *testing.B) {
-			var err error
+			n := 0
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				j, err = parseByte(bs, ':')
-				if err != nil {
-					b.Fatal(err)
+				j, n = parseByte(bs, ':')
+				if n != 1 {
+					b.Fatal("n!=1")
 				}
 				_ = j
 			}

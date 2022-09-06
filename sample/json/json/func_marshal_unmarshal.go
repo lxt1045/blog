@@ -7,11 +7,11 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
-type unmFunc = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int, err error)
+type unmFunc = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int)
 type mFunc = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte)
 
 func boolMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int, err error) {
+	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
 		if stream[0] == 't' && stream[i+1] == 'r' && stream[i+2] == 'u' && stream[i+3] == 'e' {
 			i = 4
 		} else if stream[0] == 'f' && stream[1] == 'a' && stream[2] == 'l' && stream[3] == 's' && stream[4] == 'e' {
@@ -20,14 +20,10 @@ func boolMFuncs() (fUnm unmFunc, fM mFunc) {
 			i = 4
 			return
 		} else {
-			err = lxterrs.New("should be \"false\" or , not [%s]", ErrStream(stream))
-			return
+			err := lxterrs.New("should be \"false\" or , not [%s]", ErrStream(stream))
+			panic(err)
 		}
-		_, err = tag.fSet(pointerOffset(pObj, tag.Offset), stream[0:i])
-		if err != nil {
-			err = lxterrs.New("error type:%s", ErrStream(stream[:]))
-			return
-		}
+		tag.fSet(pointerOffset(pObj, tag.Offset), stream[0:i])
 		return
 	}
 	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
@@ -37,23 +33,23 @@ func boolMFuncs() (fUnm unmFunc, fM mFunc) {
 	return
 }
 
-func float64UnmFuncs(stream []byte) (f float64, i int, err error) {
+func float64UnmFuncs(stream []byte) (f float64, i int) {
 	for ; i < len(stream); i++ {
 		c := stream[i]
 		if spaceTable[c] || c == ']' || c == '}' || c == ',' {
 			break
 		}
 	}
-	f, err = strconv.ParseFloat(bytesString(stream[:i]), 64)
+	f, err := strconv.ParseFloat(bytesString(stream[:i]), 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(stream[:i]))
-		return
+		panic(err)
 	}
 	return
 }
 
 func numMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int, err error) {
+	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
 		for ; i < len(stream); i++ {
 			c := stream[i]
 			if spaceTable[c] || c == ']' || c == '}' || c == ',' {
@@ -71,21 +67,13 @@ func numMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func structMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int, err error) {
+	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
 		i++
 		pObj = pointerOffset(pObj, tag.Offset)
 		if tag.fSet != nil {
-			pObj, err = tag.fSet(pObj, stream[i:])
-			if err != nil {
-				err = lxterrs.Wrap(err, "error fSet, tag:%s", tag)
-				return
-			}
+			pObj = tag.fSet(pObj, stream[i:])
 		}
-		n, err := parseObj(stream[i:], pObj, tag)
-		if err != nil {
-			err = lxterrs.Wrap(err, "error type:%s", ErrStream(stream[i:]))
-			return
-		}
+		n := parseObj(stream[i:], pObj, tag)
 		i += n
 		return
 	}
@@ -97,13 +85,9 @@ func structMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int, err error) {
+	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
 		i++
-		n, err := parseSlice(stream[i:], pObj, tag)
-		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(stream[i:]))
-			return
-		}
+		n := parseSlice(stream[i:], pObj, tag)
 		i += n
 		return
 	}
@@ -115,15 +99,11 @@ func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func stringMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int, err error) {
+	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
 		i++
 		raw, n := parseStr(stream[i:])
 		i += n
-		_, err = tag.fSet(pointerOffset(pObj, tag.Offset), raw)
-		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(stream[i:]))
-			return
-		}
+		tag.fSet(pointerOffset(pObj, tag.Offset), raw)
 		return
 	}
 	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
@@ -134,15 +114,11 @@ func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func interfaceMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int, err error) {
+	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
 		n := trimSpace(stream[i:])
 		i += n
 		iv := (*interface{})(pointerOffset(pObj, tag.Offset))
-		n, err = parseInterface(stream[i:], iv)
-		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(stream[i:]))
-			return
-		}
+		n = parseInterface(stream[i:], iv)
 		i += n
 		// *iv = iface
 		return

@@ -261,12 +261,6 @@ type tagNode struct {
 
 const PANIC = true
 
-func tryPanic(e any) {
-	if PANIC {
-		panic(e)
-	}
-}
-
 type Value struct {
 	typ  uintptr
 	ptr  unsafe.Pointer
