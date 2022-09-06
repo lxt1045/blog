@@ -119,6 +119,7 @@ go build -gcflags=-m ./     2> ./gc.log
 //	  5. 全部 key 找出来之后，再排序，再从 bytes 中找出对应的 key?
 //	  6. 用 bin-tree（字典树），先构造，在优化聚合，实现快速查找？ 找一行 self 状态，最终只是用区分度最大的字母，让状态行大幅减少
 // 	  7.  指针分配消除术：在 tagInfo 中添加 chan 用于分配 struct 和 子struct 中的所有指针，struct 上下层级有分界线便于兼容内层 struct
+//    8. stream[i:] 的下标越界问题，需要 recover 时处理一下，err panic 处理性能可能会好点
 func BenchmarkMyUnmarshal1(b *testing.B) {
 	type Name struct {
 		ZHCN  string `json:"ZH_CN"`

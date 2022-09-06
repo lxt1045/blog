@@ -89,8 +89,8 @@ func bsToStr(bs []byte) string {
 func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err error) {
 	n := 0
 	key := []byte{}
-	for i < len(stream) {
-		i += trimSpace(stream[i:])
+	i += trimSpace(stream[i:])
+	for {
 		key, n, err = parseKey(stream[i:])
 		if err != nil {
 			lxterrs.Wrap(err, "errors key:%s", ErrStream(stream))
@@ -127,10 +127,7 @@ func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int, err erro
 			}
 			return
 		}
-		key = nil
 	}
-	err = lxterrs.New("errors json string:%s", ErrStream(stream[i:]))
-	return
 }
 
 func parseMapInterface(stream []byte) (m map[string]interface{}, i int, err error) {
