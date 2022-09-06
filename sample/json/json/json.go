@@ -62,17 +62,6 @@ func parseObjToSlice(stream []byte, s []interface{}) (i int) {
 	return 0
 }
 
-func parseKey(stream []byte) (key []byte, i int) {
-	if stream[i] != '"' {
-		err := lxterrs.New("errors key:%s", ErrStream(stream))
-		panic(err)
-	}
-	i++
-	key, size := parseStr(stream[i:]) //先解析key 再解析value
-	i += size
-	return
-}
-
 func bsToStr(bs []byte) string {
 	return *(*string)(unsafe.Pointer(&bs))
 }
@@ -83,7 +72,12 @@ func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 	key := []byte{}
 	i += trimSpace(stream[i:])
 	for {
-		key, n = parseKey(stream[i:])
+		if stream[i] != '"' {
+			err := lxterrs.New("errors key:%s", ErrStream(stream))
+			panic(err)
+		}
+		i++
+		key, n = parseStr(stream[i:])
 		i += n
 		var son *TagInfo
 		if tag != nil {
@@ -121,7 +115,12 @@ func parseMapInterface(stream []byte) (m map[string]interface{}, i int) {
 	// m = make(map[string]interface{})
 	for {
 		i += trimSpace(stream[i:])
-		key, n = parseKey(stream[i:])
+		if stream[i] != '"' {
+			err := lxterrs.New("errors key:%s", ErrStream(stream))
+			panic(err)
+		}
+		i++
+		key, n = parseStr(stream[i:])
 		i += n
 		n, nB = parseByte(stream[i:], ':')
 		if nB != 1 {
@@ -148,7 +147,12 @@ func parseMap(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 	m := *(*map[string]interface{})(pObj)
 	for i < len(stream) && stream[i] != '}' {
 		i += trimSpace(stream[i:])
-		key, n := parseKey(stream[i:])
+		if stream[i] != '"' {
+			err := lxterrs.New("errors key:%s", ErrStream(stream))
+			panic(err)
+		}
+		i++
+		key, n := parseStr(stream[i:])
 		i += n
 		n, nB := parseByte(stream[i:], ':')
 		if nB != 1 {
