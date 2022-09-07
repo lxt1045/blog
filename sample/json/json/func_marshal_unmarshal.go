@@ -1,6 +1,7 @@
 package json
 
 import (
+	"bytes"
 	"strconv"
 	"unsafe"
 
@@ -100,10 +101,21 @@ func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
 
 func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
-		i++
-		raw, n := parseStr(stream[i:])
-		i += n
-		tag.fSet(pointerOffset(pObj, tag.Offset), raw)
+		// raw, i := parseStr(stream[:])
+		var raw []byte
+		{
+			nextSlashIdx := -1 // nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
+
+			// 手动内联
+			i = bytes.IndexByte(stream[1:], '"')
+			if i >= 0 && nextSlashIdx <= 0 {
+				i += 2
+				raw = stream[:i]
+			} else {
+				raw, i = parseUnescapeStr(stream[i:], nextSlashIdx, i)
+			}
+		}
+		tag.fSet(pointerOffset(pObj, tag.Offset), raw[1:len(raw)-1])
 		return
 	}
 	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {

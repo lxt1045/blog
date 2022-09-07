@@ -20,7 +20,7 @@ func TestStruct(t *testing.T) {
 		_, file = filepath.Split(file)
 		return file + ":" + strconv.Itoa(line)
 	}
-	idx := -4
+	idx := -3
 
 	datas := []struct {
 		name   string

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/lxt1045/errors"
 	lxterrs "github.com/lxt1045/errors"
 )
 
@@ -22,6 +21,7 @@ type TagInfo struct {
 	Anonymous    bool
 	Children     map[string]*TagInfo
 	ChildList    []*TagInfo // 遍历的顺序和速度
+	MChildren    tagMap
 
 	fSet setFunc
 	fGet getFunc
@@ -33,8 +33,25 @@ type TagInfo struct {
 func (p *TagInfo) cacheKey() (k string) {
 	return p.TagName
 }
+func (t *TagInfo) buildChildMap() {
+	if len(t.ChildList) == 0 {
+		return
+	}
+	nodes := make([]mapNode, 0, len(t.ChildList))
+	for _, child := range t.ChildList {
+		if len(child.TagName) == 0 {
+			continue
+		}
+		nodes = append(nodes, mapNode{
+			K: []byte(child.TagName),
+			V: child,
+		})
+	}
+	t.MChildren = buildTagMap(nodes)
+}
 func (t *TagInfo) GetChild(key []byte) *TagInfo {
 	return t.Children[string(key)]
+	return t.MChildren.GetV(key)
 }
 func (t *TagInfo) AddChild(c *TagInfo) (err error) {
 	if len(t.Children) == 0 {
@@ -124,7 +141,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			ti.JSONType = Slice
 			sliceType := baseType.Elem()
 			son := &TagInfo{
-				TagName: "son",
+				TagName: `"son"`,
 				Type:    sliceType,
 			}
 			err = son.setFuncs(sliceType)
@@ -140,7 +157,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 	case reflect.Struct:
 		ti.fUnm, ti.fM = structMFuncs()
 		ti.JSONType = Struct
-		son, e := NewStructTagInfo(baseType)
+		son, e := NewStructTagInfo(baseType, false)
 		if err = e; err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
@@ -152,6 +169,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 					return lxterrs.Wrap(err, "AddChild")
 				}
 			}
+			ti.buildChildMap()
 			ti.fSet, ti.fGet = structChildFuncs(ptrDeep, func() unsafe.Pointer {
 				v := reflect.New(baseType)
 				return reflectValueToPointer(&v)
@@ -178,7 +196,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		ti.fSet, ti.fGet = mapFuncs(ptrDeep)
 		valueType := baseType.Elem()
 		son := &TagInfo{
-			TagName: "son",
+			TagName: `"son"`,
 			Type:    valueType,
 		}
 		err = ti.AddChild(son)
@@ -199,7 +217,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 
 //NewStructTagInfo 解析struct的tag字段，并返回解析的结果
 //只需要type, 不需要 interface 也可以? 不着急,分步来
-func NewStructTagInfo(typIn reflect.Type) (ti *TagInfo, err error) {
+func NewStructTagInfo(typIn reflect.Type, noBuildmap bool) (ti *TagInfo, err error) {
 	if typIn.Kind() != reflect.Struct {
 		err = lxterrs.New("NewStructTagInfo only accepts structs; got %v", typIn.Kind())
 		return
@@ -214,7 +232,7 @@ func NewStructTagInfo(typIn reflect.Type) (ti *TagInfo, err error) {
 		field := typIn.Field(i)
 		son := &TagInfo{
 			Type:      field.Type,
-			TagName:   field.Name,
+			TagName:   `"` + field.Name + `"`,
 			Offset:    field.Offset,
 			BaseKind:  field.Type.Kind(),
 			Anonymous: field.Anonymous,
@@ -236,7 +254,7 @@ func NewStructTagInfo(typIn reflect.Type) (ti *TagInfo, err error) {
 		for i := range tvs {
 			tvs[i] = strings.TrimSpace(tvs[i])
 		}
-		son.TagName = tvs[0]
+		son.TagName = `"` + tvs[0] + `"`
 		for i := 1; i < len(tvs); i++ {
 			if strings.TrimSpace(tvs[i]) == "string" {
 				son.StringTag = true
@@ -267,6 +285,9 @@ func NewStructTagInfo(typIn reflect.Type) (ti *TagInfo, err error) {
 			}
 		}
 	}
+	if !noBuildmap {
+		ti.buildChildMap()
+	}
 	return
 }
 
@@ -274,10 +295,10 @@ func NewStructTagInfo(typIn reflect.Type) (ti *TagInfo, err error) {
 func Unmarshal(bs []byte, in interface{}) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
-			if err1, ok := e.(error); ok {
+			if err1, ok := e.(*lxterrs.Code); ok {
 				err = err1
 			} else {
-				err = errors.New("%+v", e)
+				err = lxterrs.New("%+v", e)
 			}
 			return
 		}
@@ -310,17 +331,18 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 		return
 	}
 	typ := vi.Type()
-	for typ.Kind() == reflect.Ptr || typ.Kind() == reflect.Slice {
-		vi.Set(reflect.New(vi.Type().Elem()))
-		vi = vi.Elem()
-		typ = typ.Elem()
-	}
-	n, err := LoadTagNode(typ)
+	// n, err := LoadTagNode(typ)
+	// if err != nil {
+	// 	return
+	// }
+
+	// eface := unpackEface(in)
+	eface := UnpackEface(in)
+	goType := PtrElem(eface.Type)
+	n, err := LoadTagNode(typ, goType.Hash)
 	if err != nil {
 		return
 	}
-
-	empty := (*emptyInterface)(unsafe.Pointer(&in))
-	err = parseRoot(bs[i:], empty.word, n.tagInfo)
+	err = parseRoot(bs[i:], eface.Value, (*TagInfo)(n))
 	return
 }

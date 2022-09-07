@@ -35,10 +35,9 @@ var spaceTable = [256]bool{'\t': true, '\n': true, '\v': true, '\f': true, '\r':
 //inline
 func trimSpace(stream []byte) (i int) {
 	// for i = 0; i < len(stream) && spaceTable[stream[i]]; i++ {}
-	for i = 0; spaceTable[stream[i]]; i++ {
+	for ; spaceTable[stream[i]]; i++ {
 	}
-	// for i = 0; InSpaceQ(stream[i]); i++ {
-	// }
+	// for i = 0; InSpaceQ(stream[i]); i++ { }
 	return
 }
 
@@ -72,29 +71,40 @@ func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 	key := []byte{}
 	i += trimSpace(stream[i:])
 	for {
-		if stream[i] != '"' {
-			err := lxterrs.New("errors key:%s", ErrStream(stream))
-			panic(err)
-		}
-		i++
-		key, n = parseStr(stream[i:])
-		i += n
-		var son *TagInfo
-		if tag != nil {
-			son = tag.Children[string(key)]
-		}
+		// 解析 key
+		// key, n = parseStr(stream[i:])
+		{
+			nextSlashIdx := -1 // nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
 
+			// 手动内联
+			n = bytes.IndexByte(stream[i+1:], '"')
+			if n >= 0 && nextSlashIdx <= 0 {
+				n += 2
+				key = stream[i : i+n]
+			} else {
+				key, n = parseUnescapeStr(stream[i:], nextSlashIdx, n)
+			}
+		}
+		i += n
+		// 解析 冒号
 		n, nB = parseByte(stream[i:], ':')
+		i += n
 		if nB != 1 {
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
-		i += n
+		// 解析 value
+		var son *TagInfo
+		if tag != nil {
+			// son = tag.Children[string(key)]
+			son = tag.GetChild(key)
+		}
 		if son != nil && son.fUnm != nil {
 			n = son.fUnm(pObj, stream[i:], son)
 		} else {
 			n = parseValue(stream[i:], pObj, son)
 		}
 		i += n
+		// 解析 逗号
 		n, nB = parseByte(stream[i:], ',')
 		i += n
 		if nB != 1 {
@@ -115,12 +125,8 @@ func parseMapInterface(stream []byte) (m map[string]interface{}, i int) {
 	// m = make(map[string]interface{})
 	for {
 		i += trimSpace(stream[i:])
-		if stream[i] != '"' {
-			err := lxterrs.New("errors key:%s", ErrStream(stream))
-			panic(err)
-		}
-		i++
 		key, n = parseStr(stream[i:])
+		key = key[1 : len(key)-1]
 		i += n
 		n, nB = parseByte(stream[i:], ':')
 		if nB != 1 {
@@ -147,13 +153,9 @@ func parseMap(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 	m := *(*map[string]interface{})(pObj)
 	for i < len(stream) && stream[i] != '}' {
 		i += trimSpace(stream[i:])
-		if stream[i] != '"' {
-			err := lxterrs.New("errors key:%s", ErrStream(stream))
-			panic(err)
-		}
-		i++
 		key, n := parseStr(stream[i:])
 		i += n
+		key = key[1 : len(key)-1]
 		n, nB := parseByte(stream[i:], ':')
 		if nB != 1 {
 			panic(lxterrs.New(ErrStream(stream[i:])))
@@ -281,8 +283,8 @@ func parseInterface(stream []byte, p *interface{}) (i int) {
 		*p = false
 		return
 	case '"':
-		i++
 		raw, n := parseStr(stream[i:])
+		raw = raw[1 : len(raw)-1]
 		i += n
 		pStr := strCache.Get()
 		*pStr = bytesString(raw)
@@ -342,8 +344,8 @@ func parseInterface1(stream []byte) (iface interface{}, i int) {
 		iface = false
 		return
 	case '"':
-		i++
 		raw, n := parseStr(stream[i:])
+		raw = raw[1 : len(raw)-1]
 		i += n
 		iface = bytesString(raw)
 		return
@@ -418,8 +420,8 @@ func parseValue(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 		tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:i+5])
 		i += 5
 	case '"':
-		i++
 		raw, n := parseStr(stream[i:])
+		raw = raw[1 : len(raw)-1]
 		i += n
 		if tag != nil {
 			tag.fSet(pointerOffset(pObj, tag.Offset), raw)
@@ -491,38 +493,48 @@ func parseStr2(stream []byte) (raw []byte, i int) {
 }
 
 func parseStr(stream []byte) (raw []byte, i int) {
-	nextSlashIdx := -1
-	// nextSlashIdx = bytes.IndexByte(stream[i:], '\\')
-	nextQuotesIdx := bytes.IndexByte(stream, '"')
+	nextSlashIdx := -1 // nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
+
+	// TODO: 专业抄，把 '"' 提前准备好，少了个几步，也能快很多了
+	i = bytes.IndexByte(stream[1:], '"')
+	if i >= 0 && nextSlashIdx <= 0 {
+		i += 2
+		raw = stream[:i]
+		return
+	}
+
+	return parseUnescapeStr(stream, nextSlashIdx, i)
+}
+func parseUnescapeStr(stream []byte, nextSlashIdx, nextQuotesIdx int) (raw []byte, i int) {
 	if nextQuotesIdx < 0 {
 		panic(string(stream[i:]))
 	}
-	if nextSlashIdx > 0 && nextSlashIdx < nextQuotesIdx {
-		lastIdx := 1
-		i = 1
-		for {
-			word, wordSize := unescapeStr(stream[i:])
-			if len(raw) <= 0 {
-				raw = stream[i : nextSlashIdx+i : nextSlashIdx+i] //新建 []byte 避免修改员 stream
-				// raw = stream[1:i] //新建 []byte 避免修改员 stream
-			} else if lastIdx < i {
-				raw = append(raw, stream[lastIdx:nextSlashIdx+i]...)
-			}
-			raw = append(raw, word...)
-			i += wordSize
-			lastIdx = i
-
-			nextSlashIdx = bytes.IndexByte(stream[i:], '\\')
-			if nextSlashIdx < 0 || nextSlashIdx+i > nextQuotesIdx+1 {
-				break
-			}
-		}
-		raw = append(raw, stream[lastIdx:1+nextQuotesIdx]...)
-		return raw, nextQuotesIdx + 1 + 1
+	if nextSlashIdx > nextQuotesIdx {
+		i = nextQuotesIdx + 2
+		raw = stream[:i]
+		return
 	}
+	lastIdx := 1
+	i = 1
+	for {
+		word, wordSize := unescapeStr(stream[i:])
+		if len(raw) <= 0 {
+			raw = stream[i : nextSlashIdx+i : nextSlashIdx+i] //新建 []byte 避免修改员 stream
+			// raw = stream[1:i] //新建 []byte 避免修改员 stream
+		} else if lastIdx < i {
+			raw = append(raw, stream[lastIdx:nextSlashIdx+i]...)
+		}
+		raw = append(raw, word...)
+		i += wordSize
+		lastIdx = i
 
-	raw = stream[:nextQuotesIdx]
-	return raw, nextQuotesIdx + 1
+		nextSlashIdx = bytes.IndexByte(stream[i:], '\\')
+		if nextSlashIdx < 0 || nextSlashIdx+i > nextQuotesIdx+1 {
+			break
+		}
+	}
+	raw = append(raw, stream[lastIdx:1+nextQuotesIdx]...)
+	return raw, nextQuotesIdx + 1 + 1
 }
 
 // unescape unescapes a string

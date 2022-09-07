@@ -182,7 +182,8 @@ func (t Type) String() string {
 }
 
 var (
-	cacheStructTagInfoP   = newCache[uintptr, *tagNode]()
+	cacheStructTagInfoP   = newCache[uintptr, *tagNodeP]()
+	cacheStructTagInfo    = newCache[uint32, *tagNode]()
 	cacheStructTagInfoStr = newCache[string, *tagNodeStr]()
 )
 
@@ -190,7 +191,7 @@ var (
 func strToUintptr(p string) uintptr {
 	return *(*uintptr)(unsafe.Pointer(&p))
 }
-func LoadTagNode(typ reflect.Type) (n *tagNode, err error) {
+func LoadTagNodeP(typ reflect.Type) (n *tagNodeP, err error) {
 	pname := strToUintptr(typ.String()) //typ.Name() 在匿名struct时，是空的
 	ppkg := strToUintptr(typ.PkgPath())
 	n, ok := cacheStructTagInfoP.Get(pname)
@@ -202,20 +203,35 @@ func LoadTagNode(typ reflect.Type) (n *tagNode, err error) {
 			return n, nil
 		}
 	}
-	ti, err := NewStructTagInfo(typ)
+	ti, err := NewStructTagInfo(typ, false)
 	if err != nil {
 		return nil, err
 	}
-	n = &tagNode{
+	n = &tagNodeP{
 		pkgPath:  ppkg,
 		tagInfo:  ti,
-		pkgCache: newCache[uintptr, *tagNode](),
+		pkgCache: newCache[uintptr, *tagNodeP](),
 	}
 	if !ok {
 		cacheStructTagInfoP.Set(pname, n)
 	} else {
 		n.pkgCache.Set(ppkg, n)
 	}
+	return
+}
+
+func LoadTagNode(typ reflect.Type, hash uint32) (n *tagNode, err error) {
+	n, ok := cacheStructTagInfo.Get(hash)
+	if ok {
+		return n, nil
+
+	}
+	ti, err := NewStructTagInfo(typ, false)
+	if err != nil {
+		return nil, err
+	}
+	n = (*tagNode)(ti)
+	cacheStructTagInfo.Set(hash, n)
 	return
 }
 func LoadTagNodeStr(typ reflect.Type) (n *tagNodeStr) {
@@ -230,7 +246,7 @@ func LoadTagNodeStr(typ reflect.Type) (n *tagNodeStr) {
 			return n
 		}
 	}
-	ti, err := NewStructTagInfo(typ)
+	ti, err := NewStructTagInfo(typ, false)
 	if err != nil {
 		panic(err)
 	}
@@ -253,13 +269,12 @@ type tagNodeStr struct {
 	pkgCache cache[string, *tagNodeStr] //如果 name 相等，则从这个缓存中获取
 }
 
-type tagNode struct {
+type tagNodeP struct {
 	pkgPath  uintptr
 	tagInfo  *TagInfo
-	pkgCache cache[uintptr, *tagNode] //如果 name 相等，则从这个缓存中获取
+	pkgCache cache[uintptr, *tagNodeP] //如果 name 相等，则从这个缓存中获取
 }
-
-const PANIC = true
+type tagNode TagInfo
 
 type Value struct {
 	typ  uintptr
@@ -279,4 +294,40 @@ func bytesString(b []byte) string {
 type emptyInterface struct {
 	typ  uintptr
 	word unsafe.Pointer
+}
+
+func unpackEface(v interface{}) *emptyInterface {
+	empty := (*emptyInterface)(unsafe.Pointer(&v))
+	return empty
+}
+func UnpackEface(v interface{}) GoEface {
+	return *(*GoEface)(unsafe.Pointer(&v))
+}
+
+type GoEface struct {
+	Type  *GoType
+	Value unsafe.Pointer
+}
+
+type GoType struct {
+	Size       uintptr
+	PtrData    uintptr
+	Hash       uint32
+	Flags      uint8
+	Align      uint8
+	FieldAlign uint8
+	KindFlags  uint8
+	Traits     unsafe.Pointer
+	GCData     *byte
+	Str        int32
+	PtrToSelf  int32
+}
+
+func PtrElem(t *GoType) *GoType {
+	return (*GoPtrType)(unsafe.Pointer(t)).Elem
+}
+
+type GoPtrType struct {
+	GoType
+	Elem *GoType
 }

@@ -27,11 +27,11 @@ import (
 	"unsafe"
 )
 
-type cache[T uintptr | string | int, V any] struct {
+type cache[T uintptr | uint32 | string | int, V any] struct {
 	m unsafe.Pointer
 }
 
-func newCache[T uintptr | string | int, V any]() (c cache[T, V]) {
+func newCache[T uintptr | uint32 | string | int, V any]() (c cache[T, V]) {
 	m := make(map[T]V, 1)
 	c.m = unsafe.Pointer(&m)
 	return
