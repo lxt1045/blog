@@ -182,45 +182,15 @@ func (t Type) String() string {
 }
 
 var (
-	cacheStructTagInfoP   = newCache[uintptr, *tagNodeP]()
-	cacheStructTagInfo    = newCache[uint32, *tagNode]()
-	cacheStructTagInfoStr = newCache[string, *tagNodeStr]()
+	cacheStructTagInfo = newCache[uint32, *TagInfo]()
 )
 
 // 获取 string 的起始地址
 func strToUintptr(p string) uintptr {
 	return *(*uintptr)(unsafe.Pointer(&p))
 }
-func LoadTagNodeP(typ reflect.Type) (n *tagNodeP, err error) {
-	pname := strToUintptr(typ.String()) //typ.Name() 在匿名struct时，是空的
-	ppkg := strToUintptr(typ.PkgPath())
-	n, ok := cacheStructTagInfoP.Get(pname)
-	if ok {
-		if n.pkgPath == ppkg {
-			return
-		}
-		if n, ok := n.pkgCache.Get(ppkg); ok {
-			return n, nil
-		}
-	}
-	ti, err := NewStructTagInfo(typ, false)
-	if err != nil {
-		return nil, err
-	}
-	n = &tagNodeP{
-		pkgPath:  ppkg,
-		tagInfo:  ti,
-		pkgCache: newCache[uintptr, *tagNodeP](),
-	}
-	if !ok {
-		cacheStructTagInfoP.Set(pname, n)
-	} else {
-		n.pkgCache.Set(ppkg, n)
-	}
-	return
-}
 
-func LoadTagNode(typ reflect.Type, hash uint32) (n *tagNode, err error) {
+func LoadTagNode(typ reflect.Type, hash uint32) (n *TagInfo, err error) {
 	n, ok := cacheStructTagInfo.Get(hash)
 	if ok {
 		return n, nil
@@ -230,51 +200,10 @@ func LoadTagNode(typ reflect.Type, hash uint32) (n *tagNode, err error) {
 	if err != nil {
 		return nil, err
 	}
-	n = (*tagNode)(ti)
+	n = (*TagInfo)(ti)
 	cacheStructTagInfo.Set(hash, n)
 	return
 }
-func LoadTagNodeStr(typ reflect.Type) (n *tagNodeStr) {
-	pname := typ.String()
-	ppkg := typ.PkgPath()
-	n, ok := cacheStructTagInfoStr.Get(pname)
-	if ok {
-		if n.pkgPath == ppkg {
-			return
-		}
-		if n, ok := n.pkgCache.Get(ppkg); ok {
-			return n
-		}
-	}
-	ti, err := NewStructTagInfo(typ, false)
-	if err != nil {
-		panic(err)
-	}
-	n = &tagNodeStr{
-		pkgPath:  ppkg,
-		tagInfo:  ti,
-		pkgCache: newCache[string, *tagNodeStr](),
-	}
-	if !ok {
-		cacheStructTagInfoStr.Set(pname, n)
-	} else {
-		n.pkgCache.Set(ppkg, n)
-	}
-	return
-}
-
-type tagNodeStr struct {
-	pkgPath  string
-	tagInfo  *TagInfo
-	pkgCache cache[string, *tagNodeStr] //如果 name 相等，则从这个缓存中获取
-}
-
-type tagNodeP struct {
-	pkgPath  uintptr
-	tagInfo  *TagInfo
-	pkgCache cache[uintptr, *tagNodeP] //如果 name 相等，则从这个缓存中获取
-}
-type tagNode TagInfo
 
 type Value struct {
 	typ  uintptr

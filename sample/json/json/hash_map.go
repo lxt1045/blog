@@ -10,6 +10,141 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
+func getHashFuncU64(idxs []int) (f func(key []byte) (idx int)) {
+	// 可以提前聚合成 byte ，然后打表合并 bit 增速最高 8 倍？
+
+	type N struct {
+		iByte int // []byte的偏移量
+		mask  byte
+		iBit  int
+	}
+	idxN := make([]N, len(idxs))
+	for i, idx := range idxs {
+		iKey := idx / 8 // key 的偏移量
+		iBit := idx % 8 // byte 内部偏移量
+		idxN[i] = N{
+			iByte: iKey, // key 的偏移量
+			mask:  1 << iBit,
+			iBit:  1 << i,
+		}
+	}
+	f = func(key []byte) (idx int) {
+		for i, x := range idxN {
+			if i >= len(key) {
+				break
+			}
+			if x.mask&key[x.iByte] > 0 {
+				idx |= x.iBit
+			}
+		}
+		return
+	}
+	return
+}
+
+//根据状态数 返回 bit 数
+func getNLen(nBit int) (nStatus int) {
+	nStatus = 1
+	for i := 0; i < nBit; i++ {
+		nStatus *= 2
+	}
+	return
+}
+
+var allMask = func() (allMask []byte) {
+	allMask = make([]byte, 0, 256)
+	seed := []byte{1, 2, 4, 8, 16, 32, 64, 128}
+
+	// 1bit 的
+	allMask = append(allMask, seed...)
+
+	// 2. 2bit 的
+	for i, a := range seed {
+		for _, b := range seed[i+1:] {
+			allMask = append(allMask, a+b)
+		}
+	}
+
+	// 3bit 的
+	for i, a := range seed {
+		for j, b := range seed[i+1:] {
+			for _, c := range seed[i+j+2:] {
+				allMask = append(allMask, a+b+c)
+			}
+		}
+	}
+
+	// 4bit 的
+	for i, a := range seed {
+		for j, b := range seed[i+1:] {
+			for k, c := range seed[i+j+2:] {
+				for _, d := range seed[i+j+k+3:] {
+					allMask = append(allMask, a+b+c+d)
+				}
+			}
+		}
+	}
+	// return
+	// 5bit 的
+	for i, a := range seed {
+		for j, b := range seed[i+1:] {
+			for k, c := range seed[i+j+2:] {
+				for l, d := range seed[i+j+k+3:] {
+					for _, e := range seed[i+j+k+l+4:] {
+						allMask = append(allMask, a+b+c+d+e)
+					}
+				}
+			}
+		}
+	}
+
+	// 6bit 的
+	for i, a := range seed {
+		for j, b := range seed[i+1:] {
+			for k, c := range seed[i+j+2:] {
+				for l, d := range seed[i+j+k+3:] {
+					for m, e := range seed[i+j+k+l+4:] {
+						for _, f := range seed[i+j+k+l+m+5:] {
+							allMask = append(allMask, a+b+c+d+e+f)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 7bit 的
+	allMask = append(allMask, []byte{
+		0b11111110, 0b11111101, 0b11111011, 0b11110111, 0b11101111,
+		0b11011111, 0b10111111, 0b01111111, 0b11111111,
+	}...)
+
+	m := make(map[byte]struct{})
+	for _, b := range allMask {
+		if _, ok := m[b]; ok {
+			panic(fmt.Sprintf("%b already exist", b))
+		}
+		m[b] = struct{}{}
+	}
+
+	for i := 1; i < 0xff; i++ {
+		b := byte(i)
+		if _, ok := m[b]; !ok {
+			allMask = append(allMask, b)
+			panic(fmt.Sprintf("%b not exist", b))
+		}
+	}
+	return
+}()
+
+func PrintMask(allMask []byte) {
+	str := "PrintMask:\n"
+	for _, b := range allMask {
+		str += fmt.Sprintf("%3d:%08b\n", b, b)
+	}
+	log.Printf("allMask:\n%s", str)
+}
+
 func init() {
 	log.SetFlags(log.Flags() | log.Lmicroseconds | log.Lshortfile)
 }
@@ -97,20 +232,6 @@ func PrintKeys(bsList [][]byte) {
 	log.Printf("%s\n", str)
 }
 
-func PrintKeys2(bsList [][]byte) {
-	str := "\nbsList:\n"
-	for i := 0; i < 32; i++ {
-		str += fmt.Sprintf("%d", i%10)
-	}
-	log.Printf("%s", str)
-	for _, bs := range bsList {
-		for _, b := range bs {
-			str += fmt.Sprintf("%08b", b)
-		}
-		log.Printf("%s:%s", str, string(bs))
-	}
-}
-
 //找到醉倒的区分度(第 n 位)，二分
 // 1bit 不行就 2bit
 // 贪婪算法？全遍历？
@@ -164,36 +285,6 @@ type Mask struct {
 	mask  byte
 	diff  float32
 	nMask uint32 // 命中 mask 的数量; (mask & b) == mask
-}
-
-func logicalHash2(bsList [][]byte) (idxN []iN, idxRet []int) {
-	var idxsRet [][]int
-	if len(bsList) <= 1 {
-		idxN = []iN{{
-			iByte: 0, // key 的偏移量
-			mask:  1,
-			iBit:  1,
-		}}
-		return
-	}
-
-	idxsRet = divide2(bsList)
-	// log.Printf("---idxsRet---:%+v", idxsRet)
-	// PrintKeys(bsList)
-	idxRet = idxsRet[0]
-
-	idxN = make([]iN, len(idxRet))
-	for i, x := range idxRet {
-		iByte := x / 8 // key 的偏移量
-		iBit := x % 8  // byte 内部偏移量
-		idxN[i] = iN{
-			iByte: iByte, // key 的偏移量
-			mask:  1 << (7 - iBit),
-			iBit:  1 << i,
-		}
-	}
-	sort.Slice(idxN, func(i, j int) bool { return idxN[i].iByte < idxN[j].iByte })
-	return
 }
 
 //idxRet:[{iByte:1 mask:1 iBit:3} {iByte:2 mask:1 iBit:1} {iByte:3 mask:1 iBit:7} {iByte:4 mask:1 iBit:6}
@@ -367,58 +458,6 @@ outfor:
 	blocks = append(blocks, blockNewMax)
 	ms = append(ms, Mask{iByte: blockNewMax.iByte, mask: blockNewMax.mask, diff: float32(blockNewMax.diffSum)})
 	goto start
-}
-
-func getPivot(bsList [][]byte) (min Mask) {
-	lMax := len(bsList[0])
-	for _, bs := range bsList {
-		if lMax < len(bs) {
-			lMax = len(bs)
-		}
-	}
-	l := uint32(len(bsList))
-	midL := float32(l) / 2 //获取中值
-
-	// 0b0001, 0b0010, 0b0011, 0b0100 ...
-	allMask := make([]byte, 0, 0xff)
-	for i := 1; i < 0xff; i++ {
-		allMask = append(allMask)
-	}
-	for _, mask := range allMask {
-		masks := make([]Mask, lMax) // bit位为 1 的个数
-		for _, bs := range bsList {
-			for i, b := range bs {
-				// masks[i].iByte = i
-				if (mask & b) == mask {
-					masks[i].nMask++
-				}
-			}
-		}
-
-		for i, mm := range masks {
-			if mm.nMask == 0 || mm.nMask == l {
-				continue
-			}
-
-			diff := midL - float32(mm.nMask)
-			if diff < 0 {
-				diff = -diff
-			}
-			if min.nMask == 0 || min.diff > diff {
-				min = Mask{
-					iByte: i,
-					diff:  diff,
-					nMask: mm.nMask,
-					mask:  mask,
-				}
-				// 如果已经均分,则提前返回
-				if min.diff < 0.51 {
-					return min
-				}
-			}
-		}
-	}
-	return min
 }
 
 func getHashParam(idxN []iN) (idxNTable []int16) {

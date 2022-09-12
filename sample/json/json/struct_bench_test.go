@@ -750,12 +750,6 @@ func BenchmarkStruct(b *testing.B) {
 	typ := reflect.TypeOf(&d)
 	typ = typ.Elem()
 
-	_, _ = LoadTagNodeP(typ)
-	b.Run("LoadTagNode", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_, _ = LoadTagNodeP(typ)
-		}
-	})
 	b.Run(name, func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			NewStructTagInfo(typ, false)
@@ -900,14 +894,6 @@ func BenchmarkCron(b *testing.B) {
 	}
 }
 
-func TestLeft(t *testing.T) {
-	xs := [16]byte{}
-	Test2(' ', xs[:])
-	t.Logf("b:%v", xs)
-
-	t.Logf("b:%v", InSpaceQ(' '))
-	t.Logf("b:%v", InSpaceQ('q'))
-}
 func TestMyUnmarshalStd(t *testing.T) {
 	var j = `{
 		"BizName": {
