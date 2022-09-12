@@ -1,9 +1,21 @@
 package json
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
 )
 
+const encodeStd = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+func getRandStr(l int) (str string) {
+	bs := make([]byte, l)
+	for i := 0; i < l; i++ {
+		idx := rand.Intn(len(encodeStd))
+		bs[i] = encodeStd[idx]
+	}
+	return string(bs)
+}
 func Test_append2(t *testing.T) {
 	xs := []int{1, 2, 3, 4, 5}
 	i := 4
@@ -12,26 +24,175 @@ func Test_append2(t *testing.T) {
 	t.Logf("%+v", xs)
 }
 
-func Test_logicalHash2(t *testing.T) {
-	bsList := [][]byte{
-		// []byte(`"id"`),
-		// []byte(`"name"`),
-		// []byte(`"avatar"`),
-		// []byte(`"department"`),
-		// []byte(`"email"`),
-		// []byte(`"mobile"`),
-		[]byte(`"status"`),
-		[]byte(`"employeeType"`),
-		[]byte(`"isAdmin"`),
-		[]byte(`"isLeader"`),
-		[]byte(`"isManager"`),
-		[]byte(`"isAppManager"`),
-		[]byte(`"departmentList"`),
+func Test_getPivotMask(t *testing.T) {
+	keys := []string{
+		`"id"`,
+		`"name"`,
+		`"avatar"`,
+		`"department"`,
+		`"email"`,
+		`"mobile"`,
+		`"status"`,
+		`"employeeType"`,
+		`"isAdmin"`,
+		`"isLeader"`,
+		`"isManager"`,
+		`"isAppManager"`,
+		`"departmentList"`,
 	}
-	idxList, _ := logicalHash(bsList)
-	t.Logf("idxList: \n\n%+v", idxList)
+	// keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
+	for i := 0; i < 160; i++ {
+		keys = append(keys, getRandStr(rand.Intn(18)+2))
+	}
+	bsList := [][]byte{}
+	for _, k := range keys {
+		bsList = append(bsList, []byte(k))
+	}
 
-	PrintKeys2(bsList)
+	lens := []int{8, 16, 32, 64, 128}
+	for _, l := range lens {
+		name := fmt.Sprintf("getPivotMask-%d", l)
+		t.Run(name, func(t *testing.T) {
+			m := getPivotMask(bsList[:l])
+			// t.Logf("l:%d, len:%d, m: %+v", l, len(m), m)
+			t.Logf("l:%d, len:%d", l, len(m))
+		})
+	}
+}
+
+/*
+
+    /Users/bytedance/go/src/github.com/lxt1045/blog/sample/json/json/bin_tree_test.go:96: l:8, len:4, m: [{iByte:1 mask:1 iBit:8} {iByte:2 mask:5 iBit:1} {iByte:6 mask:16 iBit:2} {iByte:6 mask:1 iBit:4}]
+=== RUN   Test_logicalHash_new/getPivotMask-16
+    /Users/bytedance/go/src/github.com/lxt1045/blog/sample/json/json/bin_tree_test.go:96: l:16, len:6, m: [{iByte:1 mask:4 iBit:1} {iByte:1 mask:8 iBit:16} {iByte:5 mask:4 iBit:4} {iByte:5 mask:65 iBit:8} {iByte:7 mask:64 iBit:2} {iByte:11 mask:2 iBit:32}]
+=== RUN   Test_logicalHash_new/getPivotMask-32
+    /Users/bytedance/go/src/github.com/lxt1045/blog/sample/json/json/bin_tree_test.go:96: l:32, len:8, m: [{iByte:0 mask:16 iBit:64} {iByte:0 mask:64 iBit:8} {iByte:1 mask:2 iBit:32} {iByte:1 mask:8 iBit:1} {iByte:4 mask:33 iBit:16} {iByte:6 mask:1 iBit:4} {iByte:8 mask:64 iBit:2} {iByte:11 mask:2 iBit:128}]
+=== RUN   Test_logicalHash_new/getPivotMask-64
+    /Users/bytedance/go/src/github.com/lxt1045/blog/sample/json/json/bin_tree_test.go:96: l:64, len:9, m: [{iByte:0 mask:16 iBit:128} {iByte:0 mask:34 iBit:8} {iByte:2 mask:16 iBit:1} {iByte:2 mask:33 iBit:4} {iByte:3 mask:8 iBit:64} {iByte:6 mask:65 iBit:16} {iByte:6 mask:32 iBit:2} {iByte:8 mask:1 iBit:32} {iByte:11 mask:2 iBit:256}]
+=== RUN   Test_logicalHash_new/getPivotMask-128
+    /Users/bytedance/go/src/github.com/lxt1045/blog/sample/json/json/bin_tree_test.go:96: l:128, len:11, m: [{iByte:0 mask:1 iBit:1} {iByte:1 mask:16 iBit:128} {iByte:1 mask:4 iBit:512} {iByte:1 mask:1 iBit:64} {iByte:2 mask:16 iBit:4} {iByte:2 mask:4 iBit:2} {iByte:3 mask:1 iBit:1024} {iByte:3 mask:2 iBit:8} {iByte:4 mask:4 iBit:256} {iByte:4 mask:96 iBit:16} {iByte:11 mask:64 iBit:32}]
+--- PASS: Test_logicalHash_new (0.78s)
+*/
+
+func Test_logicalHash_new(t *testing.T) {
+	keys := []string{
+		// `"id"`,
+		// `"name"`,
+		// `"avatar"`,
+		// `"department"`,
+		// `"email"`,
+		// `"mobile"`,
+		// `"status"`,
+		// `"employeeType"`,
+		// `"isAdmin"`,
+		// `"isLeader"`,
+		// `"isManager"`,
+		// `"isAppManager"`,
+		// `"departmentList"`,
+	}
+	// keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
+	for i := 0; i < 160; i++ {
+		keys = append(keys, getRandStr(rand.Intn(18)+2))
+	}
+	bsList := [][]byte{}
+	for _, k := range keys {
+		bsList = append(bsList, []byte(k))
+	}
+
+	lens := []int{
+		8,
+		16, 32, 64, 128,
+	}
+	for _, l := range lens {
+		name := fmt.Sprintf("getPivotMask-%d", l)
+		t.Run(name, func(t *testing.T) {
+			m, _ := logicalHash(bsList[:l])
+			t.Logf("l:%d, len:%d, m: %+v", l, len(m), m)
+			// t.Logf("l:%d, len:%d", l, len(m))
+
+			exist := map[int]string{}
+			for _, bs := range bsList[:l] {
+				idx := hash(bs, nil, m)
+				if _, ok := exist[idx]; !ok {
+					exist[idx] = string(bs)
+				} else {
+					PrintKeys(bsList[:l])
+					t.Fatalf("insert_key:%s, idx:%d, exist:%+v", string(bs), idx, exist)
+				}
+			}
+		})
+	}
+}
+
+func Benchmark_getPivotMask(b *testing.B) {
+	keys := []string{
+		`"id"`,
+		`"name"`,
+		`"avatar"`,
+		`"department"`,
+		`"email"`,
+		`"mobile"`,
+		`"status"`,
+		`"employeeType"`,
+		`"isAdmin"`,
+		`"isLeader"`,
+		`"isManager"`,
+		`"isAppManager"`,
+		`"departmentList"`,
+	}
+	// keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
+	for i := 0; i < 160; i++ {
+		keys = append(keys, getRandStr(rand.Intn(18)+2))
+	}
+	bsList := [][]byte{}
+	for _, k := range keys {
+		bsList = append(bsList, []byte(k))
+	}
+
+	lens := []int{8, 16, 32, 64, 128}
+	lens = []int{8, 64}
+	for _, l := range lens {
+		name := fmt.Sprintf("getPivotMask-%d", l)
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				getPivotMask(bsList[:l])
+			}
+			b.StopTimer()
+			b.SetBytes(int64(b.N))
+		})
+	}
+}
+
+func Test_divide(t *testing.T) {
+	keys := []string{
+		// `"id"`,
+		// `"name"`,
+		// `"avatar"`,
+		// `"department"`,
+		// `"email"`,
+		// `"mobile"`,
+		// `"status"`,
+		// `"employeeType"`,
+		// `"isAdmin"`,
+		`"isLeader"`,
+		`"isManager"`,
+		`"isAppManager"`,
+		`"departmentList"`,
+	}
+	// keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
+	ns := []mapNode{}
+	for _, k := range keys {
+		ns = append(ns, mapNode{
+			K: []byte(k),
+			V: &TagInfo{},
+		})
+	}
+
+	m := buildTagMap(ns)
+	t.Logf("m: %+v", m.String())
+
 }
 func Test_logicalHash(t *testing.T) {
 	bsList := [][]byte{
@@ -93,21 +254,28 @@ go build -gcflags=-m ./     2> ./gc.log
 //   */
 func Benchmark_buildMap(b *testing.B) {
 	keys := []string{
-		`"id"`,
-		`"name"`,
-		`"avatar"`,
-		`"department"`,
-		`"email"`,
-		`"mobile"`,
-		`"status"`,
-		`"employeeType"`,
-		`"isAdmin"`,
-		`"isLeader"`,
-		`"isManager"`,
-		`"isAppManager"`,
-		`"departmentList"`,
+		// `"id"`,
+		// `"name"`,
+		// `"avatar"`,
+		// `"department"`,
+		// `"email"`,
+		// `"mobile"`,
+		// `"status"`,
+		// `"employeeType"`,
+		// `"isAdmin"`,
+		// `"isLeader"`,
+		// `"isManager"`,
+		// `"isAppManager"`,
+		// `"departmentList"`,
 	}
-	keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
+	// keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
+	for i := 0; i < 16; i++ {
+		keys = append(keys, getRandStr(rand.Intn(18)+2))
+	}
+	bsList := [][]byte{}
+	for _, k := range keys {
+		bsList = append(bsList, []byte(k))
+	}
 	ns := []mapNode{}
 	for _, k := range keys {
 		ns = append(ns, mapNode{

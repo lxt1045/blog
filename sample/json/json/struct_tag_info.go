@@ -50,7 +50,7 @@ func (t *TagInfo) buildChildMap() {
 	t.MChildren = buildTagMap(nodes)
 }
 func (t *TagInfo) GetChild(key []byte) *TagInfo {
-	return t.Children[string(key)]
+	// return t.Children[string(key)]
 	return t.MChildren.GetV(key)
 }
 func (t *TagInfo) AddChild(c *TagInfo) (err error) {

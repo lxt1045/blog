@@ -168,7 +168,7 @@ func BenchmarkMyUnmarshal1(b *testing.B) {
 	})
 }
 
-func init1() {
+func init() {
 	bs := []byte(j0)
 	d := J0{}
 	err := Unmarshal(bs, &d)

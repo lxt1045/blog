@@ -1,6 +1,7 @@
 package json
 
 import (
+	"fmt"
 	"log"
 	"sort"
 )
@@ -37,96 +38,10 @@ func getHashFuncU64(idxs []int) (f func(key []byte) (idx int)) {
 	return
 }
 
-type iN struct {
-	iByte int // []byte的偏移量
-	mask  byte
-	iBit  int
-}
-
-func getHashParam(idxN []iN) (idxNTable []int16) {
-	// 可以提前聚合成 byte ，然后打表合并 bit 增速最高 8 倍？
-	idxNTable = make([]int16, 1024) //idxN[len(idxN)-1].iByte+1)
-	j := int16(0)
-	for i := range idxNTable {
-		if int(j) == len(idxN) || idxN[j].iByte >= i {
-			idxNTable[i] = j
-			continue
-		}
-		for int(j) < len(idxN) {
-			if int(j) == len(idxN) || idxN[j].iByte >= i {
-				break
-			}
-			j++
-		}
-		idxNTable[i] = j
-	}
-	return
-}
-
-func hash2(key []byte, idxNTable []int16, idxN []iN) (idx int) {
-	n := idxNTable[len(key)]
-	for _, x := range idxN[:n] {
-		if (x.mask & key[x.iByte]) == x.mask {
-			idx |= x.iBit
-		}
-		// TODO
-		/*
-			可以改进，用 uint64 来匹配：
-			flag := 0b0010010010
-			if (in & flag) ^ flag == 0 {
-				// 表示匹配
-			}
-		*/
-	}
-	return
-}
-
-func hash(key []byte, idxNTable []int16, idxN []iN) (idx int) {
-	for _, x := range idxN {
-		if x.iByte >= len(key) {
-			break
-		}
-		if (x.mask & key[x.iByte]) == x.mask {
-			idx |= x.iBit
-		}
-	}
-	return
-}
-
-func logicalHash(bsList [][]byte) (idxN []iN, idxRet []int) {
-	var idxsRet [][]int
-	if len(bsList) <= 1 {
-		idxN = []iN{{
-			iByte: 0, // key 的偏移量
-			mask:  1,
-			iBit:  1,
-		}}
-		return
-	}
-
-	idxsRet = divide(bsList)
-	log.Printf("---idxsRet---:%+v", idxsRet)
-	// PrintKeys(bsList)
-	idxRet = idxsRet[0]
-
-	idxN = make([]iN, len(idxRet))
-	for i, x := range idxRet {
-		iByte := x / 8 // key 的偏移量
-		iBit := x % 8  // byte 内部偏移量
-		idxN[i] = iN{
-			iByte: iByte, // key 的偏移量
-			mask:  1 << (7 - iBit),
-			iBit:  1 << i,
-		}
-	}
-	sort.Slice(idxN, func(i, j int) bool { return idxN[i].iByte < idxN[j].iByte })
-	return
-}
-
 // 只能通过贪心算法加快计算速度，拿个不是那么好的结果
 // 用 4bit 或 8 bit 来搞，一次能分的类型最多的获胜
 // 从 1bit 追到 8bit(64bit)，只为找能能对半分的
-func divide(bsList [][]byte) (idxsRet [][]int) {
+func divide2(bsList [][]byte) (idxsRet [][]int) {
 	// PrintKeys(bsList)
 	if len(bsList) == 1 {
 		return [][]int{{}}
@@ -216,8 +131,8 @@ func divide(bsList [][]byte) (idxsRet [][]int) {
 				bsRight = append(bsRight, bs)
 			}
 		}
-		idxListL := divide(bsLeft)
-		idxListR := divide(bsRight)
+		idxListL := divide2(bsLeft)
+		idxListR := divide2(bsRight)
 		// idxsRet1 := [][]int{}
 		for _, idxL := range idxListL {
 			for _, idxR := range idxListR {
@@ -272,6 +187,61 @@ func divide(bsList [][]byte) (idxsRet [][]int) {
 	return
 }
 
+func divide(bsList [][]byte) (iNs []iN) {
+	// PrintKeys(bsList)
+	if len(bsList) <= 1 {
+		return
+	}
+
+	iMask := getPivot(bsList)
+
+	if len(bsList) == 2 {
+		return []iN{{
+			iByte: iMask.iByte,
+			mask:  iMask.mask,
+		}}
+	}
+
+	// 先按比特位分成两拨
+	bsLeft := make([][]byte, 0, uint32(len(bsList))-iMask.nMask)
+	bsRight := make([][]byte, 0, iMask.nMask)
+	for _, bs := range bsList {
+		if len(bs) <= iMask.iByte {
+			bsLeft = append(bsLeft, bs)
+			continue
+		}
+		b := bs[iMask.iByte]
+		if (iMask.mask & b) == iMask.mask {
+			bsRight = append(bsRight, bs)
+		} else {
+			bsLeft = append(bsLeft, bs)
+		}
+	}
+	if len(bsLeft) == 0 || len(bsLeft) == 0 {
+		panic("len(bsLeft) == 0 || len(bsLeft) == 0")
+	}
+	idxL := divide(bsLeft) // L 和 R 的联动，不联动的话，会造成 空间指数级增大
+	idxR := divide(bsRight)
+	idx := idxL[:len(idxL):len(idxL)]
+	for _, i := range idxR {
+		bFound := false
+		for _, j := range idxL {
+			if j.iByte == i.iByte && j.mask == i.mask {
+				bFound = true
+				break
+			}
+		}
+		if !bFound {
+			idx = append(idx, i)
+		}
+	}
+	iNs = append(idx, iN{
+		iByte: iMask.iByte,
+		mask:  iMask.mask,
+	})
+	return
+}
+
 //根据状态数 返回 bit 数
 func getNBit(nStatus int) (nBit int) {
 	x := 2
@@ -288,4 +258,98 @@ func getNLen(nBit int) (nStatus int) {
 		nStatus *= 2
 	}
 	return
+}
+
+var allMask = func() (allMask []byte) {
+	allMask = make([]byte, 0, 256)
+	seed := []byte{1, 2, 4, 8, 16, 32, 64, 128}
+
+	// 1bit 的
+	allMask = append(allMask, seed...)
+
+	// 2. 2bit 的
+	for i, a := range seed {
+		for _, b := range seed[i+1:] {
+			allMask = append(allMask, a+b)
+		}
+	}
+
+	// 3bit 的
+	for i, a := range seed {
+		for j, b := range seed[i+1:] {
+			for _, c := range seed[i+j+2:] {
+				allMask = append(allMask, a+b+c)
+			}
+		}
+	}
+
+	// 4bit 的
+	for i, a := range seed {
+		for j, b := range seed[i+1:] {
+			for k, c := range seed[i+j+2:] {
+				for _, d := range seed[i+j+k+3:] {
+					allMask = append(allMask, a+b+c+d)
+				}
+			}
+		}
+	}
+	// return
+	// 5bit 的
+	for i, a := range seed {
+		for j, b := range seed[i+1:] {
+			for k, c := range seed[i+j+2:] {
+				for l, d := range seed[i+j+k+3:] {
+					for _, e := range seed[i+j+k+l+4:] {
+						allMask = append(allMask, a+b+c+d+e)
+					}
+				}
+			}
+		}
+	}
+
+	// 6bit 的
+	for i, a := range seed {
+		for j, b := range seed[i+1:] {
+			for k, c := range seed[i+j+2:] {
+				for l, d := range seed[i+j+k+3:] {
+					for m, e := range seed[i+j+k+l+4:] {
+						for _, f := range seed[i+j+k+l+m+5:] {
+							allMask = append(allMask, a+b+c+d+e+f)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 7bit 的
+	allMask = append(allMask, []byte{
+		0b11111110, 0b11111101, 0b11111011, 0b11110111, 0b11101111,
+		0b11011111, 0b10111111, 0b01111111, 0b11111111,
+	}...)
+
+	m := make(map[byte]struct{})
+	for _, b := range allMask {
+		if _, ok := m[b]; ok {
+			panic(fmt.Sprintf("%b already exist", b))
+		}
+		m[b] = struct{}{}
+	}
+
+	for i := 1; i < 0xff; i++ {
+		b := byte(i)
+		if _, ok := m[b]; !ok {
+			allMask = append(allMask, b)
+			panic(fmt.Sprintf("%b not exist", b))
+		}
+	}
+	return
+}()
+
+func PrintMask(allMask []byte) {
+	str := "PrintMask:\n"
+	for _, b := range allMask {
+		str += fmt.Sprintf("%3d:%08b\n", b, b)
+	}
+	log.Printf("allMask:\n%s", str)
 }
