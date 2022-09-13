@@ -11,17 +11,18 @@ import (
 
 //TagInfo 拥有tag的struct的成员的解析结果
 type TagInfo struct {
-	Offset       uintptr //偏移量
-	Type         reflect.Type
-	BaseKind     reflect.Kind // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
-	JSONType     Type         // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
-	TagName      string       //
-	StringTag    bool         // `json:"field,string"`: 此情形下,需要把struct的int转成json的string
-	OmitemptyTag bool         //  `json:"some_field,omitempty"`
-	Anonymous    bool
-	Children     map[string]*TagInfo
-	ChildList    []*TagInfo // 遍历的顺序和速度
-	MChildren    tagMap
+	Offset          uintptr //偏移量
+	Type            reflect.Type
+	BaseKind        reflect.Kind // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
+	JSONType        Type         // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
+	TagName         string       //
+	StringTag       bool         // `json:"field,string"`: 此情形下,需要把struct的int转成json的string
+	OmitemptyTag    bool         //  `json:"some_field,omitempty"`
+	Anonymous       bool
+	Children        map[string]*TagInfo
+	ChildList       []*TagInfo // 遍历的顺序和速度
+	MChildren       tagMap
+	MChildrenEnable bool
 
 	fSet setFunc
 	fGet getFunc
@@ -47,10 +48,16 @@ func (t *TagInfo) buildChildMap() {
 			V: child,
 		})
 	}
-	t.MChildren = buildTagMap(nodes)
+	if len(t.ChildList) <= 128 {
+		t.MChildrenEnable = true
+		t.MChildren = buildTagMap(nodes)
+	}
 }
 func (t *TagInfo) GetChild(key []byte) *TagInfo {
 	// return t.Children[string(key)]
+	if !t.MChildrenEnable {
+		return t.Children[string(key)]
+	}
 	return t.MChildren.GetV(key)
 }
 func (t *TagInfo) AddChild(c *TagInfo) (err error) {
@@ -331,12 +338,6 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 		return
 	}
 	typ := vi.Type()
-	// n, err := LoadTagNode(typ)
-	// if err != nil {
-	// 	return
-	// }
-
-	// eface := unpackEface(in)
 	eface := UnpackEface(in)
 	goType := PtrElem(eface.Type)
 	n, err := LoadTagNode(typ, goType.Hash)

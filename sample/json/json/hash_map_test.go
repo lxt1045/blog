@@ -6,9 +6,8 @@ import (
 	"testing"
 )
 
-const encodeStd = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-
 func getRandStr(l int) (str string) {
+	const encodeStd = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	bs := make([]byte, l)
 	for i := 0; i < l; i++ {
 		idx := rand.Intn(len(encodeStd))
@@ -16,32 +15,10 @@ func getRandStr(l int) (str string) {
 	}
 	return string(bs)
 }
-func Test_append2(t *testing.T) {
-	xs := []int{1, 2, 3, 4, 5}
-	i := 4
-	xs = append(xs[:i+1], xs[i:len(xs)-1]...)
-	xs[i] = 88
-	t.Logf("%+v", xs)
-}
 
 func Test_getPivotMask(t *testing.T) {
-	keys := []string{
-		`"id"`,
-		`"name"`,
-		`"avatar"`,
-		`"department"`,
-		`"email"`,
-		`"mobile"`,
-		`"status"`,
-		`"employeeType"`,
-		`"isAdmin"`,
-		`"isLeader"`,
-		`"isManager"`,
-		`"isAppManager"`,
-		`"departmentList"`,
-	}
-	// keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
-	for i := 0; i < 160; i++ {
+	keys := []string{}
+	for i := 0; i < 256; i++ {
 		keys = append(keys, getRandStr(rand.Intn(18)+2))
 	}
 	bsList := [][]byte{}
@@ -49,7 +26,7 @@ func Test_getPivotMask(t *testing.T) {
 		bsList = append(bsList, []byte(k))
 	}
 
-	lens := []int{8, 16, 32, 64, 128}
+	lens := []int{8, 16, 32, 64, 128, 256}
 	for _, l := range lens {
 		name := fmt.Sprintf("getPivotMask-%d", l)
 		t.Run(name, func(t *testing.T) {

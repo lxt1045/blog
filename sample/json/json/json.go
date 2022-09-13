@@ -205,11 +205,15 @@ func parseInterface(stream []byte, p *interface{}) (i int) {
 		i++
 		*p = m
 		return
+	case '}':
+		return
 	case '[': // slice
 		var s []interface{}
 		s, i = parseSliceInterface(stream[1:])
 		i++
 		*p = s
+		return
+	case ']':
 		return
 	case 'n':
 		if stream[i+1] != 'u' || stream[i+2] != 'l' || stream[i+3] != 'l' {

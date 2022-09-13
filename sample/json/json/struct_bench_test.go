@@ -532,6 +532,70 @@ func BenchmarkUnmarshalStruct1xMap(b *testing.B) {
 		})
 	}
 }
+func BenchmarkUnmarshalStruct1x1(b *testing.B) {
+	bs := []byte(TwitterJson)
+	data := string(bs)
+	d := TwitterStruct{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	_, err = json.Marshal(&d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	runs := []struct {
+		name string
+		f    func()
+	}{
+		{"lxt-st",
+			func() {
+				m := J0{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				m := J0{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{"lxt-st",
+			func() {
+				m := J0{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				m := J0{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+	}
+
+	for _, r := range runs {
+		b.Run(r.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				r.f()
+			}
+		})
+	}
+}
 
 var pp unsafe.Pointer
 var pm *map[string]interface{}
