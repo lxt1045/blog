@@ -3,6 +3,7 @@ package json
 import (
 	"bytes"
 	"errors"
+	"math"
 	"reflect"
 	"strconv"
 	"unicode/utf16"
@@ -52,27 +53,22 @@ func bsToStr(bs []byte) string {
 }
 
 // 解析 {}
+// func parseObj(sts status, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 	n, nB := 0, 0
 	key := []byte{}
 	i += trimSpace(stream[i:])
 	for {
-		// 解析 key
-		// key, n = parseStr(stream[i:])
+		// 解析 key: key不需要转义，因为在解析 struct 的时候会提供转义和不转义两种形式
 		{
-			//TODO: nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
-			nextSlashIdx := -1
-
 			// 手动内联
+			start := i
 			n = bytes.IndexByte(stream[i+1:], '"')
-			if n >= 0 && nextSlashIdx <= 0 {
-				n += 2
-				key = stream[i : i+n]
-			} else {
-				key, n = parseUnescapeStr(stream[i:], nextSlashIdx, n)
+			if n >= 0 {
+				i += n + 2
+				key = stream[start:i]
 			}
 		}
-		i += n
 		// 解析 冒号
 		n, nB = parseByte(stream[i:], ':')
 		i += n
@@ -113,9 +109,16 @@ func parseMapInterface(stream []byte) (m map[string]interface{}, i int) {
 	// m = make(map[string]interface{})
 	for {
 		i += trimSpace(stream[i:])
-		key, n = parseStr(stream[i:])
-		key = key[1 : len(key)-1]
-		i += n
+		// key, n, _ = parseStr(stream[i:], math.MaxInt)
+		{
+			i++
+			n = bytes.IndexByte(stream[i:], '"')
+			if n >= 0 {
+				n += i
+				key = stream[i:n]
+				i = n + 1
+			}
+		}
 		n, nB = parseByte(stream[i:], ':')
 		if nB != 1 {
 			panic(lxterrs.New(ErrStream(stream[i:])))
@@ -240,7 +243,7 @@ func parseInterface(stream []byte, p *interface{}) (i int) {
 		return
 	case '"':
 		var raw []byte
-		raw, i = parseStr(stream)
+		raw, i, _ = parseStr(stream, math.MaxInt)
 		raw = raw[1 : len(raw)-1]
 		pStr := strCache.Get()
 		*pStr = bytesString(raw)
@@ -251,9 +254,14 @@ func parseInterface(stream []byte, p *interface{}) (i int) {
 	return
 }
 
+type status struct {
+	idxUnescape int
+}
+
 //解析 obj: {}, 或 []
 func parseRoot(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (err error) {
 	i := 1
+	// sts := status{}
 	if stream[0] == '{' {
 		parseObj(stream[i:], pObj, tag)
 		return
@@ -297,49 +305,70 @@ func parseStr2(stream []byte) (raw []byte, i int) {
 	return raw, i + 1
 }
 
-func parseStr(stream []byte) (raw []byte, i int) {
-	nextSlashIdx := -1 // nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
-
+func parseStr(stream []byte, nextSlashIdx int) (raw []byte, i, nextSlashIdxOut int) {
 	// TODO: 专业抄，把 '"' 提前准备好，少了个几步，也能快很多了
 	i = bytes.IndexByte(stream[1:], '"')
-	if i >= 0 && nextSlashIdx <= 0 {
+	if i >= 0 && nextSlashIdx > i {
 		i += 2
 		raw = stream[:i]
 		return
 	}
 
-	return parseUnescapeStr(stream, nextSlashIdx, i)
+	return parseUnescapeStr(stream, i+1, nextSlashIdx)
 }
-func parseUnescapeStr(stream []byte, nextSlashIdx, nextQuotesIdx int) (raw []byte, i int) {
+
+// 可以可以在 struct 那边写两个 key，解析的时候就可以不用管了
+// stream:`"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"`
+func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdx int) (raw []byte, i, nextSlashIdxOut int) {
+	if nextSlashIdx < 0 {
+		nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
+		if nextSlashIdx < 0 {
+			nextSlashIdx = math.MaxInt
+		} else {
+			nextSlashIdx++
+		}
+
+	}
 	if nextQuotesIdx < 0 {
 		panic(string(stream[i:]))
 	}
 	if nextSlashIdx > nextQuotesIdx {
-		i = nextQuotesIdx + 2
+		i = nextQuotesIdx + 1
 		raw = stream[:i]
 		return
 	}
-	lastIdx := 1
-	i = 1
+	lastIdx := 0
 	for {
+		i = nextSlashIdx
 		word, wordSize := unescapeStr(stream[i:])
-		if len(raw) <= 0 {
-			raw = stream[i : nextSlashIdx+i : nextSlashIdx+i] //新建 []byte 避免修改员 stream
-			// raw = stream[1:i] //新建 []byte 避免修改员 stream
+		if len(raw) == 0 {
+			raw = stream[0:i:i] //新建 []byte 避免修改员 stream
 		} else if lastIdx < i {
-			raw = append(raw, stream[lastIdx:nextSlashIdx+i]...)
+			raw = append(raw, stream[lastIdx:i]...)
 		}
 		raw = append(raw, word...)
 		i += wordSize
 		lastIdx = i
+		if word[0] == '"' {
+			nextQuotesIdx = bytes.IndexByte(stream[i:], '"')
+			if nextQuotesIdx < 0 {
+				panic(string(stream[i:]))
+			}
+			nextQuotesIdx += i
+		}
 
 		nextSlashIdx = bytes.IndexByte(stream[i:], '\\')
-		if nextSlashIdx < 0 || nextSlashIdx+i > nextQuotesIdx+1 {
+		if nextSlashIdx < 0 {
+			nextSlashIdx = math.MaxInt
+			break
+		}
+		nextSlashIdx += i
+		if nextSlashIdx > nextQuotesIdx {
 			break
 		}
 	}
-	raw = append(raw, stream[lastIdx:1+nextQuotesIdx]...)
-	return raw, nextQuotesIdx + 1 + 1
+	raw = append(raw, stream[lastIdx:nextQuotesIdx+1]...)
+	return raw, nextQuotesIdx + 1, nextSlashIdx
 }
 
 // unescape unescapes a string
@@ -390,11 +419,7 @@ func unescapeStr(raw []byte) (word []byte, size int) {
 		n := utf8.EncodeRune(word, r0)
 		word = word[:n]
 	default:
-		l := 4
-		if l > len(raw) {
-			l = len(raw)
-		}
-		panic(errors.New("incorrect format: " + string(raw[:l])))
+		panic(errors.New("incorrect format: " + ErrStream(raw)))
 	}
 	return
 }

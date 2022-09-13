@@ -101,6 +101,11 @@ func Test_logicalHash_new(t *testing.T) {
 	}
 }
 
+/*
+go test -benchmem -run=^$ -bench ^Benchmark_getPivotMask$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^Benchmark_getPivotMask$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+*/
 func Benchmark_getPivotMask(b *testing.B) {
 	keys := []string{
 		`"id"`,
@@ -127,7 +132,8 @@ func Benchmark_getPivotMask(b *testing.B) {
 	}
 
 	lens := []int{8, 16, 32, 64, 128}
-	lens = []int{8, 64}
+	lens = []int{8, 64, 128}
+	lens = []int{128}
 	for _, l := range lens {
 		name := fmt.Sprintf("getPivotMask-%d", l)
 		b.Run(name, func(b *testing.B) {

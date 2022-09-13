@@ -20,7 +20,7 @@ func TestStruct(t *testing.T) {
 		_, file = filepath.Split(file)
 		return file + ":" + strconv.Itoa(line)
 	}
-	idx := -3
+	idx := -1
 
 	datas := []struct {
 		name   string
@@ -28,7 +28,6 @@ func TestStruct(t *testing.T) {
 		target string
 		data   interface{}
 	}{
-
 		{
 			name:   "interface:" + fLine(),
 			bs:     `{"out": 11 , "struct_0": { "count":8}}`,

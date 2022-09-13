@@ -112,7 +112,7 @@ func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 				i += 2
 				raw = stream[:i]
 			} else {
-				raw, i = parseUnescapeStr(stream[i:], nextSlashIdx, i)
+				raw, i, nextSlashIdx = parseUnescapeStr(stream[i:], nextSlashIdx, i)
 			}
 		}
 		tag.fSet(pointerOffset(pObj, tag.Offset), raw[1:len(raw)-1])

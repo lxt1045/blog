@@ -105,13 +105,9 @@ func TestState(t *testing.T) {
 
 func Test_Unmarshal_1(t *testing.T) {
 	t.Run("map", func(t *testing.T) {
-		bs := []byte(j0)
-		d := J0{}
-		err := Unmarshal(bs, &d)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Log("success")
+		src := `"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"`
+		raw, i, n := parseStr([]byte(src), -1)
+		t.Logf("%s, i:%d, n:%d", string(raw), i, n)
 	})
 }
 
@@ -168,7 +164,7 @@ func BenchmarkMyUnmarshal1(b *testing.B) {
 	})
 }
 
-func init() {
+func init1() {
 	bs := []byte(j0)
 	d := J0{}
 	err := Unmarshal(bs, &d)
@@ -248,15 +244,10 @@ func BenchmarkMyUnmarshal3(b *testing.B) {
 
 /*
 go test -benchmem -run=^$ -benchtime=10000000x -bench "^BenchmarkUnMarshalStruct$"
-BenchmarkUnMarshalStruct/lxt-st-12              10000000               125.9 ns/op      79433380.66 MB/s               0 B/op          0 allocs/op
-BenchmarkUnMarshalStruct/sonic-st-12            10000000               154.2 ns/op      64854219.52 MB/s               0 B/op          0 allocs/op
-BenchmarkUnMarshalStruct/lxt-st#01-12           10000000               126.3 ns/op      79182478.47 MB/s               0 B/op          0 allocs/op
-BenchmarkUnMarshalStruct/sonic-st#01-12         10000000               155.4 ns/op      64370421.06 MB/s               0 B/op          0 allocs/op
-
-BenchmarkUnMarshalStruct/lxt-st-12              10000000               163.7 ns/op      61100999.96 MB/s               0 B/op          0 allocs/op
-BenchmarkUnMarshalStruct/sonic-st-12            10000000               212.2 ns/op      47131755.76 MB/s               0 B/op          0 allocs/op
-BenchmarkUnMarshalStruct/lxt-st#01-12           10000000               126.5 ns/op      79044262.23 MB/s               0 B/op          0 allocs/op
-BenchmarkUnMarshalStruct/sonic-st#01-12         10000000               174.9 ns/op      57162671.85 MB/s               0 B/op          0 allocs/op
+BenchmarkUnMarshalStruct/lxt-st-12              10000000               129.2 ns/op      77375851.24 MB/s               0 B/op          0 allocs/op
+BenchmarkUnMarshalStruct/sonic-st-12            10000000               155.8 ns/op      64166301.93 MB/s               0 B/op          0 allocs/op
+BenchmarkUnMarshalStruct/lxt-st#01-12           10000000               127.5 ns/op      78409245.03 MB/s               0 B/op          0 allocs/op
+BenchmarkUnMarshalStruct/sonic-st#01-12         10000000               148.5 ns/op      67361422.86 MB/s               0 B/op          0 allocs/op
 */
 func BenchmarkUnMarshalStruct(b *testing.B) {
 	type Name1 struct {

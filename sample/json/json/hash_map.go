@@ -368,13 +368,13 @@ outfor:
 	for iByte := 0; iByte < lMax; iByte++ {
 		for _, mask := range allMask {
 			block := BlockNew{
-				list: make([]Block, len(bsList)),
+				list: make([]Block, len(bsList)), // escapes to heap
 			}
 			if len(blocks) > 0 {
 				copy(block.list, blocks[len(blocks)-1].list)
 			}
 
-			mBlockHit := make(map[int]*Hit) // 取款已命中 block
+			mBlockHit := make(map[int]*Hit) // 区块已命中 block
 			newBlock := 0                   // 此次循环新增的区块
 
 			for i, bs := range bsList {
@@ -385,7 +385,7 @@ outfor:
 				blockNO := block.list[i].NO // 当前 bs 的区块号码
 				blockHit := mBlockHit[blockNO]
 				if blockHit == nil {
-					mBlockHit[blockNO] = &Hit{
+					mBlockHit[blockNO] = &Hit{ // escapes to heap
 						hit:     hit,
 						blockNO: blockNO,
 						nMask:   1,
