@@ -2,17 +2,19 @@ package json
 
 import (
 	"bytes"
+	"reflect"
 	"strconv"
 	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
 )
 
-type unmFunc = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int)
+type unmFunc = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int)
 type mFunc = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte)
 
 func boolMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
+	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+		iSlash = idxSlash
 		if stream[0] == 't' && stream[i+1] == 'r' && stream[i+2] == 'u' && stream[i+3] == 'e' {
 			i = 4
 		} else if stream[0] == 'f' && stream[1] == 'a' && stream[2] == 'l' && stream[3] == 's' && stream[4] == 'e' {
@@ -50,7 +52,8 @@ func float64UnmFuncs(stream []byte) (f float64, i int) {
 }
 
 func numMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
+	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+		iSlash = idxSlash
 		for ; i < len(stream); i++ {
 			c := stream[i]
 			if spaceTable[c] || c == ']' || c == '}' || c == ',' {
@@ -67,15 +70,31 @@ func numMFuncs() (fUnm unmFunc, fM mFunc) {
 	return
 }
 
+func structMFuncsStatus1(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+	i++
+	pObj = pointerOffset(pObj, tag.Offset)
+	if tag.fSet != nil {
+		pObj = tag.fSet(pObj, stream[i:])
+	}
+	n, iSlash := parseObj(idxSlash-i, stream[i:], pObj, tag)
+	i += n
+	return
+}
+
 func structMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
-		i++
+	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			return
+		}
 		pObj = pointerOffset(pObj, tag.Offset)
 		if tag.fSet != nil {
-			pObj = tag.fSet(pObj, stream[i:])
+			pObj = tag.fSet(pObj, stream[1:])
 		}
-		n := parseObj(stream[i:], pObj, tag)
-		i += n
+		n, iSlash := parseObj(idxSlash-1, stream[1:], pObj, tag)
+		iSlash++
+		i += n + 1
 		return
 	}
 	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
@@ -86,10 +105,20 @@ func structMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
-		i++
-		n := parseSlice(stream[i:], pObj, tag)
-		i += n
+	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			pBase := tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:])
+			// pSlice := (*[]uint8)(pBase)
+			// *pSlice = make([]uint8, 0)
+			pHeader := (*reflect.SliceHeader)(pBase)
+			pHeader.Data = uintptr(pObj)
+			return
+		}
+		n, iSlash := parseSlice(idxSlash-1, stream[1:], pObj, tag)
+		iSlash++
+		i += n + 1
 		return
 	}
 	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
@@ -100,22 +129,26 @@ func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func stringMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
-		// raw, i := parseStr(stream[:])
+	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			return
+		}
 		var raw []byte
 		{
-			nextSlashIdx := -1 // nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
-
-			// 手动内联
 			i = bytes.IndexByte(stream[1:], '"')
-			if i >= 0 && nextSlashIdx <= 0 {
-				i += 2
-				raw = stream[:i]
+			if i >= 0 && idxSlash > i+1 {
+				i++
+				raw = stream[1:i]
+				i++
+				iSlash = idxSlash
 			} else {
-				raw, i, nextSlashIdx = parseUnescapeStr(stream[i:], nextSlashIdx, i)
+				i++
+				raw, i, iSlash = parseUnescapeStr(stream, i, idxSlash)
 			}
 		}
-		tag.fSet(pointerOffset(pObj, tag.Offset), raw[1:len(raw)-1])
+		tag.fSet(pointerOffset(pObj, tag.Offset), raw)
 		return
 	}
 	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
@@ -126,11 +159,18 @@ func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func interfaceMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i int) {
+	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			return
+		}
+		iSlash = idxSlash
 		n := trimSpace(stream[i:])
 		i += n
 		iv := (*interface{})(pointerOffset(pObj, tag.Offset))
-		n = parseInterface(stream[i:], iv)
+		n, iSlash = parseInterface(idxSlash-i, stream[i:], iv)
+		idxSlash += i
 		i += n
 		// *iv = iface
 		return

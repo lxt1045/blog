@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"unsafe"
 
 	"github.com/bytedance/sonic"
+	"github.com/lxt1045/blog/sample/json/json/testdata"
 )
 
 var j = `{
@@ -164,7 +166,7 @@ func BenchmarkMyUnmarshal1(b *testing.B) {
 	})
 }
 
-func init1() {
+func init() {
 	bs := []byte(j0)
 	d := J0{}
 	err := Unmarshal(bs, &d)
@@ -240,6 +242,15 @@ func BenchmarkMyUnmarshal3(b *testing.B) {
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
+}
+
+func init() {
+	bs := []byte(testdata.TwitterJsonLarge)
+	d := testdata.TwitterStruct{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		panic(err)
+	}
 }
 
 /*
@@ -387,6 +398,9 @@ func BenchmarkUnmarshalStruct1x(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+
+	runtime.GC()
+	_ = fmt.Sprintf("d :%+v", d)
 	runs := []struct {
 		name string
 		f    func()
@@ -523,17 +537,36 @@ func BenchmarkUnmarshalStruct1xMap(b *testing.B) {
 		})
 	}
 }
-func BenchmarkUnmarshalStruct1x1(b *testing.B) {
-	bs := []byte(TwitterJson)
+
+func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
+	bs := []byte(testdata.BookData)
 	data := string(bs)
-	d := TwitterStruct{}
+	d := testdata.Book{}
 	err := Unmarshal(bs, &d)
 	if err != nil {
 		b.Fatal(err)
 	}
-	_, err = json.Marshal(&d)
+	bsOut, err := json.Marshal(&d)
 	if err != nil {
 		b.Fatal(err)
+	}
+	m := testdata.Book{}
+	sonic.UnmarshalString(data, &m)
+	runtime.GC()
+	_ = fmt.Sprintf("d :%+v", d)
+	if string(bsOut) != string(testdata.BookDataOut) {
+		str := string(bsOut)
+		str2 := string(testdata.BookDataOut)
+		for i := range str2 {
+			if str[i] != str2[i] {
+				l := len(str2)
+				if l-i > 8 {
+					l = i + 8
+				}
+				b.Logf("i:%d, c:%s,%s", i, str[i:l], str2[i:l])
+			}
+		}
+		b.Fatalf("len:%d,%d,bsOut:%s", len(str), len(str2), str)
 	}
 	runs := []struct {
 		name string
@@ -541,7 +574,7 @@ func BenchmarkUnmarshalStruct1x1(b *testing.B) {
 	}{
 		{"lxt-st",
 			func() {
-				m := J0{}
+				m := testdata.Book{}
 				err := Unmarshal(bs, &m)
 				if err != nil {
 					panic(err)
@@ -551,7 +584,7 @@ func BenchmarkUnmarshalStruct1x1(b *testing.B) {
 		{
 			"sonic-st",
 			func() {
-				m := J0{}
+				m := testdata.Book{}
 				err := sonic.UnmarshalString(data, &m)
 				if err != nil {
 					panic(err)
@@ -560,7 +593,7 @@ func BenchmarkUnmarshalStruct1x1(b *testing.B) {
 		},
 		{"lxt-st",
 			func() {
-				m := J0{}
+				m := testdata.Book{}
 				err := Unmarshal(bs, &m)
 				if err != nil {
 					panic(err)
@@ -570,7 +603,7 @@ func BenchmarkUnmarshalStruct1x1(b *testing.B) {
 		{
 			"sonic-st",
 			func() {
-				m := J0{}
+				m := testdata.Book{}
 				err := sonic.UnmarshalString(data, &m)
 				if err != nil {
 					panic(err)
@@ -586,6 +619,207 @@ func BenchmarkUnmarshalStruct1x1(b *testing.B) {
 			}
 		})
 	}
+}
+
+func BenchmarkUnmarshalStruct1x_middle(b *testing.B) {
+	bs := []byte(testdata.TwitterJson)
+	data := string(bs)
+	d := testdata.TwitterStruct{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	m := testdata.TwitterStruct{}
+	err = sonic.UnmarshalString(data, &m)
+	if err != nil {
+		b.Fatal(err)
+	}
+	runtime.GC()
+	_ = fmt.Sprintf("d :%+v", d)
+
+	bsOut, err := json.Marshal(&d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	if string(bsOut) != testdata.TwitterJsonOut {
+		str := string(bsOut)
+		for i := range str {
+			if str[i] != testdata.TwitterJsonOut[i] {
+				b.Logf("i:%d, c:%s,%s", i, str[i:i+8], testdata.TwitterJsonOut[i:i+8])
+			}
+		}
+		b.Fatalf("len:%d,%d,bsOut:%s", len(str), len(testdata.TwitterJsonOut), str)
+	}
+	runs := []struct {
+		name string
+		f    func()
+	}{
+		{"lxt-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{"lxt-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+	}
+
+	for _, r := range runs {
+		b.Run(r.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				r.f()
+			}
+		})
+	}
+}
+
+func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
+	bs := []byte(testdata.TwitterJsonLarge)
+	data := string(bs)
+	d := testdata.TwitterStruct{}
+	d2 := testdata.TwitterStruct{}
+	err := json.Unmarshal(bs, &d2)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	m := testdata.TwitterStruct{}
+	err = sonic.UnmarshalString(data, &m)
+	if err != nil {
+		panic(err)
+	}
+
+	// return
+	err = Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	runtime.GC()
+	_ = fmt.Sprintf("d :%+v", d)
+
+	// bsOut, err := json.Marshal(&d)
+	// if err != nil {
+	// 	b.Fatal(err)
+	// }
+	// _ = bsOut
+	// dGlobal = fmt.Sprintf("bsOut:%s", string(bsOut))
+	// if string(bsOut) != testdata.TwitterJsonOut {
+	// 	str := string(bsOut)
+	// 	b.Fatalf("len:%d,%d,bsOut:%s", len(str), len(testdata.TwitterJsonOut), str)
+	// 	for i := range str {
+	// 		if str[i] != testdata.TwitterJsonOut[i] {
+	// 			b.Logf("i:%d, c:%s,%s", i, str[i:i+8], testdata.TwitterJsonOut[i:i+8])
+	// 		}
+	// 	}
+	// }
+	runs := []struct {
+		name string
+		f    func()
+	}{
+		{"lxt-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{"lxt-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+	}
+
+	for _, r := range runs {
+		b.Run(r.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				r.f()
+			}
+		})
+	}
+}
+
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalLarge$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalLarge$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+//   */
+// large
+func BenchmarkMyUnmarshalLarge(b *testing.B) {
+	bs := []byte(testdata.TwitterJson)
+	d := testdata.TwitterStruct{}
+	// return
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.Run("large", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			err := Unmarshal(bs, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
 }
 
 var pp unsafe.Pointer

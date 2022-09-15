@@ -54,10 +54,15 @@ func bsToStr(bs []byte) string {
 
 // 解析 {}
 // func parseObj(sts status, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
-func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
+func parseObj(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i, iSlash int) {
+	iSlash = idxSlash
 	n, nB := 0, 0
 	key := []byte{}
 	i += trimSpace(stream[i:])
+	if stream[i] == '}' {
+		i++
+		return
+	}
 	for {
 		// 解析 key: key不需要转义，因为在解析 struct 的时候会提供转义和不转义两种形式
 		{
@@ -76,16 +81,15 @@ func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
 		// 解析 value
-		var son *TagInfo
-		if tag != nil {
-			// son = tag.Children[string(key)]
-			son = tag.GetChild(key)
-		}
+		son := tag.GetChild(key)
+
 		if son != nil {
-			n = son.fUnm(pObj, stream[i:], son)
+			n, iSlash = son.fUnm(iSlash-i, pObj, stream[i:], son)
+			iSlash += i
 		} else {
 			var iface interface{}
-			n = parseInterface(stream[i:], &iface)
+			n, iSlash = parseInterface(iSlash-i, stream[i:], &iface)
+			iSlash += i
 		}
 		i += n
 		// 解析 逗号
@@ -101,7 +105,8 @@ func parseObj(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 	}
 }
 
-func parseMapInterface(stream []byte) (m map[string]interface{}, i int) {
+func parseMapInterface(idxSlash int, stream []byte) (m map[string]interface{}, i, iSlash int) {
+	iSlash = idxSlash
 	n, nB := 0, 0
 	key := []byte{}
 	m = *mapCache.Get() //map 和 interface 一起获取，合并两次损耗为一次
@@ -109,7 +114,6 @@ func parseMapInterface(stream []byte) (m map[string]interface{}, i int) {
 	// m = make(map[string]interface{})
 	for {
 		i += trimSpace(stream[i:])
-		// key, n, _ = parseStr(stream[i:], math.MaxInt)
 		{
 			i++
 			n = bytes.IndexByte(stream[i:], '"')
@@ -124,7 +128,8 @@ func parseMapInterface(stream []byte) (m map[string]interface{}, i int) {
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
 		i += n
-		n = parseInterface(stream[i:], value)
+		n, iSlash = parseInterface(iSlash-i, stream[i:], value)
+		iSlash += i
 		i += n
 		m[string(key)] = *value
 		n, nB = parseByte(stream[i:], ',')
@@ -139,13 +144,15 @@ func parseMapInterface(stream []byte) (m map[string]interface{}, i int) {
 	}
 }
 
-func parseSliceInterface(stream []byte) (s []interface{}, i int) {
+func parseSliceInterface(idxSlash int, stream []byte) (s []interface{}, i, iSlash int) {
+	iSlash = idxSlash
 	i = trimSpace(stream[i:])
 	var value interface{}
 	// pS := <-chSlice
 	// s = *pS.(*[]interface{})
 	for n, nB := 0, 0; ; {
-		n = parseInterface(stream[i:], &value)
+		n, iSlash = parseInterface(iSlash-i, stream[i:], &value)
+		iSlash += i
 		i += n
 		s = append(s, value)
 		n, nB = parseByte(stream[i:], ',')
@@ -159,25 +166,62 @@ func parseSliceInterface(stream []byte) (s []interface{}, i int) {
 		}
 	}
 }
-func parseSlice(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
+func parseSlice(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i, iSlash int) {
+	iSlash = idxSlash
 	i = trimSpace(stream[i:])
+	if stream[i] == ']' {
+		i++
+		pBase := tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:])
+		// pSlice := (*[]uint8)(pBase)
+		// *pSlice = make([]uint8, 0)
+		pHeader := (*reflect.SliceHeader)(pBase)
+		pHeader.Data = uintptr(pObj)
+		return
+	}
 	pBase := tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:])
 	son := tag.ChildList[0]
 	size := int(son.Type.Size())
-	pSlice := (*[]uint8)(pBase)
+	// size := (int(son.Type.Size()) + int(unsafe.Sizeof(&[]uint8{1}[0])) - 1) / int(unsafe.Sizeof((*uint8)(nil)))
+	pSlice := (*[]uint8)(pBase) // 此处会被 GC 回收，因为申请的时候没有指示包含指针，所以不会被 GC 标志含有指针
 	pHeader := (*reflect.SliceHeader)(pBase)
 	for n, nB := 0, 0; ; {
 		if pHeader.Len+size >= pHeader.Cap {
-			*pSlice = append(*pSlice, make([]uint8, size)...)
+			// *pSlice = append(*pSlice, make([]uint8, size)...) // 此处会被 GC 回收，因为申请的时候没有指示包含指针，所以不会被 GC 标志含有指针
+			// 只能用 reflect.MakeSlice
+			l := pHeader.Len / size
+			c := l * 2
+			if l == 0 {
+				c = 4
+			}
+			v := reflect.MakeSlice(tag.BaseType, l, c)
+			p := reflectValueToPointer(&v)
+			pS := (*[]uint8)(p)
+			// pHeader = (*reflect.SliceHeader)(p)
+			// pHeader.Len = (pHeader.Len + 1) * size
+			// pHeader.Cap = pHeader.Cap * size
+			// copy(*pSlice, *pS)
+
+			pH := (*reflect.SliceHeader)(p)
+			pH.Len = pH.Len * size
+			pH.Cap = pH.Cap * size
+			copy(*pS, *pSlice)
+
+			pHeader.Len += size
+			pHeader.Data = pH.Data
 		} else {
 			pHeader.Len += size
 		}
 		p := pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len-size))
 		if son != nil && son.fUnm != nil {
-			n = son.fUnm(p, stream[i:], son)
+			n, iSlash = son.fUnm(iSlash-i, p, stream[i:], son)
+			iSlash += i
+			if n == 0 {
+				pHeader.Len -= size
+			}
 		} else {
 			var iface interface{}
-			n = parseInterface(stream[i:], &iface)
+			n, iSlash = parseInterface(iSlash-i, stream[i:], &iface)
+			iSlash += i
 		}
 		i += n
 		n, nB = parseByte(stream[i:], ',')
@@ -194,7 +238,8 @@ func parseSlice(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
 }
 
 // key 后面的单元: Num, str, bool, slice, obj, null
-func parseInterface(stream []byte, p *interface{}) (i int) {
+func parseInterface(idxSlash int, stream []byte, p *interface{}) (i, iSlash int) {
+	iSlash = idxSlash
 	// i = trimSpace(stream)
 	switch stream[0] {
 	default: // num
@@ -204,7 +249,8 @@ func parseInterface(stream []byte, p *interface{}) (i int) {
 		return
 	case '{': // obj
 		var m map[string]interface{}
-		m, i = parseMapInterface(stream[1:])
+		m, i, iSlash = parseMapInterface(iSlash-1, stream[1:])
+		iSlash++
 		i++
 		*p = m
 		return
@@ -212,7 +258,8 @@ func parseInterface(stream []byte, p *interface{}) (i int) {
 		return
 	case '[': // slice
 		var s []interface{}
-		s, i = parseSliceInterface(stream[1:])
+		s, i, iSlash = parseSliceInterface(iSlash-1, stream[1:])
+		iSlash++
 		i++
 		*p = s
 		return
@@ -243,8 +290,8 @@ func parseInterface(stream []byte, p *interface{}) (i int) {
 		return
 	case '"':
 		var raw []byte
-		raw, i, _ = parseStr(stream, math.MaxInt)
-		raw = raw[1 : len(raw)-1]
+		//
+		raw, i, iSlash = parseStr(stream, iSlash)
 		pStr := strCache.Get()
 		*pStr = bytesString(raw)
 		*p = pStr
@@ -260,16 +307,17 @@ type status struct {
 
 //解析 obj: {}, 或 []
 func parseRoot(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (err error) {
-	i := 1
+	idxSlash := bytes.IndexByte(stream[1:], '\\')
+	if idxSlash < 0 {
+		idxSlash = math.MaxInt
+	}
 	// sts := status{}
 	if stream[0] == '{' {
-		parseObj(stream[i:], pObj, tag)
+		parseObj(idxSlash, stream[1:], pObj, tag)
 		return
 	}
 	if stream[0] == '[' {
-		i++
-		n := parseSlice(stream[i:], pObj, tag)
-		i += n
+		parseSlice(idxSlash, stream[1:], pObj, tag)
 		return
 	}
 	return
@@ -308,13 +356,15 @@ func parseStr2(stream []byte) (raw []byte, i int) {
 func parseStr(stream []byte, nextSlashIdx int) (raw []byte, i, nextSlashIdxOut int) {
 	// TODO: 专业抄，把 '"' 提前准备好，少了个几步，也能快很多了
 	i = bytes.IndexByte(stream[1:], '"')
-	if i >= 0 && nextSlashIdx > i {
-		i += 2
-		raw = stream[:i]
+	if i >= 0 && nextSlashIdx > i+1 {
+		i++
+		raw = stream[1:i]
+		i++
+		nextSlashIdxOut = nextSlashIdx
 		return
 	}
-
-	return parseUnescapeStr(stream, i+1, nextSlashIdx)
+	i++
+	return parseUnescapeStr(stream, i, nextSlashIdx)
 }
 
 // 可以可以在 struct 那边写两个 key，解析的时候就可以不用管了
@@ -342,7 +392,7 @@ func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdx int) (raw []byt
 		i = nextSlashIdx
 		word, wordSize := unescapeStr(stream[i:])
 		if len(raw) == 0 {
-			raw = stream[0:i:i] //新建 []byte 避免修改员 stream
+			raw = stream[1:i:i] //新建 []byte 避免修改员 stream
 		} else if lastIdx < i {
 			raw = append(raw, stream[lastIdx:i]...)
 		}
@@ -367,7 +417,7 @@ func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdx int) (raw []byt
 			break
 		}
 	}
-	raw = append(raw, stream[lastIdx:nextQuotesIdx+1]...)
+	raw = append(raw, stream[lastIdx:nextQuotesIdx]...)
 	return raw, nextQuotesIdx + 1, nextSlashIdx
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
@@ -13,6 +14,7 @@ import (
 type TagInfo struct {
 	Offset          uintptr //偏移量
 	Type            reflect.Type
+	BaseType        reflect.Type
 	BaseKind        reflect.Kind // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
 	JSONType        Type         // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
 	TagName         string       //
@@ -27,8 +29,12 @@ type TagInfo struct {
 	fSet setFunc
 	fGet getFunc
 
-	fUnm unmFunc
-	fM   mFunc
+	fUnm   unmFunc
+	fM     mFunc
+	hasPtr bool // TODO： 是否有指针，如果没有指针，则不需要用 reflect.New reflect.MakeSlice,可以更快速的分配空间
+	// 预分配空间，针对指针，切片（数组）可以直接拿来用
+	// 根据 slice 的大小建立不同的 sync.pool 以供直接使用：4,8,16,32,64,128
+	Pool []sync.Pool
 }
 
 func (p *TagInfo) cacheKey() (k string) {
@@ -146,6 +152,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			ti.fSet, ti.fGet = bytesFuncs(ptrDeep)
 		} else {
 			ti.JSONType = Slice
+			ti.BaseType = baseType
 			sliceType := baseType.Elem()
 			son := &TagInfo{
 				TagName: `"son"`,
@@ -160,6 +167,30 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 				return lxterrs.Wrap(err, "Struct")
 			}
 			ti.fSet, ti.fGet = sliceFuncs(ptrDeep)
+
+			if ptrDeep > 0 || son.hasPtr {
+				ti.hasPtr = true
+			}
+			if !son.hasPtr {
+			} else {
+			}
+			ti.Pool = []sync.Pool{
+				0: {New: func() (s any) {
+					v := reflect.MakeSlice(ti.BaseType, 0, 4)
+					p := reflectValueToPointer(&v)
+					return p
+				}},
+				1: {New: func() (s any) {
+					v := reflect.MakeSlice(ti.BaseType, 4, 8)
+					p := reflectValueToPointer(&v)
+					return p
+				}},
+				2: {New: func() (s any) {
+					v := reflect.MakeSlice(ti.BaseType, 4, 32)
+					p := reflectValueToPointer(&v)
+					return p
+				}},
+			}
 		}
 	case reflect.Struct:
 		ti.fUnm, ti.fM = structMFuncs()
@@ -239,6 +270,7 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool) (ti *TagInfo, err err
 		field := typIn.Field(i)
 		son := &TagInfo{
 			Type:      field.Type,
+			BaseType:  field.Type,
 			TagName:   `"` + field.Name + `"`,
 			Offset:    field.Offset,
 			BaseKind:  field.Type.Kind(),
@@ -317,7 +349,7 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 			err = fmt.Errorf("json must start with '{' or '[', %s", ErrStream(bs[i:]))
 			return
 		}
-		m, _ := parseMapInterface(bs[i+1:])
+		m, _, _ := parseMapInterface(-1, bs[i+1:])
 		*mIn = m
 		return nil
 	}

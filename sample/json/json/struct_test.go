@@ -2,6 +2,7 @@ package json
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -28,6 +29,23 @@ func TestStruct(t *testing.T) {
 		target string
 		data   interface{}
 	}{
+		{
+			name:   "interface:" + fLine(),
+			bs:     `{"out":88,"struct_0":{"a":"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"}}`,
+			target: `{"out":88,"struct_0":{"a":"\u003ca href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\"\u003eTwitter for Mac\u003c/a\u003e"}}`,
+			data: &struct {
+				Out    int         `json:"out"`
+				Struct interface{} `json:"struct_0"`
+			}{},
+		},
+		{
+			name:   "interface:" + fLine(),
+			bs:     `{"out":"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"}`,
+			target: "{\"out\":\"\\u003ca href=\\\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\\\" rel=\\\"\\\\\\\"nofollow\\\\\\\"\\\"\\u003eTwitter for Mac\\u003c/a\\u003e\"}",
+			data: &struct {
+				Out string `json:"out"`
+			}{},
+		},
 		{
 			name:   "interface:" + fLine(),
 			bs:     `{"out": 11 , "struct_0": { "count":8}}`,
@@ -200,8 +218,11 @@ func TestStruct(t *testing.T) {
 				t.Logf("\n%s\n%s", string(d.target), string(bs))
 				// asrt.EqualValuesf(t, d.target, string(bs), d.name)
 			} else {
-				asrt.Equalf(t, d.target, string(bs), d.name)
+				asrt.Equalf(t, d.target, string(bs), fmt.Sprintf("i:%d,%s", i, d.name))
 			}
+
+			runtime.GC()
+			_ = fmt.Sprintf("d :%+v", d)
 		})
 	}
 }

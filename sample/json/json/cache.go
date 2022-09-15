@@ -27,6 +27,8 @@ import (
 	"unsafe"
 )
 
+// json.go 中有很多用完就写入 map[string] interface{} 中的，可以用 sync.pool
+
 type cache[T uintptr | uint32 | string | int, V any] struct {
 	m unsafe.Pointer
 }
