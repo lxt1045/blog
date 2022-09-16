@@ -11,10 +11,10 @@ const N = 1024
 // /*
 
 var (
-	bsCache        = NewSliceCache[[]byte](N)
-	strCache       = NewSliceCache[string](N)
-	interfaceCache = NewSliceCache[interface{}](N)
-	mapCache       = NewSliceCache[map[string]interface{}](N)
+// bsCache        = NewSliceCache[[]byte](N)
+// strCache       = NewSliceCache[string](N)
+// interfaceCache = NewSliceCache[interface{}](N)
+// mapCache       = NewSliceCache[map[string]interface{}](N)
 )
 
 type sliceCache[T any] struct {
@@ -194,8 +194,8 @@ func LoadTagNode(typ reflect.Type, hash uint32) (n *TagInfo, err error) {
 	n, ok := cacheStructTagInfo.Get(hash)
 	if ok {
 		return n, nil
-
 	}
+	// log.Printf("type:%s", typ.String())
 	ti, err := NewStructTagInfo(typ, false)
 	if err != nil {
 		return nil, err

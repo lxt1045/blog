@@ -14,6 +14,7 @@ import (
 type TagInfo struct {
 	Offset          uintptr //偏移量
 	Type            reflect.Type
+	TypeSize        int
 	BaseType        reflect.Type
 	BaseKind        reflect.Kind // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
 	JSONType        Type         // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
@@ -32,9 +33,14 @@ type TagInfo struct {
 	fUnm   unmFunc
 	fM     mFunc
 	hasPtr bool // TODO： 是否有指针，如果没有指针，则不需要用 reflect.New reflect.MakeSlice,可以更快速的分配空间
-	// 预分配空间，针对指针，切片（数组）可以直接拿来用
-	// 根据 slice 的大小建立不同的 sync.pool 以供直接使用：4,8,16,32,64,128
-	Pool []sync.Pool
+	Pool   *SlicePool
+	fMake  func(l int) unsafe.Pointer // make slice/map
+	MakeN  int
+	SPool  sync.Pool
+
+	// 学 Nginx，每个 tag 都搞一个 []type,用于集中分配，slice type还可以动态增长，
+	// 1. 通过 pool 动态分配: slice, 可以动态增长，然后截断留下未使用部分
+	// 2. 通过 动态定义的 struct:reflect.StructOf(fileIDs), 通过 reflect.New()一次性分配此次需要的所有内存
 }
 
 func (p *TagInfo) cacheKey() (k string) {
@@ -84,6 +90,7 @@ func isBytes(typ reflect.Type) bool {
 	bsType := reflect.TypeOf(&[]byte{})
 	return typ.PkgPath() == bsType.PkgPath() && typ.String() == bsType.String()
 }
+
 func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 	ptrDeep, baseType := 0, typ
 	for ; ; typ = typ.Elem() {
@@ -147,6 +154,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		ti.fUnm, ti.fM = stringMFuncs()
 	case reflect.Slice: // &[]byte; Array
 		ti.fUnm, ti.fM = sliceMFuncs()
+		ti.MakeN = 4
 		if isBytes(baseType) {
 			ti.JSONType = Bytes
 			ti.fSet, ti.fGet = bytesFuncs(ptrDeep)
@@ -155,8 +163,9 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			ti.BaseType = baseType
 			sliceType := baseType.Elem()
 			son := &TagInfo{
-				TagName: `"son"`,
-				Type:    sliceType,
+				TagName:  `"son"`,
+				Type:     sliceType,
+				TypeSize: int(sliceType.Size()),
 			}
 			err = son.setFuncs(sliceType)
 			if err != nil {
@@ -174,22 +183,13 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			if !son.hasPtr {
 			} else {
 			}
-			ti.Pool = []sync.Pool{
-				0: {New: func() (s any) {
-					v := reflect.MakeSlice(ti.BaseType, 0, 4)
-					p := reflectValueToPointer(&v)
-					return p
-				}},
-				1: {New: func() (s any) {
-					v := reflect.MakeSlice(ti.BaseType, 4, 8)
-					p := reflectValueToPointer(&v)
-					return p
-				}},
-				2: {New: func() (s any) {
-					v := reflect.MakeSlice(ti.BaseType, 4, 32)
-					p := reflectValueToPointer(&v)
-					return p
-				}},
+			ti.Pool = NewSlicePool(ti.BaseType, son.Type)
+			ti.SPool.New = func() any {
+				v := reflect.MakeSlice(ti.BaseType, 0, 1024)
+				p := reflectValueToPointer(&v)
+				pH := (*reflect.SliceHeader)(p)
+				pH.Cap = pH.Cap * int(son.Type.Size())
+				return (*[]uint8)(p)
 			}
 		}
 	case reflect.Struct:

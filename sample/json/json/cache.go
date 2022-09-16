@@ -23,6 +23,8 @@
 package json
 
 import (
+	"reflect"
+	"sync"
 	"sync/atomic"
 	"unsafe"
 )
@@ -86,6 +88,70 @@ func (c *cache[T, V]) GetOrSet(key T, load func() (v V)) (v V) {
 				break
 			}
 		}
+	}
+	return
+}
+
+//SlicePool 用于分配 Slice，避免频繁 grow
+type SlicePool struct {
+	sync.Pool
+	MakeN int
+	NewN  uint32
+	size  int
+	typ   reflect.Type
+}
+
+func (p *SlicePool) SetMakeN(cap int) {
+	atomic.StoreUint32(&p.NewN, 1)
+	if p.MakeN < cap {
+		p.MakeN = cap
+	}
+}
+
+func (s *SlicePool) Grow(pHeader *reflect.SliceHeader) {
+	l := pHeader.Cap / s.size
+	// c := l * 2 //
+	c := l + l/2
+	if c == 0 {
+		c = 4
+	}
+	s.SetMakeN(c)
+
+	v := reflect.MakeSlice(s.typ, l, c)
+	p := reflectValueToPointer(&v)
+	pH := (*reflect.SliceHeader)(p)
+	// pH.Len = pHeader.Len
+	pH.Cap = pH.Cap * s.size
+
+	// copy(*(*[]uint8)(p), *(*[]uint8)(unsafe.Pointer(pHeader)))
+	_ = append((*(*[]uint8)(unsafe.Pointer(pHeader)))[:0], *(*[]uint8)(p)...)
+
+	pHeader.Cap = pH.Cap
+	pHeader.Data = pH.Data
+}
+
+func NewSlicePool(typ, sonTyp reflect.Type) (s *SlicePool) {
+	s = &SlicePool{}
+	s.typ = typ
+	s.size = int(sonTyp.Size())
+	s.New = func() any {
+		n := s.MakeN
+		if n < 4 {
+			n = 4
+		}
+		if atomic.AddUint32(&s.NewN, 1)%4000 == 1 {
+			n := s.MakeN / 2
+			if n < 4 {
+				n = 4
+			}
+			s.MakeN = n
+		}
+		v := reflect.MakeSlice(typ, s.MakeN, s.MakeN)
+		p := reflectValueToPointer(&v)
+		pH := (*reflect.SliceHeader)(p)
+		pH.Len = pH.Len * s.size
+		pH.Cap = pH.Cap * s.size
+		return p
 	}
 	return
 }

@@ -145,6 +145,7 @@ func BenchmarkMyUnmarshal1(b *testing.B) {
 		"EN_US":"English",
 		"count":8
 	}`)
+	str := string(bs)
 	{
 		d := Name{}
 		err := Unmarshal(bs, &d)
@@ -159,7 +160,78 @@ func BenchmarkMyUnmarshal1(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			Unmarshal(bs, &d)
+			err := Unmarshal(bs, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("sonic", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := sonic.UnmarshalString(str, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+}
+
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalPoniter$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalPoniter$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+*/
+func BenchmarkMyUnmarshalPoniter(b *testing.B) {
+	type Name struct {
+		ZHCN  *string `json:"ZH_CN"`
+		ENUS  *string `json:"EN_US"`
+		Count *int    `json:"count"`
+	}
+	bs := []byte(`{
+		"ZH_CN":"chinesechinesec",
+		"EN_US":"English",
+		"count":8
+	}`)
+	str := string(bs)
+	{
+		d := Name{}
+		err := Unmarshal(bs, &d)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	name := "Unmarshal"
+	b.Run(name, func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := Unmarshal(bs, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	return
+	b.Run("sonic", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := sonic.UnmarshalString(str, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
 		}
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
@@ -242,15 +314,6 @@ func BenchmarkMyUnmarshal3(b *testing.B) {
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
-}
-
-func init() {
-	bs := []byte(testdata.TwitterJsonLarge)
-	d := testdata.TwitterStruct{}
-	err := Unmarshal(bs, &d)
-	if err != nil {
-		panic(err)
-	}
 }
 
 /*
@@ -538,6 +601,9 @@ func BenchmarkUnmarshalStruct1xMap(b *testing.B) {
 	}
 }
 
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1x_small$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+*/
 func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 	bs := []byte(testdata.BookData)
 	data := string(bs)
@@ -610,9 +676,18 @@ func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 				}
 			},
 		},
+		{"std-st",
+			func() {
+				m := testdata.Book{}
+				err := json.Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
 	}
 
-	for _, r := range runs {
+	for _, r := range runs[:] {
 		b.Run(r.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				r.f()
@@ -687,6 +762,15 @@ func BenchmarkUnmarshalStruct1x_middle(b *testing.B) {
 			func() {
 				m := testdata.TwitterStruct{}
 				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{"std-st",
+			func() {
+				m := testdata.Book{}
+				err := json.Unmarshal(bs, &m)
 				if err != nil {
 					panic(err)
 				}
@@ -784,6 +868,15 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 				}
 			},
 		},
+		{"std-st",
+			func() {
+				m := testdata.Book{}
+				err := json.Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
 	}
 
 	for _, r := range runs {
@@ -795,14 +888,26 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 	}
 }
 
+func init() {
+	bs := []byte(testdata.TwitterJsonLarge)
+	d := testdata.TwitterStruct{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		panic(err)
+	}
+	runtime.GC()
+}
+
 /*
 go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalLarge$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
 go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalLarge$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
 go tool pprof ./json.test cpu.prof
 //   */
-// large
 func BenchmarkMyUnmarshalLarge(b *testing.B) {
 	bs := []byte(testdata.TwitterJson)
+	bs = []byte(testdata.TwitterJsonLarge)
+	data := string(bs)
+	_ = data
 	d := testdata.TwitterStruct{}
 	// return
 	err := Unmarshal(bs, &d)
@@ -812,13 +917,53 @@ func BenchmarkMyUnmarshalLarge(b *testing.B) {
 	b.Run("large", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			d := testdata.TwitterStruct{}
+			// err := json.Unmarshal(bs, &d)
+			// if err != nil {
+			// 	b.Fatalf("[%d]:%v", i, err)
+			// }
 			err := Unmarshal(bs, &d)
 			if err != nil {
 				b.Fatalf("[%d]:%v", i, err)
 			}
+			// 	err := sonic.UnmarshalString(data, &m)
+			// 	if err != nil {
+			// 		panic(err)
+			// 	}
 		}
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
+	})
+	return
+	b.Run("spaceTable", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			for i := 0; i < len(bs); i++ {
+				if spaceTable[bs[i]] {
+					b0 = bs[i]
+				}
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+}
+
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalSmall$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalSmall$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+//   */
+func BenchmarkMyUnmarshalSmall(b *testing.B) {
+	bs := []byte(testdata.BookData)
+	b.Run("small", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			m := testdata.Book{}
+			err := Unmarshal(bs, &m)
+			if err != nil {
+				panic(err)
+			}
+		}
 	})
 }
 
@@ -829,6 +974,7 @@ var str *string
 var pbs *[]byte
 var bs []byte
 var pbool *bool
+var b0 byte
 var iface *interface{}
 
 /*
@@ -837,8 +983,13 @@ go test -benchmem -run=^$ -bench ^BenchmarkCache$ github.com/lxt1045/blog/sample
 go tool pprof ./json.test cpu.prof
 */
 func BenchmarkCache(b *testing.B) {
-	boolCache := NewSliceCache[bool](N)
-	bsCache := NewSliceCache[[]byte](N)
+	var (
+		bsCache        = NewSliceCache[[]byte](N)
+		strCache       = NewSliceCache[string](N)
+		interfaceCache = NewSliceCache[interface{}](N)
+		mapCache       = NewSliceCache[map[string]interface{}](N)
+		boolCache      = NewSliceCache[bool](N)
+	)
 	b.Run("map-cache", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {

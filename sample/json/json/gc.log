@@ -7,7 +7,7 @@
 ./func_get_set.go:44:9: can inline boolFuncs.func1
 ./func_get_set.go:53:9: can inline boolFuncs.func2
 ./struct_tag_node.go:218:6: can inline bytesString
-./json.go:16:6: can inline ErrStream
+./json.go:17:6: can inline ErrStream
 ./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.uint64_0].func1
 ./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.uint64_0].func2
 ./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.uint64_0].func3
@@ -99,73 +99,83 @@
 ./func_get_set.go:447:10: can inline iterfaceFuncs.func2
 ./func_get_set.go:457:9: can inline mapFuncs.func1
 ./func_get_set.go:464:10: can inline mapFuncs.func2
-./func_marshal_unmarshal.go:24:69: inlining call to ErrStream
-./func_marshal_unmarshal.go:27:25: inlining call to pointerOffset
-./func_marshal_unmarshal.go:30:7: can inline boolMFuncs.func2
-./func_marshal_unmarshal.go:31:34: inlining call to pointerOffset
-./func_marshal_unmarshal.go:44:42: inlining call to bytesString
-./func_marshal_unmarshal.go:46:36: inlining call to ErrStream
-./func_marshal_unmarshal.go:60:25: inlining call to pointerOffset
-./func_marshal_unmarshal.go:63:7: can inline numMFuncs.func2
-./func_marshal_unmarshal.go:64:34: inlining call to pointerOffset
-./json.go:28:6: can inline trimSpace
-./json.go:35:6: can inline parseByte
+./func_marshal_unmarshal.go:26:69: inlining call to ErrStream
+./func_marshal_unmarshal.go:29:25: inlining call to pointerOffset
+./func_marshal_unmarshal.go:32:7: can inline boolMFuncs.func2
+./func_marshal_unmarshal.go:33:34: inlining call to pointerOffset
+./func_marshal_unmarshal.go:46:42: inlining call to bytesString
+./func_marshal_unmarshal.go:48:36: inlining call to ErrStream
+./func_marshal_unmarshal.go:63:25: inlining call to pointerOffset
+./func_marshal_unmarshal.go:66:7: can inline numMFuncs.func2
+./func_marshal_unmarshal.go:67:34: inlining call to pointerOffset
+./json.go:29:6: can inline trimSpace
+./json.go:36:6: can inline parseByte
 ./hash_map.go:483:6: can inline hash2
 ./hash_map.go:164:6: can inline (*tagMap).GetV
 ./hash_map.go:165:14: inlining call to hash2
 ./hash_map.go:167:16: inlining call to bytes.Equal
-./struct_tag_info.go:61:25: inlining call to (*tagMap).GetV
-./struct_tag_info.go:61:25: inlining call to hash2
-./struct_tag_info.go:61:25: inlining call to bytes.Equal
-./json.go:431:19: inlining call to "errors".New
-./json.go:399:20: inlining call to "errors".New
-./json.go:404:23: inlining call to utf16.IsSurrogate
-./json.go:410:21: inlining call to "errors".New
-./json.go:414:25: inlining call to utf16.DecodeRune
-./json.go:422:52: inlining call to ErrStream
-./json.go:422:19: inlining call to "errors".New
-./json.go:324:33: inlining call to bytes.IndexByte
-./json.go:353:35: inlining call to bytes.IndexByte
-./json.go:360:33: inlining call to bytes.IndexByte
-./json.go:310:21: inlining call to bytes.IndexByte
-./json.go:223:64: inlining call to ErrStream
-./json.go:230:64: inlining call to ErrStream
-./json.go:238:65: inlining call to ErrStream
-./json.go:249:22: inlining call to bytesString
-./json.go:111:17: inlining call to trimSpace
-./json.go:115:23: inlining call to bytes.IndexByte
-./json.go:122:20: inlining call to parseByte
-./json.go:124:31: inlining call to ErrStream
-./json.go:130:20: inlining call to parseByte
-./json.go:137:31: inlining call to ErrStream
-./json.go:143:15: inlining call to trimSpace
-./json.go:151:20: inlining call to parseByte
-./json.go:158:31: inlining call to ErrStream
-./json.go:60:16: inlining call to trimSpace
-./json.go:66:23: inlining call to bytes.IndexByte
-./json.go:73:20: inlining call to parseByte
-./json.go:76:31: inlining call to ErrStream
-./json.go:92:20: inlining call to parseByte
-./json.go:99:31: inlining call to ErrStream
-./func_marshal_unmarshal.go:73:23: inlining call to pointerOffset
-./func_marshal_unmarshal.go:81:7: can inline structMFuncs.func2
-./func_marshal_unmarshal.go:82:34: inlining call to pointerOffset
-./json.go:163:15: inlining call to trimSpace
-./json.go:164:33: inlining call to pointerOffset
-./json.go:175:21: inlining call to pointerOffset
-./json.go:183:20: inlining call to parseByte
-./json.go:191:31: inlining call to ErrStream
-./func_marshal_unmarshal.go:89:9: can inline sliceMFuncs.func1
-./func_marshal_unmarshal.go:95:7: can inline sliceMFuncs.func2
-./func_marshal_unmarshal.go:96:34: inlining call to pointerOffset
-./func_marshal_unmarshal.go:110:23: inlining call to bytes.IndexByte
-./func_marshal_unmarshal.go:118:25: inlining call to pointerOffset
-./func_marshal_unmarshal.go:121:7: can inline stringMFuncs.func2
-./func_marshal_unmarshal.go:122:34: inlining call to pointerOffset
-./func_marshal_unmarshal.go:130:17: inlining call to trimSpace
-./func_marshal_unmarshal.go:132:37: inlining call to pointerOffset
-./func_marshal_unmarshal.go:138:7: can inline interfaceMFuncs.func2
-./func_marshal_unmarshal.go:139:34: inlining call to pointerOffset
+./struct_tag_info.go:67:25: inlining call to (*tagMap).GetV
+./struct_tag_info.go:67:25: inlining call to hash2
+./struct_tag_info.go:67:25: inlining call to bytes.Equal
+./json.go:367:31: inlining call to bytes.IndexByte
+./json.go:400:31: inlining call to bytes.IndexByte
+./json.go:431:64: inlining call to ErrStream
+./json.go:438:64: inlining call to ErrStream
+./json.go:445:65: inlining call to ErrStream
+./json.go:453:29: inlining call to bytes.IndexByte
+./json.go:62:16: inlining call to trimSpace
+./json.go:72:23: inlining call to bytes.IndexByte
+./json.go:79:20: inlining call to parseByte
+./json.go:82:31: inlining call to ErrStream
+./json.go:102:20: inlining call to parseByte
+./json.go:109:31: inlining call to ErrStream
+./func_marshal_unmarshal.go:75:22: inlining call to pointerOffset
+./func_marshal_unmarshal.go:91:23: inlining call to pointerOffset
+./func_marshal_unmarshal.go:100:7: can inline structMFuncs.func2
+./func_marshal_unmarshal.go:101:34: inlining call to pointerOffset
+./struct_tag_node.go:214:6: can inline reflectValueToPointer
+./json.go:646:19: inlining call to "errors".New
+./json.go:614:20: inlining call to "errors".New
+./json.go:619:23: inlining call to utf16.IsSurrogate
+./json.go:625:21: inlining call to "errors".New
+./json.go:629:25: inlining call to utf16.DecodeRune
+./json.go:637:52: inlining call to ErrStream
+./json.go:637:19: inlining call to "errors".New
+./json.go:539:33: inlining call to bytes.IndexByte
+./json.go:568:35: inlining call to bytes.IndexByte
+./json.go:575:33: inlining call to bytes.IndexByte
+./json.go:523:21: inlining call to bytes.IndexByte
+./json.go:312:64: inlining call to ErrStream
+./json.go:319:64: inlining call to ErrStream
+./json.go:327:65: inlining call to ErrStream
+./json.go:340:19: inlining call to bytesString
+./json.go:137:17: inlining call to trimSpace
+./json.go:140:23: inlining call to bytes.IndexByte
+./json.go:147:20: inlining call to parseByte
+./json.go:149:31: inlining call to ErrStream
+./json.go:159:20: inlining call to parseByte
+./json.go:173:31: inlining call to ErrStream
+./json.go:180:15: inlining call to trimSpace
+./json.go:189:20: inlining call to parseByte
+./json.go:196:31: inlining call to ErrStream
+./json.go:202:15: inlining call to trimSpace
+./json.go:203:33: inlining call to pointerOffset
+./json.go:231:30: inlining call to reflectValueToPointer
+./json.go:244:21: inlining call to pointerOffset
+./json.go:257:20: inlining call to parseByte
+./json.go:264:31: inlining call to ErrStream
+./json.go:270:29: inlining call to reflectValueToPointer
+./func_marshal_unmarshal.go:112:35: inlining call to pointerOffset
+./func_marshal_unmarshal.go:124:7: can inline sliceMFuncs.func2
+./func_marshal_unmarshal.go:125:34: inlining call to pointerOffset
+./func_marshal_unmarshal.go:140:23: inlining call to bytes.IndexByte
+./func_marshal_unmarshal.go:151:25: inlining call to pointerOffset
+./func_marshal_unmarshal.go:154:7: can inline stringMFuncs.func2
+./func_marshal_unmarshal.go:155:34: inlining call to pointerOffset
+./func_marshal_unmarshal.go:169:17: inlining call to trimSpace
+./func_marshal_unmarshal.go:171:37: inlining call to pointerOffset
+./func_marshal_unmarshal.go:178:7: can inline interfaceMFuncs.func2
+./func_marshal_unmarshal.go:179:34: inlining call to pointerOffset
 ./hash_map.go:31:6: can inline getHashFuncU64.func1
 ./hash_map.go:46:6: can inline getNLen
 ./hash_map.go:149:24: inlining call to log.Flags
@@ -185,60 +195,58 @@
 ./hash_map.go:258:28: inlining call to getHashParam
 ./hash_map.go:261:14: inlining call to hash
 ./hash_map.go:262:51: inlining call to bytes.Equal
-./json.go:47:6: can inline parseObjToSlice
-./json.go:51:6: can inline bsToStr
-./json.go:462:6: can inline fillBytes16
-./struct_tag_info.go:34:6: can inline (*TagInfo).cacheKey
-./struct_tag_info.go:78:26: inlining call to reflect.TypeOf
-./struct_tag_info.go:78:26: inlining call to reflect.toType
-./struct_tag_node.go:214:6: can inline reflectValueToPointer
-./struct_tag_info.go:247:23: inlining call to reflect.StructField.IsExported
-./struct_tag_info.go:251:24: inlining call to reflect.StructTag.Get
-./struct_tag_info.go:260:23: inlining call to strings.Split
-./struct_tag_info.go:180:49: can inline (*TagInfo).setFuncs.func1
-./struct_tag_info.go:182:33: inlining call to reflectValueToPointer
-./struct_tag_info.go:186:79: can inline (*TagInfo).setFuncs.func2
-./struct_tag_info.go:188:34: inlining call to reflectValueToPointer
+./json.go:48:6: can inline parseObjToSlice
+./json.go:52:6: can inline bsToStr
+./json.go:120:7: can inline glob..func2
+./json.go:475:29: inlining call to bytes.IndexByte
+./json.go:677:6: can inline fillBytes16
+./struct_tag_info.go:40:6: can inline (*TagInfo).cacheKey
+./struct_tag_info.go:84:26: inlining call to reflect.TypeOf
+./struct_tag_info.go:84:26: inlining call to reflect.toType
+./struct_tag_info.go:194:32: inlining call to reflectValueToPointer
+./struct_tag_info.go:202:32: inlining call to reflectValueToPointer
+./struct_tag_info.go:210:32: inlining call to reflectValueToPointer
+./struct_tag_info.go:218:32: inlining call to reflectValueToPointer
+./struct_tag_info.go:226:32: inlining call to reflectValueToPointer
+./struct_tag_info.go:318:23: inlining call to reflect.StructField.IsExported
+./struct_tag_info.go:322:24: inlining call to reflect.StructTag.Get
+./struct_tag_info.go:331:23: inlining call to strings.Split
+./struct_tag_info.go:250:49: can inline (*TagInfo).setFuncs.func6
+./struct_tag_info.go:252:33: inlining call to reflectValueToPointer
+./struct_tag_info.go:256:79: can inline (*TagInfo).setFuncs.func7
+./struct_tag_info.go:258:34: inlining call to reflectValueToPointer
 ./struct_tag_node.go:232:6: can inline UnpackEface
 ./struct_tag_node.go:255:6: can inline PtrElem
-./cache.go:40:6: can inline (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
+./cache.go:42:6: can inline (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
 ./struct_tag_node.go:194:33: inlining call to (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
-./struct_tag_info.go:313:16: inlining call to trimSpace
-./struct_tag_info.go:317:69: inlining call to ErrStream
-./struct_tag_info.go:326:69: inlining call to ErrStream
-./struct_tag_info.go:330:18: inlining call to parseObjToSlice
-./struct_tag_info.go:334:23: inlining call to reflect.ValueOf
-./struct_tag_info.go:334:23: inlining call to reflect.escapes
-./struct_tag_info.go:334:23: inlining call to reflect.unpackEface
-./struct_tag_info.go:334:23: inlining call to reflect.(*rtype).Kind
-./struct_tag_info.go:334:23: inlining call to reflect.ifaceIndir
-./struct_tag_info.go:335:23: inlining call to reflect.Indirect
-./struct_tag_info.go:335:23: inlining call to reflect.Value.Kind
-./struct_tag_info.go:335:23: inlining call to reflect.flag.kind
-./struct_tag_info.go:336:15: inlining call to reflect.Value.CanSet
-./struct_tag_info.go:341:22: inlining call to UnpackEface
-./struct_tag_info.go:342:19: inlining call to PtrElem
+./struct_tag_info.go:384:16: inlining call to trimSpace
+./struct_tag_info.go:388:69: inlining call to ErrStream
+./struct_tag_info.go:397:69: inlining call to ErrStream
+./struct_tag_info.go:401:18: inlining call to parseObjToSlice
+./struct_tag_info.go:405:23: inlining call to reflect.ValueOf
+./struct_tag_info.go:405:23: inlining call to reflect.escapes
+./struct_tag_info.go:405:23: inlining call to reflect.unpackEface
+./struct_tag_info.go:405:23: inlining call to reflect.(*rtype).Kind
+./struct_tag_info.go:405:23: inlining call to reflect.ifaceIndir
+./struct_tag_info.go:406:23: inlining call to reflect.Indirect
+./struct_tag_info.go:406:23: inlining call to reflect.Value.Kind
+./struct_tag_info.go:406:23: inlining call to reflect.flag.kind
+./struct_tag_info.go:407:15: inlining call to reflect.Value.CanSet
+./struct_tag_info.go:412:22: inlining call to UnpackEface
+./struct_tag_info.go:413:19: inlining call to PtrElem
 ./struct_tag_node.go:160:6: can inline Type.IsNull
 ./struct_tag_node.go:165:6: can inline Type.String
 ./struct_tag_node.go:189:6: can inline strToUintptr
 ./struct_tag_node.go:228:6: can inline unpackEface
-./struct_tag_node.go:78:12: can inline NewSliceCache[go.shape.[]uint8_0].func1
-./struct_tag_node.go:83:12: can inline NewSliceCache[go.shape.[]uint8_0].func2
-./struct_tag_node.go:78:12: can inline NewSliceCache[go.shape.string_0].func1
-./struct_tag_node.go:83:12: can inline NewSliceCache[go.shape.string_0].func2
-./struct_tag_node.go:78:12: can inline NewSliceCache[go.shape.interface {}_0].func1
-./struct_tag_node.go:83:12: can inline NewSliceCache[go.shape.interface {}_0].func2
-./struct_tag_node.go:78:12: can inline NewSliceCache[go.shape.map[string]interface {}_0].func1
-./struct_tag_node.go:83:12: can inline NewSliceCache[go.shape.map[string]interface {}_0].func2
-./cache.go:34:6: can inline newCache[go.shape.uint32_0,go.shape.*uint8_1]
-./json.go:452:13: inlining call to fillBytes16
-./json.go:453:13: inlining call to fillBytes16
-./json.go:454:13: inlining call to fillBytes16
-./json.go:455:13: inlining call to fillBytes16
-./json.go:456:13: inlining call to fillBytes16
-./json.go:457:13: inlining call to fillBytes16
-./json.go:458:13: inlining call to fillBytes16
-./json.go:459:13: inlining call to fillBytes16
+./cache.go:36:6: can inline newCache[go.shape.uint32_0,go.shape.*uint8_1]
+./json.go:667:13: inlining call to fillBytes16
+./json.go:668:13: inlining call to fillBytes16
+./json.go:669:13: inlining call to fillBytes16
+./json.go:670:13: inlining call to fillBytes16
+./json.go:671:13: inlining call to fillBytes16
+./json.go:672:13: inlining call to fillBytes16
+./json.go:673:13: inlining call to fillBytes16
+./json.go:674:13: inlining call to fillBytes16
 ./struct_tag_node.go:185:49: inlining call to newCache[go.shape.uint32_0,go.shape.*uint8_1]
 ./func_get_set.go:14:20: leaking param: p to result pOut level=0
 ./func_get_set.go:19:15: pObj does not escape
@@ -572,128 +580,143 @@
 ./func_get_set.go:457:9: func literal escapes to heap
 ./func_get_set.go:459:12: make(map[string]interface {}) escapes to heap
 ./func_get_set.go:464:10: func literal escapes to heap
-./func_marshal_unmarshal.go:15:14: leaking param: pObj
-./func_marshal_unmarshal.go:15:35: leaking param: stream
-./func_marshal_unmarshal.go:15:50: tag does not escape
-./func_marshal_unmarshal.go:30:12: leaking param: pObj
-./func_marshal_unmarshal.go:30:33: leaking param: in
-./func_marshal_unmarshal.go:30:44: tag does not escape
-./func_marshal_unmarshal.go:15:9: func literal escapes to heap
-./func_marshal_unmarshal.go:24:22: ... argument does not escape
-./func_marshal_unmarshal.go:24:69: ~R0 escapes to heap
-./func_marshal_unmarshal.go:24:69: string(stream) escapes to heap
-./func_marshal_unmarshal.go:30:7: func literal escapes to heap
-./func_marshal_unmarshal.go:37:22: leaking param: stream
-./func_marshal_unmarshal.go:46:36: string(stream) escapes to heap
-./func_marshal_unmarshal.go:53:14: leaking param: pObj
-./func_marshal_unmarshal.go:53:35: leaking param: stream
-./func_marshal_unmarshal.go:53:50: tag does not escape
-./func_marshal_unmarshal.go:63:12: leaking param: pObj
-./func_marshal_unmarshal.go:63:33: leaking param: in
-./func_marshal_unmarshal.go:63:44: tag does not escape
-./func_marshal_unmarshal.go:53:9: func literal escapes to heap
-./func_marshal_unmarshal.go:63:7: func literal escapes to heap
-./struct_tag_info.go:56:7: leaking param: t to result ~r0 level=2
-./struct_tag_info.go:56:28: key does not escape
-./struct_tag_info.go:59:27: string(key) does not escape
-./struct_tag_info.go:61:25: string(bytes.a) does not escape
-./struct_tag_info.go:61:25: string(bytes.b) does not escape
-./json.go:428:21: raw does not escape
-./json.go:429:36: string(raw) escapes to heap
-./json.go:431:64: "err:" + err.Error() + ",ncorrect format: " + string(raw) escapes to heap
-./json.go:431:72: string(raw) does not escape
-./json.go:431:19: &"errors".errorString{...} escapes to heap
-./json.go:377:18: raw does not escape
-./json.go:381:22: []byte{...} escapes to heap
-./json.go:383:22: []byte{...} escapes to heap
-./json.go:385:22: []byte{...} escapes to heap
-./json.go:387:22: []byte{...} escapes to heap
-./json.go:389:22: []byte{...} escapes to heap
-./json.go:391:22: []byte{...} escapes to heap
-./json.go:393:22: []byte{...} escapes to heap
-./json.go:395:22: []byte{...} escapes to heap
-./json.go:399:44: "incorrect format: \\" + string(raw) escapes to heap
-./json.go:399:52: string(raw) does not escape
-./json.go:399:20: &"errors".errorString{...} escapes to heap
-./json.go:410:60: "incorrect format: \\" + string(last) + string(raw[:l]) escapes to heap
-./json.go:410:53: string(last) does not escape
-./json.go:410:68: string(raw[:l]) does not escape
-./json.go:410:21: &"errors".errorString{...} escapes to heap
-./json.go:418:14: make([]byte, 4) escapes to heap
-./json.go:422:41: "incorrect format: " + ~R0 escapes to heap
-./json.go:422:52: string(stream) does not escape
-./json.go:422:19: &"errors".errorString{...} escapes to heap
-./json.go:322:23: leaking param: stream to result raw level=0
-./json.go:333:23: string(stream[i:]) escapes to heap
-./json.go:333:15: string(stream[i:]) escapes to heap
-./json.go:355:25: string(stream[i:]) escapes to heap
-./json.go:355:17: string(stream[i:]) escapes to heap
-./json.go:308:15: leaking param: stream to result raw level=0
-./json.go:197:21: leaking param: stream
-./json.go:197:36: p does not escape
-./json.go:104:24: leaking param: stream
-./json.go:142:26: leaking param: stream
-./json.go:203:4: f escapes to heap
-./json.go:217:4: s escapes to heap
-./json.go:223:22: ... argument does not escape
-./json.go:223:64: ~R0 escapes to heap
-./json.go:223:64: string(stream) escapes to heap
-./json.go:230:22: ... argument does not escape
-./json.go:230:64: ~R0 escapes to heap
-./json.go:230:64: string(stream) escapes to heap
-./json.go:234:4: true escapes to heap
-./json.go:238:22: ... argument does not escape
-./json.go:238:65: ~R0 escapes to heap
-./json.go:238:65: string(stream) escapes to heap
-./json.go:242:4: false escapes to heap
-./json.go:106:15: []byte{} does not escape
-./json.go:124:31: string(stream) escapes to heap
-./json.go:129:11: string(key) escapes to heap
-./json.go:137:31: string(stream) escapes to heap
-./json.go:158:31: string(stream) escapes to heap
-./json.go:57:15: leaking param: stream
-./json.go:57:30: leaking param: pObj
-./json.go:57:51: leaking param content: tag
-./json.go:59:15: []byte{} does not escape
-./json.go:76:31: string(stream) escapes to heap
-./json.go:99:31: string(stream) escapes to heap
-./func_marshal_unmarshal.go:71:14: leaking param: pObj
-./func_marshal_unmarshal.go:71:35: leaking param: stream
-./func_marshal_unmarshal.go:71:50: leaking param content: tag
-./func_marshal_unmarshal.go:81:12: leaking param: pObj
-./func_marshal_unmarshal.go:81:33: leaking param: in
-./func_marshal_unmarshal.go:81:44: tag does not escape
-./func_marshal_unmarshal.go:71:9: func literal escapes to heap
-./func_marshal_unmarshal.go:81:7: func literal escapes to heap
-./json.go:162:17: leaking param: stream
-./json.go:162:32: leaking param: pObj
-./json.go:162:53: leaking param content: tag
-./json.go:171:34: make([]uint8, size) escapes to heap
-./json.go:191:31: string(stream) escapes to heap
-./func_marshal_unmarshal.go:89:14: leaking param: pObj
-./func_marshal_unmarshal.go:89:35: leaking param: stream
-./func_marshal_unmarshal.go:89:50: leaking param content: tag
-./func_marshal_unmarshal.go:95:12: leaking param: pObj
-./func_marshal_unmarshal.go:95:33: leaking param: in
-./func_marshal_unmarshal.go:95:44: tag does not escape
-./func_marshal_unmarshal.go:89:9: func literal escapes to heap
-./func_marshal_unmarshal.go:95:7: func literal escapes to heap
-./func_marshal_unmarshal.go:103:14: leaking param: pObj
-./func_marshal_unmarshal.go:103:35: leaking param: stream
-./func_marshal_unmarshal.go:103:50: tag does not escape
-./func_marshal_unmarshal.go:121:12: leaking param: pObj
-./func_marshal_unmarshal.go:121:33: leaking param: in
-./func_marshal_unmarshal.go:121:44: tag does not escape
-./func_marshal_unmarshal.go:103:9: func literal escapes to heap
-./func_marshal_unmarshal.go:121:7: func literal escapes to heap
-./func_marshal_unmarshal.go:129:14: pObj does not escape
-./func_marshal_unmarshal.go:129:35: leaking param: stream
-./func_marshal_unmarshal.go:129:50: tag does not escape
-./func_marshal_unmarshal.go:138:12: leaking param: pObj
-./func_marshal_unmarshal.go:138:33: leaking param: in
-./func_marshal_unmarshal.go:138:44: tag does not escape
-./func_marshal_unmarshal.go:129:9: func literal escapes to heap
-./func_marshal_unmarshal.go:138:7: func literal escapes to heap
+./func_marshal_unmarshal.go:16:28: leaking param: pObj
+./func_marshal_unmarshal.go:16:49: leaking param: stream
+./func_marshal_unmarshal.go:16:64: tag does not escape
+./func_marshal_unmarshal.go:32:12: leaking param: pObj
+./func_marshal_unmarshal.go:32:33: leaking param: in
+./func_marshal_unmarshal.go:32:44: tag does not escape
+./func_marshal_unmarshal.go:16:9: func literal escapes to heap
+./func_marshal_unmarshal.go:26:22: ... argument does not escape
+./func_marshal_unmarshal.go:26:69: ~R0 escapes to heap
+./func_marshal_unmarshal.go:26:69: string(stream) escapes to heap
+./func_marshal_unmarshal.go:32:7: func literal escapes to heap
+./func_marshal_unmarshal.go:39:22: leaking param: stream
+./func_marshal_unmarshal.go:48:36: string(stream) escapes to heap
+./func_marshal_unmarshal.go:55:28: leaking param: pObj
+./func_marshal_unmarshal.go:55:49: leaking param: stream
+./func_marshal_unmarshal.go:55:64: tag does not escape
+./func_marshal_unmarshal.go:66:12: leaking param: pObj
+./func_marshal_unmarshal.go:66:33: leaking param: in
+./func_marshal_unmarshal.go:66:44: tag does not escape
+./func_marshal_unmarshal.go:55:9: func literal escapes to heap
+./func_marshal_unmarshal.go:66:7: func literal escapes to heap
+./struct_tag_info.go:62:7: leaking param: t to result ~r0 level=2
+./struct_tag_info.go:62:28: key does not escape
+./struct_tag_info.go:65:27: string(key) does not escape
+./struct_tag_info.go:67:25: string(bytes.a) does not escape
+./struct_tag_info.go:67:25: string(bytes.b) does not escape
+./json.go:347:17: stream does not escape
+./json.go:431:22: ... argument does not escape
+./json.go:431:64: ~R0 escapes to heap
+./json.go:431:64: string(stream) escapes to heap
+./json.go:438:22: ... argument does not escape
+./json.go:438:64: ~R0 escapes to heap
+./json.go:438:64: string(stream) escapes to heap
+./json.go:445:22: ... argument does not escape
+./json.go:445:65: ~R0 escapes to heap
+./json.go:445:65: string(stream) escapes to heap
+./json.go:58:29: leaking param: stream
+./json.go:58:44: leaking param: pObj
+./json.go:58:65: leaking param content: tag
+./json.go:61:15: []byte{} does not escape
+./json.go:82:31: string(stream) escapes to heap
+./json.go:109:31: string(stream) escapes to heap
+./func_marshal_unmarshal.go:73:40: leaking param: pObj
+./func_marshal_unmarshal.go:73:61: leaking param: stream
+./func_marshal_unmarshal.go:73:76: leaking param content: tag
+./func_marshal_unmarshal.go:85:28: leaking param: pObj
+./func_marshal_unmarshal.go:85:49: leaking param: stream
+./func_marshal_unmarshal.go:85:64: leaking param content: tag
+./func_marshal_unmarshal.go:100:12: leaking param: pObj
+./func_marshal_unmarshal.go:100:33: leaking param: in
+./func_marshal_unmarshal.go:100:44: tag does not escape
+./func_marshal_unmarshal.go:85:9: func literal escapes to heap
+./func_marshal_unmarshal.go:100:7: func literal escapes to heap
+./json.go:643:21: raw does not escape
+./json.go:644:36: string(raw) escapes to heap
+./json.go:646:64: "err:" + err.Error() + ",ncorrect format: " + string(raw) escapes to heap
+./json.go:646:72: string(raw) does not escape
+./json.go:646:19: &"errors".errorString{...} escapes to heap
+./json.go:592:18: raw does not escape
+./json.go:596:22: []byte{...} escapes to heap
+./json.go:598:22: []byte{...} escapes to heap
+./json.go:600:22: []byte{...} escapes to heap
+./json.go:602:22: []byte{...} escapes to heap
+./json.go:604:22: []byte{...} escapes to heap
+./json.go:606:22: []byte{...} escapes to heap
+./json.go:608:22: []byte{...} escapes to heap
+./json.go:610:22: []byte{...} escapes to heap
+./json.go:614:44: "incorrect format: \\" + string(raw) escapes to heap
+./json.go:614:52: string(raw) does not escape
+./json.go:614:20: &"errors".errorString{...} escapes to heap
+./json.go:625:60: "incorrect format: \\" + string(last) + string(raw[:l]) escapes to heap
+./json.go:625:53: string(last) does not escape
+./json.go:625:68: string(raw[:l]) does not escape
+./json.go:625:21: &"errors".errorString{...} escapes to heap
+./json.go:633:14: make([]byte, 4) escapes to heap
+./json.go:637:41: "incorrect format: " + ~R0 escapes to heap
+./json.go:637:52: string(stream) does not escape
+./json.go:637:19: &"errors".errorString{...} escapes to heap
+./json.go:537:23: leaking param: stream to result raw level=0
+./json.go:548:23: string(stream[i:]) escapes to heap
+./json.go:548:15: string(stream[i:]) escapes to heap
+./json.go:570:25: string(stream[i:]) escapes to heap
+./json.go:570:17: string(stream[i:]) escapes to heap
+./json.go:521:15: leaking param: stream to result raw level=0
+./json.go:283:35: leaking param: stream
+./json.go:283:50: p does not escape
+./json.go:125:38: leaking param: stream
+./json.go:178:40: leaking param: stream
+./json.go:290:4: f escapes to heap
+./json.go:306:4: s escapes to heap
+./json.go:312:22: ... argument does not escape
+./json.go:312:64: ~R0 escapes to heap
+./json.go:312:64: string(stream) escapes to heap
+./json.go:319:22: ... argument does not escape
+./json.go:319:64: ~R0 escapes to heap
+./json.go:319:64: string(stream) escapes to heap
+./json.go:323:4: true escapes to heap
+./json.go:327:22: ... argument does not escape
+./json.go:327:65: ~R0 escapes to heap
+./json.go:327:65: string(stream) escapes to heap
+./json.go:331:4: false escapes to heap
+./json.go:340:4: ~R0 escapes to heap
+./json.go:128:15: []byte{} escapes to heap
+./json.go:149:31: string(stream) escapes to heap
+./json.go:165:13: make(map[string]interface {}, len(pairs) * 1) escapes to heap
+./json.go:167:14: string(pairs[i].k) escapes to heap
+./json.go:170:17: pairs escapes to heap
+./json.go:173:31: string(stream) escapes to heap
+./json.go:196:31: string(stream) escapes to heap
+./json.go:200:31: leaking param: stream
+./json.go:200:46: leaking param: pObj
+./json.go:200:67: leaking param content: tag
+./json.go:264:31: string(stream) escapes to heap
+./func_marshal_unmarshal.go:108:28: leaking param: pObj
+./func_marshal_unmarshal.go:108:49: leaking param: stream
+./func_marshal_unmarshal.go:108:64: leaking param content: tag
+./func_marshal_unmarshal.go:124:12: leaking param: pObj
+./func_marshal_unmarshal.go:124:33: leaking param: in
+./func_marshal_unmarshal.go:124:44: tag does not escape
+./func_marshal_unmarshal.go:108:9: func literal escapes to heap
+./func_marshal_unmarshal.go:124:7: func literal escapes to heap
+./func_marshal_unmarshal.go:132:28: leaking param: pObj
+./func_marshal_unmarshal.go:132:49: leaking param: stream
+./func_marshal_unmarshal.go:132:64: tag does not escape
+./func_marshal_unmarshal.go:154:12: leaking param: pObj
+./func_marshal_unmarshal.go:154:33: leaking param: in
+./func_marshal_unmarshal.go:154:44: tag does not escape
+./func_marshal_unmarshal.go:132:9: func literal escapes to heap
+./func_marshal_unmarshal.go:154:7: func literal escapes to heap
+./func_marshal_unmarshal.go:162:28: pObj does not escape
+./func_marshal_unmarshal.go:162:49: leaking param: stream
+./func_marshal_unmarshal.go:162:64: tag does not escape
+./func_marshal_unmarshal.go:178:12: leaking param: pObj
+./func_marshal_unmarshal.go:178:33: leaking param: in
+./func_marshal_unmarshal.go:178:44: tag does not escape
+./func_marshal_unmarshal.go:162:9: func literal escapes to heap
+./func_marshal_unmarshal.go:178:7: func literal escapes to heap
 ./hash_map.go:13:21: idxs does not escape
 ./hash_map.go:31:11: key does not escape
 ./hash_map.go:21:14: make([]N, len(idxs)) escapes to heap
@@ -793,145 +816,103 @@
 ./hash_map.go:501:11: key does not escape
 ./hash_map.go:501:23: idxNTable does not escape
 ./hash_map.go:501:42: idxN does not escape
-./json.go:16:16: stream does not escape
-./json.go:20:15: string(stream) escapes to heap
-./json.go:28:16: stream does not escape
-./json.go:35:16: stream does not escape
-./json.go:47:22: stream does not escape
-./json.go:47:37: s does not escape
-./json.go:51:14: leaking param: bs to result ~r0 level=0
-./json.go:262:16: leaking param: stream
-./json.go:262:31: leaking param: pObj
-./json.go:262:52: leaking param content: tag
-./json.go:279:16: leaking param: stream to result raw level=0
-./json.go:437:16: bs does not escape
-./json.go:440:17: bs does not escape
-./json.go:440:28: cs does not escape
-./json.go:443:18: bs does not escape
-./json.go:443:29: cs does not escape
-./json.go:446:18: bs does not escape
-./json.go:446:29: cs does not escape
-./json.go:449:19: leaking param: xs
-./struct_tag_info.go:34:7: leaking param: p to result k level=1
-./struct_tag_info.go:37:7: leaking param content: t
-./struct_tag_info.go:41:15: make([]mapNode, 0, len(t.ChildList)) escapes to heap
-./struct_tag_info.go:47:13: ([]byte)(child.TagName) escapes to heap
-./struct_tag_info.go:63:7: leaking param content: t
-./struct_tag_info.go:63:28: leaking param: c
-./struct_tag_info.go:65:20: make(map[string]*TagInfo) escapes to heap
-./struct_tag_info.go:68:19: ... argument does not escape
-./struct_tag_info.go:68:70: c.TagName escapes to heap
-./struct_tag_info.go:77:14: leaking param: typ
-./struct_tag_info.go:78:27: &[]byte{} escapes to heap
-./struct_tag_info.go:78:34: []byte{} escapes to heap
-./struct_tag_info.go:81:7: leaking param content: ti
-./struct_tag_info.go:81:29: leaking param: typ
-./struct_tag_info.go:227:23: leaking param: typIn
-./struct_tag_info.go:150:11: &TagInfo{...} escapes to heap
-./struct_tag_info.go:180:49: func literal escapes to heap
-./struct_tag_info.go:186:79: func literal escapes to heap
-./struct_tag_info.go:205:10: &TagInfo{...} escapes to heap
-./struct_tag_info.go:218:21: ... argument does not escape
-./struct_tag_info.go:229:20: ... argument does not escape
-./struct_tag_info.go:229:80: typIn.Kind() escapes to heap
-./struct_tag_info.go:232:7: &TagInfo{...} escapes to heap
-./struct_tag_info.go:240:10: &TagInfo{...} escapes to heap
-./struct_tag_info.go:242:32: `"` + field.Name + `"` escapes to heap
-./struct_tag_info.go:264:30: `"` + tvs[0] + `"` escapes to heap
-./cache.go:51:2: moved to heap: m2
-./cache.go:51:12: make(map[go.shape.uint32_0]go.shape.*uint8_1, len(m) + 10) escapes to heap
+./json.go:17:16: stream does not escape
+./json.go:21:15: string(stream) escapes to heap
+./json.go:29:16: stream does not escape
+./json.go:36:16: stream does not escape
+./json.go:48:22: stream does not escape
+./json.go:48:37: s does not escape
+./json.go:52:14: leaking param: bs to result ~r0 level=0
+./json.go:121:14: make([]pair, 0, 8) escapes to heap
+./json.go:121:14: make([]pair, 0, 8) escapes to heap
+./json.go:474:16: leaking param: stream
+./json.go:474:31: leaking param: pObj
+./json.go:474:52: leaking param content: tag
+./json.go:492:16: leaking param: stream to result raw level=0
+./json.go:652:16: bs does not escape
+./json.go:655:17: bs does not escape
+./json.go:655:28: cs does not escape
+./json.go:658:18: bs does not escape
+./json.go:658:29: cs does not escape
+./json.go:661:18: bs does not escape
+./json.go:661:29: cs does not escape
+./json.go:664:19: leaking param: xs
+./struct_tag_info.go:40:7: leaking param: p to result k level=1
+./struct_tag_info.go:43:7: leaking param content: t
+./struct_tag_info.go:47:15: make([]mapNode, 0, len(t.ChildList)) escapes to heap
+./struct_tag_info.go:53:13: ([]byte)(child.TagName) escapes to heap
+./struct_tag_info.go:69:7: leaking param content: t
+./struct_tag_info.go:69:28: leaking param: c
+./struct_tag_info.go:71:20: make(map[string]*TagInfo) escapes to heap
+./struct_tag_info.go:74:19: ... argument does not escape
+./struct_tag_info.go:74:70: c.TagName escapes to heap
+./struct_tag_info.go:83:14: leaking param: typ
+./struct_tag_info.go:84:27: &[]byte{} escapes to heap
+./struct_tag_info.go:84:34: []byte{} escapes to heap
+./struct_tag_info.go:88:7: leaking param: ti
+./struct_tag_info.go:88:29: leaking param: typ
+./struct_tag_info.go:297:23: leaking param: typIn
+./struct_tag_info.go:158:11: &TagInfo{...} escapes to heap
+./struct_tag_info.go:191:26: []sync.Pool{...} escapes to heap
+./struct_tag_info.go:192:11: func literal escapes to heap
+./struct_tag_info.go:200:11: func literal escapes to heap
+./struct_tag_info.go:208:11: func literal escapes to heap
+./struct_tag_info.go:216:11: func literal escapes to heap
+./struct_tag_info.go:224:11: func literal escapes to heap
+./struct_tag_info.go:250:49: func literal escapes to heap
+./struct_tag_info.go:256:79: func literal escapes to heap
+./struct_tag_info.go:275:10: &TagInfo{...} escapes to heap
+./struct_tag_info.go:288:21: ... argument does not escape
+./struct_tag_info.go:299:20: ... argument does not escape
+./struct_tag_info.go:299:80: typIn.Kind() escapes to heap
+./struct_tag_info.go:302:7: &TagInfo{...} escapes to heap
+./struct_tag_info.go:310:10: &TagInfo{...} escapes to heap
+./struct_tag_info.go:313:32: `"` + field.Name + `"` escapes to heap
+./struct_tag_info.go:335:30: `"` + tvs[0] + `"` escapes to heap
+./cache.go:53:2: moved to heap: m2
+./cache.go:53:12: make(map[go.shape.uint32_0]go.shape.*uint8_1, len(m) + 10) escapes to heap
 ./struct_tag_node.go:193:18: leaking param: typ
-./struct_tag_info.go:302:16: leaking param: bs
-./struct_tag_info.go:302:27: leaking param: in
-./struct_tag_info.go:303:8: func literal does not escape
-./struct_tag_info.go:308:22: ... argument does not escape
-./struct_tag_info.go:317:20: ... argument does not escape
-./struct_tag_info.go:317:69: ~R0 escapes to heap
-./struct_tag_info.go:317:69: string(stream) escapes to heap
-./struct_tag_info.go:326:20: ... argument does not escape
-./struct_tag_info.go:326:69: ~R0 escapes to heap
-./struct_tag_info.go:326:69: string(stream) escapes to heap
-./struct_tag_info.go:329:14: make([]interface {}, 0, 32) does not escape
-./struct_tag_info.go:337:19: ... argument does not escape
+./struct_tag_info.go:373:16: leaking param: bs
+./struct_tag_info.go:373:27: leaking param: in
+./struct_tag_info.go:374:8: func literal does not escape
+./struct_tag_info.go:379:22: ... argument does not escape
+./struct_tag_info.go:388:20: ... argument does not escape
+./struct_tag_info.go:388:69: ~R0 escapes to heap
+./struct_tag_info.go:388:69: string(stream) escapes to heap
+./struct_tag_info.go:397:20: ... argument does not escape
+./struct_tag_info.go:397:69: ~R0 escapes to heap
+./struct_tag_info.go:397:69: string(stream) escapes to heap
+./struct_tag_info.go:400:14: make([]interface {}, 0, 32) does not escape
+./struct_tag_info.go:408:19: ... argument does not escape
 ./struct_tag_node.go:189:19: p does not escape
 ./struct_tag_node.go:214:28: leaking param: v to result ~r0 level=1
 ./struct_tag_node.go:218:18: leaking param: b to result ~r0 level=0
 ./struct_tag_node.go:228:18: moved to heap: v
 ./struct_tag_node.go:232:18: leaking param: v to result ~r0 level=0
 ./struct_tag_node.go:255:14: leaking param: t to result ~r0 level=1
-./cache.go:74:3: moved to heap: m2
-./cache.go:74:13: make(map[go.shape.uint32_0]go.shape.*uint8_1, len(m) + 10) escapes to heap
-./struct_tag_node.go:73:37: moved to heap: s
-./struct_tag_node.go:78:2: moved to heap: makeTs
-./struct_tag_node.go:75:6: unsafe.Pointer(t) does not escape
-./struct_tag_node.go:78:12: func literal escapes to heap
-./struct_tag_node.go:79:12: make([]go.shape.[]uint8_0, n) escapes to heap
-./struct_tag_node.go:83:12: func literal escapes to heap
-./struct_tag_node.go:84:13: make([]map[string]interface {}, n) escapes to heap
-./struct_tag_node.go:86:16: make(map[string]interface {}) escapes to heap
-./struct_tag_node.go:94:6: &SliceCache[go.shape.[]uint8_0]{...} escapes to heap
-./struct_tag_node.go:95:21: &sliceCache[go.shape.[]uint8_0]{...} escapes to heap
-./struct_tag_node.go:104:13: make([]sliceCache[go.shape.[]uint8_0], cap(s.ch)) escapes to heap
-./struct_tag_node.go:117:6: func literal escapes to heap
-./struct_tag_node.go:119:15: make([]sliceCache[go.shape.[]uint8_0], cap(s.ch)) escapes to heap
-./struct_tag_node.go:73:37: moved to heap: s
-./struct_tag_node.go:78:2: moved to heap: makeTs
-./struct_tag_node.go:75:6: unsafe.Pointer(t) does not escape
-./struct_tag_node.go:78:12: func literal escapes to heap
-./struct_tag_node.go:79:12: make([]go.shape.string_0, n) escapes to heap
-./struct_tag_node.go:83:12: func literal escapes to heap
-./struct_tag_node.go:84:13: make([]map[string]interface {}, n) escapes to heap
-./struct_tag_node.go:86:16: make(map[string]interface {}) escapes to heap
-./struct_tag_node.go:94:6: &SliceCache[go.shape.string_0]{...} escapes to heap
-./struct_tag_node.go:95:21: &sliceCache[go.shape.string_0]{...} escapes to heap
-./struct_tag_node.go:104:13: make([]sliceCache[go.shape.string_0], cap(s.ch)) escapes to heap
-./struct_tag_node.go:117:6: func literal escapes to heap
-./struct_tag_node.go:119:15: make([]sliceCache[go.shape.string_0], cap(s.ch)) escapes to heap
-./struct_tag_node.go:73:37: moved to heap: s
-./struct_tag_node.go:78:2: moved to heap: makeTs
-./struct_tag_node.go:78:12: func literal escapes to heap
-./struct_tag_node.go:79:12: make([]go.shape.interface {}_0, n) escapes to heap
-./struct_tag_node.go:83:12: func literal escapes to heap
-./struct_tag_node.go:84:13: make([]map[string]interface {}, n) escapes to heap
-./struct_tag_node.go:86:16: make(map[string]interface {}) escapes to heap
-./struct_tag_node.go:94:6: &SliceCache[go.shape.interface {}_0]{...} escapes to heap
-./struct_tag_node.go:95:21: &sliceCache[go.shape.interface {}_0]{...} escapes to heap
-./struct_tag_node.go:104:13: make([]sliceCache[go.shape.interface {}_0], cap(s.ch)) escapes to heap
-./struct_tag_node.go:117:6: func literal escapes to heap
-./struct_tag_node.go:119:15: make([]sliceCache[go.shape.interface {}_0], cap(s.ch)) escapes to heap
-./struct_tag_node.go:73:37: moved to heap: s
-./struct_tag_node.go:78:2: moved to heap: makeTs
-./struct_tag_node.go:78:12: func literal escapes to heap
-./struct_tag_node.go:79:12: make([]go.shape.map[string]interface {}_0, n) escapes to heap
-./struct_tag_node.go:83:12: func literal escapes to heap
-./struct_tag_node.go:84:13: make([]map[string]interface {}, n) escapes to heap
-./struct_tag_node.go:86:16: make(map[string]interface {}) escapes to heap
-./struct_tag_node.go:94:6: &SliceCache[go.shape.map[string]interface {}_0]{...} escapes to heap
-./struct_tag_node.go:95:21: &sliceCache[go.shape.map[string]interface {}_0]{...} escapes to heap
-./struct_tag_node.go:104:13: make([]sliceCache[go.shape.map[string]interface {}_0], cap(s.ch)) escapes to heap
-./struct_tag_node.go:117:6: func literal escapes to heap
-./struct_tag_node.go:119:15: make([]sliceCache[go.shape.map[string]interface {}_0], cap(s.ch)) escapes to heap
-./cache.go:35:2: moved to heap: m
-./cache.go:35:11: make(map[go.shape.uint32_0]go.shape.*uint8_1, 1) escapes to heap
+./cache.go:76:3: moved to heap: m2
+./cache.go:76:13: make(map[go.shape.uint32_0]go.shape.*uint8_1, len(m) + 10) escapes to heap
+./cache.go:37:2: moved to heap: m
+./cache.go:37:11: make(map[go.shape.uint32_0]go.shape.*uint8_1, 1) escapes to heap
 ./struct_tag_node.go:185:49: moved to heap: m
 ./hash_map.go:54:15: func literal does not escape
 ./struct_tag_node.go:185:49: make(map[go.shape.uint32_0]go.shape.*uint8_1, 1) escapes to heap
-./func_marshal_unmarshal.go:40:16: index bounds check elided
-./func_marshal_unmarshal.go:56:17: index bounds check elided
-./func_marshal_unmarshal.go:130:17: index bounds check elided
-./json.go:29:18: index bounds check elided
-./json.go:41:17: index bounds check elided
-./json.go:60:16: index bounds check elided
-./json.go:73:20: index bounds check elided
-./json.go:92:20: index bounds check elided
-./json.go:111:17: index bounds check elided
-./json.go:122:20: index bounds check elided
-./json.go:130:20: index bounds check elided
-./json.go:143:15: index bounds check elided
-./json.go:151:20: index bounds check elided
-./json.go:163:15: index bounds check elided
-./json.go:183:20: index bounds check elided
-./struct_tag_info.go:313:16: index bounds check elided
+./func_marshal_unmarshal.go:42:16: index bounds check elided
+./func_marshal_unmarshal.go:59:17: index bounds check elided
+./func_marshal_unmarshal.go:169:17: index bounds check elided
+./json.go:30:18: index bounds check elided
+./json.go:42:17: index bounds check elided
+./json.go:62:16: index bounds check elided
+./json.go:79:20: index bounds check elided
+./json.go:102:20: index bounds check elided
+./json.go:137:17: index bounds check elided
+./json.go:147:20: index bounds check elided
+./json.go:159:20: index bounds check elided
+./json.go:180:15: index bounds check elided
+./json.go:189:20: index bounds check elided
+./json.go:202:15: index bounds check elided
+./json.go:257:20: index bounds check elided
+./struct_tag_info.go:384:16: index bounds check elided
 <autogenerated>:1: inlining call to Type.IsNull
 <autogenerated>:1: inlining call to Type.String
 <autogenerated>:1: inlining call to (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
