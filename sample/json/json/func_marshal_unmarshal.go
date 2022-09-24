@@ -4,16 +4,15 @@ import (
 	"bytes"
 	"reflect"
 	"strconv"
-	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
 )
 
-type unmFunc = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int)
-type mFunc = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte)
+type unmFunc = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int)
+type mFunc = func(store Store, in []byte) (out []byte)
 
 func boolMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
 		iSlash = idxSlash
 		if stream[0] == 't' && stream[i+1] == 'r' && stream[i+2] == 'u' && stream[i+3] == 'e' {
 			i = 4
@@ -26,11 +25,14 @@ func boolMFuncs() (fUnm unmFunc, fM mFunc) {
 			err := lxterrs.New("should be \"false\" or , not [%s]", ErrStream(stream))
 			panic(err)
 		}
-		tag.fSet(pointerOffset(pObj, tag.Offset), stream[0:i])
+
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		store.tag.fSet(store, stream[0:i])
 		return
 	}
-	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
-		_, out = tag.fGet(pointerOffset(pObj, tag.Offset), in)
+	fM = func(store Store, in []byte) (out []byte) {
+		p := pointerOffset(store.obj, store.tag.Offset)
+		_, out = store.tag.fGet(p, in)
 		return
 	}
 	return
@@ -52,7 +54,7 @@ func float64UnmFuncs(stream []byte) (f float64, i int) {
 }
 
 func numMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
 		iSlash = idxSlash
 		for ; i < len(stream); i++ {
 			c := stream[i]
@@ -60,76 +62,81 @@ func numMFuncs() (fUnm unmFunc, fM mFunc) {
 				break
 			}
 		}
-		tag.fSet(pointerOffset(pObj, tag.Offset), stream[:i])
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		store.tag.fSet(store, stream[:i])
 		return
 	}
-	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
-		_, out = tag.fGet(pointerOffset(pObj, tag.Offset), in)
+	fM = func(store Store, in []byte) (out []byte) {
+		p := pointerOffset(store.obj, store.tag.Offset)
+		_, out = store.tag.fGet(p, in)
 		return
 	}
 	return
 }
 
-func structMFuncsStatus1(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+func structMFuncsStatus1(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
 	i++
-	pObj = pointerOffset(pObj, tag.Offset)
-	if tag.fSet != nil {
-		pObj = tag.fSet(pObj, stream[i:])
+	store.obj = pointerOffset(store.obj, store.tag.Offset)
+	if store.tag.fSet != nil {
+		store.obj = store.tag.fSet(store, stream[i:])
 	}
-	n, iSlash := parseObj(idxSlash-i, stream[i:], pObj, tag)
+	n, iSlash := parseObj(idxSlash-i, stream[i:], store)
 	i += n
 	return
 }
 
 func structMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
 			iSlash = idxSlash
 			return
 		}
-		pObj = pointerOffset(pObj, tag.Offset)
-		if tag.fSet != nil {
-			pObj = tag.fSet(pObj, stream[1:])
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		if store.tag.fSet != nil {
+			store.obj = store.tag.fSet(store, stream[1:])
 		}
-		n, iSlash := parseObj(idxSlash-1, stream[1:], pObj, tag)
+		n, iSlash := parseObj(idxSlash-1, stream[1:], store)
 		iSlash++
 		i += n + 1
 		return
 	}
-	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
-		_, out = tag.fGet(pointerOffset(pObj, tag.Offset), in)
+	fM = func(store Store, in []byte) (out []byte) {
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		_, out = store.tag.fGet(store.obj, in)
 		return
 	}
 	return
 }
 
 func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
 			iSlash = idxSlash
-			pBase := tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:])
+			store.obj = pointerOffset(store.obj, store.tag.Offset)
+			pBase := store.tag.fSet(store, stream[i:])
 			// pSlice := (*[]uint8)(pBase)
 			// *pSlice = make([]uint8, 0)
 			pHeader := (*reflect.SliceHeader)(pBase)
-			pHeader.Data = uintptr(pObj)
+			pHeader.Data = uintptr(store.obj)
 			return
 		}
-		n, iSlash := parseSlice(idxSlash-1, stream[1:], pObj, tag)
+		n, iSlash := parseSlice(idxSlash-1, stream[1:], store)
 		iSlash++
 		i += n + 1
 		return
 	}
-	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
-		_, out = tag.fGet(pointerOffset(pObj, tag.Offset), in)
+	fM = func(store Store, in []byte) (out []byte) {
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		_, out = store.tag.fGet(store.obj, in)
 		return
 	}
 	return
 }
 
 func stringMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
 			iSlash = idxSlash
@@ -148,18 +155,19 @@ func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 				raw, i, iSlash = parseUnescapeStr(stream, i, idxSlash)
 			}
 		}
-		tag.fSet(pointerOffset(pObj, tag.Offset), raw)
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		store.tag.fSet(store, raw)
 		return
 	}
-	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
-		_, out = tag.fGet(pointerOffset(pObj, tag.Offset), in)
+	fM = func(store Store, in []byte) (out []byte) {
+		_, out = store.tag.fGet(pointerOffset(store.obj, store.tag.Offset), in)
 		return
 	}
 	return
 }
 
 func interfaceMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, pObj unsafe.Pointer, stream []byte, tag *TagInfo) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
 			iSlash = idxSlash
@@ -168,15 +176,15 @@ func interfaceMFuncs() (fUnm unmFunc, fM mFunc) {
 		iSlash = idxSlash
 		n := trimSpace(stream[i:])
 		i += n
-		iv := (*interface{})(pointerOffset(pObj, tag.Offset))
+		iv := (*interface{})(pointerOffset(store.obj, store.tag.Offset))
 		n, iSlash = parseInterface(idxSlash-i, stream[i:], iv)
 		idxSlash += i
 		i += n
 		// *iv = iface
 		return
 	}
-	fM = func(pObj unsafe.Pointer, in []byte, tag *TagInfo) (out []byte) {
-		_, out = tag.fGet(pointerOffset(pObj, tag.Offset), in)
+	fM = func(store Store, in []byte) (out []byte) {
+		_, out = store.tag.fGet(pointerOffset(store.obj, store.tag.Offset), in)
 		return
 	}
 	return

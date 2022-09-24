@@ -196,11 +196,23 @@ func LoadTagNode(typ reflect.Type, hash uint32) (n *TagInfo, err error) {
 		return n, nil
 	}
 	// log.Printf("type:%s", typ.String())
-	ti, err := NewStructTagInfo(typ, false)
+	ti, err := NewStructTagInfo(typ, false, nil)
 	if err != nil {
 		return nil, err
 	}
 	n = (*TagInfo)(ti)
+	n.Builder.Build()
+
+	n.BPool.New = func() any {
+		N := 10240
+		p := unsafe_NewArray(n.Builder.goType, N)
+		pH := &reflect.SliceHeader{
+			Data: uintptr(p),
+			Len:  N * int(n.TypeSize),
+			Cap:  N * int(n.TypeSize),
+		}
+		return (*[]uint8)(unsafe.Pointer(pH))
+	}
 	cacheStructTagInfo.Set(hash, n)
 	return
 }
@@ -225,6 +237,26 @@ type emptyInterface struct {
 	word unsafe.Pointer
 }
 
+type nonEmptyInterface struct {
+	itab *struct {
+		ityp *GoType // static interface type
+		typ  *GoType // dynamic concrete type
+		hash uint32  // copy of typ.hash
+		_    [4]byte
+		fun  [100000]unsafe.Pointer // method table
+	}
+	word *GoType
+}
+
+func UnpackNonEface(p unsafe.Pointer) *GoType {
+	neface := (*nonEmptyInterface)(p)
+	return neface.word
+}
+
+func UnpackType(t reflect.Type) *GoType {
+	return (*GoType)((*GoIface)(unsafe.Pointer(&t)).Value)
+}
+
 func unpackEface(v interface{}) *emptyInterface {
 	empty := (*emptyInterface)(unsafe.Pointer(&v))
 	return empty
@@ -236,6 +268,18 @@ func UnpackEface(v interface{}) GoEface {
 type GoEface struct {
 	Type  *GoType
 	Value unsafe.Pointer
+}
+
+type GoIface struct {
+	Itab  *GoItab
+	Value unsafe.Pointer
+}
+type GoItab struct {
+	it unsafe.Pointer
+	vt *GoType
+	hv uint32
+	_  [4]byte
+	fn [1]uintptr
 }
 
 type GoType struct {

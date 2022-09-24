@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -12,6 +13,23 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+var p *uint64
+
+func BenchmarkParseUint(b *testing.B) {
+	b.Run("ParseUint", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			n, err := strconv.ParseUint("67788", 10, 64)
+			if err != nil {
+				b.Fatal(err)
+			}
+			_ = n
+			// p = &n
+		}
+		b.StopTimer()
+	})
+}
 
 var j0x = `{
 	"id": "7028151259660092936",

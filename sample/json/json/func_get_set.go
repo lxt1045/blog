@@ -2,35 +2,45 @@ package json
 
 import (
 	"encoding/base64"
+	"fmt"
+	"reflect"
 	"strconv"
 	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
 )
 
-type setFunc = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer)
+type setFunc = func(store PoolStore, bs []byte) (pBase unsafe.Pointer)
 type getFunc = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte)
 
 func pointerOffset(p unsafe.Pointer, offset uintptr) (pOut unsafe.Pointer) {
 	return unsafe.Pointer(uintptr(p) + uintptr(offset))
 }
 
-func ptrTypeFuncs[T any](ptrDeep int, fSet setFunc, fGet getFunc) (fSet1 setFunc, fGet1 getFunc) {
-	fSet1 = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer) {
-		var obj T
-		*(**T)(pObj) = &obj
-		return fSet(unsafe.Pointer(&obj), bs)
+func ptrTypeFuncs[T any](builder *TypeBuilder, name string, ptrDeep int, fSet setFunc, fGet getFunc) (fSet1 setFunc, fGet1 getFunc) {
+	var idx *uintptr = &[]uintptr{0}[0]
+	var x T
+	typ := reflect.TypeOf(x)
+	builder.AppendTagField(name, typ, idx)
+	fSet1 = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		p := pointerOffset(store.pool, *idx)
+		*(**T)(store.obj) = (*T)(p)
+		store.obj = p
+		return fSet(store, bs)
 	}
 	fGet1 = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 		p := *(*unsafe.Pointer)(pObj)
 		return fGet(p, in)
 	}
 	for i := 1; i < ptrDeep; i++ {
+		var idxP *uintptr = &[]uintptr{0}[0]
+		builder.AppendPointer(fmt.Sprintf("%s_%d", name, i), idxP)
 		fSet0, fGet0 := fSet1, fGet1
-		fSet1 = func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer) {
-			var p unsafe.Pointer
-			*(**unsafe.Pointer)(pObj) = &p
-			return fSet0(unsafe.Pointer(&p), bs)
+		fSet1 = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+			p := pointerOffset(store.pool, *idxP)
+			*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
+			store.obj = p
+			return fSet0(store, bs)
 		}
 		fGet1 = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 			p := *(*unsafe.Pointer)(pObj)
@@ -39,14 +49,13 @@ func ptrTypeFuncs[T any](ptrDeep int, fSet setFunc, fGet getFunc) (fSet1 setFunc
 	}
 	return
 }
-
-func boolFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		if raw[0] == 't' {
-			*(*bool)(pObj) = true
+func boolFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		if bs[0] == 't' {
+			*(*bool)(store.obj) = true
 		} else {
-			*(*bool)(pObj) = false
+			*(*bool)(store.obj) = false
 		}
 		return
 	}
@@ -60,20 +69,20 @@ func boolFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[bool](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[bool](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
 
-func uint64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		num, err := strconv.ParseUint(bytesString(raw), 10, 64)
+func uint64Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		num, err := strconv.ParseUint(bytesString(bs), 10, 64)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*uint64)(pObj) = num
+		*(*uint64)(store.obj) = num
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -84,20 +93,20 @@ func uint64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[uint64](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[uint64](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
 
-func int64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		num, err := strconv.ParseInt(bytesString(raw), 10, 64)
+func int64Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		num, err := strconv.ParseInt(bytesString(bs), 10, 64)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*int64)(pObj) = num
+		*(*int64)(store.obj) = num
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -108,19 +117,19 @@ func int64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[int64](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[int64](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func uint32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		num, err := strconv.ParseUint(bytesString(raw), 10, 32)
+func uint32Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		num, err := strconv.ParseUint(bytesString(bs), 10, 32)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*uint32)(pObj) = uint32(num)
+		*(*uint32)(store.obj) = uint32(num)
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -131,19 +140,19 @@ func uint32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[uint32](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[uint32](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func int32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		num, err := strconv.ParseInt(bytesString(raw), 10, 32)
+func int32Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		num, err := strconv.ParseInt(bytesString(bs), 10, 32)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*int32)(pObj) = int32(num)
+		*(*int32)(store.obj) = int32(num)
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -154,19 +163,19 @@ func int32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[int32](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[int32](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func uint16Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		num, err := strconv.ParseUint(bytesString(raw), 10, 32)
+func uint16Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		num, err := strconv.ParseUint(bytesString(bs), 10, 32)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*uint16)(pObj) = uint16(num)
+		*(*uint16)(store.obj) = uint16(num)
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -177,19 +186,19 @@ func uint16Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[uint16](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[uint16](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func int16Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		num, err := strconv.ParseInt(bytesString(raw), 10, 32)
+func int16Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		num, err := strconv.ParseInt(bytesString(bs), 10, 32)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*int16)(pObj) = int16(num)
+		*(*int16)(store.obj) = int16(num)
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -200,19 +209,19 @@ func int16Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[int16](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[int16](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func uint8Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		num, err := strconv.ParseUint(bytesString(raw), 10, 32)
+func uint8Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		num, err := strconv.ParseUint(bytesString(bs), 10, 32)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*uint8)(pObj) = uint8(num)
+		*(*uint8)(store.obj) = uint8(num)
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -223,19 +232,19 @@ func uint8Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[uint8](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[uint8](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func int8Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		num, err := strconv.ParseInt(bytesString(raw), 10, 32)
+func int8Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		num, err := strconv.ParseInt(bytesString(bs), 10, 32)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*int8)(pObj) = int8(num)
+		*(*int8)(store.obj) = int8(num)
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -246,19 +255,19 @@ func int8Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[int8](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[int8](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func float64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		f, err := strconv.ParseFloat(bytesString(raw), 64)
+func float64Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		f, err := strconv.ParseFloat(bytesString(bs), 64)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*float64)(pObj) = f
+		*(*float64)(store.obj) = f
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -268,19 +277,19 @@ func float64Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[float64](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[float64](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func float32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		f, err := strconv.ParseFloat(bytesString(raw), 64)
+func float32Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		f, err := strconv.ParseFloat(bytesString(bs), 64)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
-		*(*float64)(pObj) = f
+		*(*float64)(store.obj) = f
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -290,14 +299,14 @@ func float32Funcs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[float32](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[float32](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func stringFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		*(*string)(pObj) = *(*string)(unsafe.Pointer(&raw))
+func stringFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		*(*string)(store.obj) = *(*string)(unsafe.Pointer(&bs))
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -307,19 +316,19 @@ func stringFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[string](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[string](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func bytesFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
+func bytesFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
 	// []byte 是一种特殊的底层数据类型，需要 base64 编码
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
-		pbs := (*[]byte)(pObj)
-		*pbs = make([]byte, len(raw)*2)
-		n, err := base64.StdEncoding.Decode(*pbs, raw)
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
+		pbs := (*[]byte)(store.obj)
+		*pbs = make([]byte, len(bs)*2)
+		n, err := base64.StdEncoding.Decode(*pbs, bs)
 		if err != nil {
-			err = lxterrs.Wrap(err, ErrStream(raw))
+			err = lxterrs.Wrap(err, ErrStream(bs))
 			return
 		}
 		*pbs = (*pbs)[:n]
@@ -338,13 +347,13 @@ func bytesFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[[]byte](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[[]byte](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
-func sliceFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		pBase = pObj
+func sliceFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		pBase = store.obj
 		return
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -352,21 +361,24 @@ func sliceFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 		return p, in
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[[]uint8](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[[]uint8](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
 
-func structChildFuncs(ptrDeep int, fNew func() unsafe.Pointer) (fSet setFunc, fGet getFunc) {
+func structChildFuncs(builder *TypeBuilder, name string, ptrDeep int, typ reflect.Type) (fSet setFunc, fGet getFunc) {
 	if ptrDeep > 0 {
-		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-			p := *(*unsafe.Pointer)(pObj)
+		var idx *uintptr = &[]uintptr{0}[0]
+		builder.AppendTagField(name, typ, idx)
+		fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+			p := *(*unsafe.Pointer)(store.obj)
 			if p == nil {
 				/*
 					此处可以使用缓存池 sync.Pool(不合适，没有合适的回收时机，，，)， 或者自己实现生成池
 				*/
-				p = fNew()
-				*(*unsafe.Pointer)(pObj) = p
+				// p = fNew()
+				p = pointerOffset(store.pool, *idx)
+				*(*unsafe.Pointer)(store.obj) = p
 			}
 			return unsafe.Pointer(p)
 		}
@@ -376,11 +388,14 @@ func structChildFuncs(ptrDeep int, fNew func() unsafe.Pointer) (fSet setFunc, fG
 		}
 
 		for i := 0; i < ptrDeep; i++ {
+			var idxP *uintptr = &[]uintptr{0}[0]
+			builder.AppendPointer(fmt.Sprintf("%s_%d", name, i), idxP)
 			fSet0, fGet0 := fSet, fGet
-			fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer) {
-				var p unsafe.Pointer
-				*(**unsafe.Pointer)(pObj) = &p
-				return fSet0(unsafe.Pointer(&p), bs)
+			fSet1 := func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+				p := pointerOffset(store.pool, *idxP)
+				*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
+				store.obj = p
+				return fSet0(store, bs)
 			}
 			fGet1 := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 				p := *(*unsafe.Pointer)(pObj)
@@ -393,13 +408,13 @@ func structChildFuncs(ptrDeep int, fNew func() unsafe.Pointer) (fSet setFunc, fG
 }
 
 // 匿名嵌入
-func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getFunc,
-	fNew func() unsafe.Pointer) (fSet setFunc, fGet getFunc) {
+func anonymousStructFuncs(builder *TypeBuilder, name string, ptrDeep int, typ reflect.Type, offset uintptr, fSet0 setFunc, fGet0 getFunc) (fSet setFunc, fGet getFunc) {
 	if ptrDeep <= 0 {
-		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-			pBase = pObj
-			pSon := pointerOffset(pObj, offset)
-			return fSet0(pSon, raw)
+		fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+			pBase = store.obj
+			pSon := pointerOffset(store.obj, offset)
+			store.obj = pSon
+			return fSet0(store, bs)
 		}
 		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 			pBase = pObj
@@ -407,13 +422,17 @@ func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getF
 			return fGet0(pSon, in)
 		}
 	} else {
-		fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-			p := *(*unsafe.Pointer)(pObj)
+		var idx *uintptr = &[]uintptr{0}[0]
+		builder.AppendTagField(name, typ, idx)
+		fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+			p := *(*unsafe.Pointer)(store.obj)
 			if p == nil {
-				p = fNew()
-				*(*unsafe.Pointer)(pObj) = p
+				// p = fNew()
+				p = pointerOffset(store.pool, *idx)
+				*(*unsafe.Pointer)(store.obj) = p
 			}
-			return fSet0(p, raw)
+			store.obj = p
+			return fSet0(store, bs)
 		}
 		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 			p := *(*unsafe.Pointer)(pObj)
@@ -424,11 +443,14 @@ func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getF
 		}
 
 		for i := 0; i < ptrDeep; i++ {
+			var idxP *uintptr = &[]uintptr{0}[0]
+			builder.AppendPointer(fmt.Sprintf("%s_%d", name, i), idxP)
 			fSet0, fGet0 := fSet, fGet
-			fSet1 := func(pObj unsafe.Pointer, bs []byte) (pBase unsafe.Pointer) {
-				var p unsafe.Pointer
-				*(**unsafe.Pointer)(pObj) = &p
-				return fSet0(unsafe.Pointer(&p), bs)
+			fSet1 := func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+				p := pointerOffset(store.pool, *idxP)
+				*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
+				store.obj = p
+				return fSet0(store, bs)
 			}
 			fGet1 := func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 				p := *(*unsafe.Pointer)(pObj)
@@ -439,25 +461,25 @@ func anonymousStructFuncs(ptrDeep int, offset uintptr, fSet0 setFunc, fGet0 getF
 	}
 	return
 }
-func iterfaceFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		return pObj
+func iterfaceFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		return store.obj
 	}
 	if ptrDeep > 0 {
 		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 			p := *(*unsafe.Pointer)(pObj)
 			return p, in
 		}
-		fSet, fGet = ptrTypeFuncs[bool](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[bool](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }
 
-func mapFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
-	fSet = func(pObj unsafe.Pointer, raw []byte) (pBase unsafe.Pointer) {
-		p := (*map[string]interface{})(pObj)
+func mapFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
+	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		p := (*map[string]interface{})(store.obj)
 		*p = make(map[string]interface{})
-		return pObj
+		return store.obj
 	}
 
 	if ptrDeep > 0 {
@@ -465,7 +487,7 @@ func mapFuncs(ptrDeep int) (fSet setFunc, fGet getFunc) {
 			p := *(*unsafe.Pointer)(pObj)
 			return p, in
 		}
-		fSet, fGet = ptrTypeFuncs[bool](ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncs[bool](builder, name, ptrDeep, fSet, fGet)
 	}
 	return
 }

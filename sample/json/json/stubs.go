@@ -4,6 +4,12 @@ import (
 	"unsafe"
 )
 
+//go:linkname unsafe_New reflect.unsafe_New
+func unsafe_New(*GoType) unsafe.Pointer
+
+//go:linkname unsafe_NewArray reflect.unsafe_NewArray
+func unsafe_NewArray(typ *GoType, n int) unsafe.Pointer
+
 // //go:linkname mapassign runtime.makemap
 // func makemap(t *GoType, h unsafe.Pointer, k unsafe.Pointer) unsafe.Pointer
 

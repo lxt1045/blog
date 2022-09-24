@@ -731,7 +731,7 @@ ROUTINE ======================== runtime.(*mheap).allocSpan in /usr/local/go/src
          .          .   1249:		// It's safe to access h.sweepgen without the heap lock because it's
          .          .   1250:		// only ever updated with the world stopped and we run on the
          .          .   1251:		// systemstack which blocks a STW transition.
-         .          .   1252:		atomic.Store(&s.sweepgen, h.sweepgen)
+         .          .   1252:		atomic.PoolStore(&s.sweepgen, h.sweepgen)
          .          .   1253:
          .          .   1254:		// Now that the span is filled in, set its state. This
          .          .   1255:		// is a publication barrier for the other fields in

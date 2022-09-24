@@ -3,10 +3,50 @@ package json
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"sync"
 	"testing"
 	"unsafe"
 )
+
+func Test_NewSlice(t *testing.T) {
+	top := func(in string) (p *string) {
+		return &in
+	}
+	type X struct {
+		x, y *string
+	}
+	printXs := func(xs []X) {
+		fmt.Printf("[ ")
+		for _, x := range xs {
+			fmt.Printf("X{x:%s,y:%s} ", *x.x, *x.y)
+		}
+		fmt.Println("]")
+	}
+
+	f := func() []X {
+		typ := UnpackEface(X{}).Type
+
+		tt := reflect.TypeOf(X{})
+		typ = UnpackType(tt)
+		p := unsafe_NewArray(typ, 1)
+
+		sh := reflect.SliceHeader{
+			Data: uintptr(p),
+			Len:  0,
+			Cap:  2,
+		}
+		s := *(*[]X)(unsafe.Pointer(&sh))
+		return s
+	}
+	s := f()
+	runtime.GC()
+	sa := append(s, X{top("1"), top("2")})
+	sa = append(sa, X{top("11"), top("22")})
+
+	printXs(sa)
+	printXs(s[:2])
+}
 
 func Test_CacheStruct(t *testing.T) {
 	b := NewTypeBuilder().

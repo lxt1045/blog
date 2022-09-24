@@ -191,11 +191,18 @@ go tool pprof ./json.test cpu.prof
 func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 	type Name struct {
 		ZHCN  *string `json:"ZH_CN"`
-		ENUS  *string `json:"EN_US"`
+		ZHCN1 *string `json:"ZH_CN1"`
+		ZHCN2 *string `json:"ZH_CN2"`
+		ZHCN3 *string `json:"ZH_CN3"`
+		ZHCN4 *string `json:"ZH_CN4"`
 		Count *int    `json:"count"`
 	}
 	bs := []byte(`{
 		"ZH_CN":"chinesechinesec",
+		"ZH_CN1":"chinesechinesec",
+		"ZH_CN2":"chinesechinesec",
+		"ZH_CN3":"chinesechinesec",
+		"ZH_CN4":"chinesechinesec",
 		"EN_US":"English",
 		"count":8
 	}`)
@@ -222,7 +229,7 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
-	return
+	// return
 	b.Run("sonic", func(b *testing.B) {
 		d := Name{}
 		b.ReportAllocs()
@@ -238,7 +245,7 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 	})
 }
 
-func init() {
+func init1() {
 	bs := []byte(j0)
 	d := J0{}
 	err := Unmarshal(bs, &d)
@@ -888,7 +895,7 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 	}
 }
 
-func init() {
+func init2() {
 	bs := []byte(testdata.TwitterJsonLarge)
 	d := testdata.TwitterStruct{}
 	err := Unmarshal(bs, &d)
@@ -1171,7 +1178,7 @@ func Test_tagParse(t *testing.T) {
 		d := DataSt{}
 		typ := reflect.TypeOf(&d)
 		typ = typ.Elem()
-		to, err := NewStructTagInfo(typ, false)
+		to, err := NewStructTagInfo(typ, false, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1192,7 +1199,7 @@ func BenchmarkStruct(b *testing.B) {
 
 	b.Run(name, func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			NewStructTagInfo(typ, false)
+			NewStructTagInfo(typ, false, nil)
 		}
 	})
 }

@@ -54,8 +54,8 @@ func bsToStr(bs []byte) string {
 }
 
 // 解析 {}
-// func parseObj(sts status, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i int) {
-func parseObj(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i, iSlash int) {
+// func parseObj(sts status, stream []byte, store PoolStore,  tag *TagInfo) (i int) {
+func parseObj(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
 	n, nB := 0, 0
 	key := []byte{}
@@ -82,10 +82,15 @@ func parseObj(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
 		// 解析 value
-		son := tag.GetChild(key)
+		son := store.tag.GetChild(key)
 
 		if son != nil {
-			n, iSlash = son.fUnm(iSlash-i, pObj, stream[i:], son)
+			storeSon := PoolStore{
+				tag:  son,
+				pool: store.pool,
+				obj:  store.obj,
+			}
+			n, iSlash = son.fUnm(iSlash-i, storeSon, stream[i:])
 			iSlash += i
 		} else {
 			//TODO 通过 IndexByte 的方式快速跳过； 在下一层处理，这里 设为 nil
@@ -208,20 +213,21 @@ func parseSliceInterface(idxSlash int, stream []byte) (s []interface{}, i, iSlas
 		}
 	}
 }
-func parseSlice(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i, iSlash int) {
+func parseSlice(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
-	pBase := tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:])
+	store.obj = pointerOffset(store.obj, store.tag.Offset)
+	pBase := store.tag.fSet(store, stream[i:])
 	if stream[i] == ']' {
 		i++
 		pHeader := (*reflect.SliceHeader)(pBase)
-		pHeader.Data = uintptr(pObj)
+		pHeader.Data = uintptr(store.obj)
 		return
 	}
-	son := tag.ChildList[0]
+	son := store.tag.ChildList[0]
 	// size := int(son.Type.Size())
 	size := son.TypeSize
-	uint8s := tag.SPool.Get().(*[]uint8)
+	uint8s := store.tag.SPool.Get().(*[]uint8)
 	// pHPool := (*reflect.SliceHeader)(unsafe.Pointer(uint8s))
 	pHeader := (*reflect.SliceHeader)(pBase)
 	bases := (*[]uint8)(pBase)
@@ -232,7 +238,7 @@ func parseSlice(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) 
 			if c < 1024 {
 				c = 1024
 			}
-			v := reflect.MakeSlice(tag.BaseType, 0, c)
+			v := reflect.MakeSlice(store.tag.BaseType, 0, c)
 			p := reflectValueToPointer(&v)
 			pH := (*reflect.SliceHeader)(p)
 			pH.Cap = pH.Cap * size
@@ -247,7 +253,11 @@ func parseSlice(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) 
 
 		p := unsafe.Pointer(&(*uint8s)[l])
 		if son != nil && son.fUnm != nil {
-			n, iSlash = son.fUnm(iSlash-i, p, stream[i:], son)
+			n, iSlash = son.fUnm(iSlash-i, PoolStore{
+				obj:  p,
+				tag:  son,
+				pool: store.pool,
+			}, stream[i:])
 			iSlash += i
 			if n == 0 {
 				pHeader.Len -= size
@@ -272,7 +282,7 @@ func parseSlice(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) 
 	*bases = (*uint8s)[:len(*uint8s):len(*uint8s)]
 	if cap(*uint8s)-len(*uint8s) > 4*size {
 		*uint8s = (*uint8s)[len(*uint8s):]
-		tag.SPool.Put(uint8s)
+		store.tag.SPool.Put(uint8s)
 	}
 	// pH.Data = uintptr(pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len)))
 	// pH.Cap = pHeader.Cap - pHeader.Len
@@ -282,25 +292,26 @@ func parseSlice(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) 
 	return
 }
 
-func parseSlice1(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i, iSlash int) {
+func parseSlice1(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
-	pBase := tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:])
+	store.obj = pointerOffset(store.obj, store.tag.Offset)
+	pBase := store.tag.fSet(store, stream[i:])
 	if stream[i] == ']' {
 		i++
 		pHeader := (*reflect.SliceHeader)(pBase)
-		pHeader.Data = uintptr(pObj)
+		pHeader.Data = uintptr(store.obj)
 		return
 	}
-	son := tag.ChildList[0]
+	son := store.tag.ChildList[0]
 	size := int(son.Type.Size())
-	// n := tag.MakeN
+	// n := store.tag.MakeN
 	// if n < 4 {
 	// 	n = 4
 	// }
 	// n := 4
 
-	v := reflect.MakeSlice(tag.BaseType, 0, 4)
+	v := reflect.MakeSlice(store.tag.BaseType, 0, 4)
 	p0 := reflectValueToPointer(&v)
 	pH := (*reflect.SliceHeader)(p0)
 	pHeader := (*reflect.SliceHeader)(pBase)
@@ -309,10 +320,10 @@ func parseSlice1(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo)
 
 	for n, nB := 0, 0; ; {
 		if pHeader.Len+size > pHeader.Cap {
-			// tag.Pool.Grow(pHeader)
+			// store.tag.Pool.Grow(pHeader)
 			l := pHeader.Cap / size
 			c := l * 2 //l + l/2
-			v := reflect.MakeSlice(tag.BaseType, 0, c)
+			v := reflect.MakeSlice(store.tag.BaseType, 0, c)
 			p := reflectValueToPointer(&v)
 			pH := (*reflect.SliceHeader)(p)
 			// pH.Len = pHeader.Len
@@ -327,8 +338,10 @@ func parseSlice1(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo)
 		pHeader.Len += size
 
 		p := pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len-size))
+		store.obj = p
 		if son != nil && son.fUnm != nil {
-			n, iSlash = son.fUnm(iSlash-i, p, stream[i:], son)
+			store.tag = son
+			n, iSlash = son.fUnm(iSlash-i, store, stream[i:])
 			iSlash += i
 			if n == 0 {
 				pHeader.Len -= size
@@ -352,28 +365,29 @@ func parseSlice1(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo)
 
 	pHeader.Len, pHeader.Cap = pHeader.Len/size, pHeader.Cap/size
 	// if pHeader.Len > 4 {
-	// 	tag.MakeN = pHeader.Len
+	// 	store.tag.MakeN = pHeader.Len
 	// }
 	return
 }
 
-func parseSlice0(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo) (i, iSlash int) {
+func parseSlice0(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
-	pBase := tag.fSet(pointerOffset(pObj, tag.Offset), stream[i:])
+	store.obj = pointerOffset(store.obj, store.tag.Offset)
+	pBase := store.tag.fSet(store, stream[i:])
 	if stream[i] == ']' {
 		i++
 		pHeader := (*reflect.SliceHeader)(pBase)
-		pHeader.Data = uintptr(pObj)
+		pHeader.Data = uintptr(store.obj)
 		return
 	}
-	son := tag.ChildList[0]
+	son := store.tag.ChildList[0]
 	size := int(son.Type.Size())
 	// pSlice := (*[]uint8)(pBase) // 此处会被 GC 回收，因为申请的时候没有指示包含指针，所以不会被 GC 标志含有指针
 	// pHeader := (*reflect.SliceHeader)(pBase)
 	// idxPool := 0
 	// 只要一个 pool 就可以了，最后 make 一个大小合适的，这个 put 会 pool 中，减少重复分配
-	p := tag.Pool.Get().(unsafe.Pointer)
+	p := store.tag.Pool.Get().(unsafe.Pointer)
 	pHeader := (*reflect.SliceHeader)(p)
 	pSlice := (*[]uint8)(p)
 	pHeader.Len = 0
@@ -382,13 +396,15 @@ func parseSlice0(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo)
 
 	for n, nB := 0, 0; ; {
 		if pHeader.Len+size > pHeader.Cap {
-			tag.Pool.Grow(pHeader)
+			store.tag.Pool.Grow(pHeader)
 		}
 		pHeader.Len += size
 
 		p := pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len-size))
+		store.obj = p
 		if son != nil && son.fUnm != nil {
-			n, iSlash = son.fUnm(iSlash-i, p, stream[i:], son)
+			store.tag = son
+			n, iSlash = son.fUnm(iSlash-i, store, stream[i:])
 			iSlash += i
 			if n == 0 {
 				pHeader.Len -= size
@@ -417,7 +433,7 @@ func parseSlice0(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo)
 	// 	*(*[]uint8)(pBase) = *pSlice
 	// } else {
 	l := pHeader.Len / size
-	v := reflect.MakeSlice(tag.BaseType, l, l)
+	v := reflect.MakeSlice(store.tag.BaseType, l, l)
 	p0 := reflectValueToPointer(&v)
 	pS := (*[]uint8)(p0)
 	*(*[]uint8)(pBase) = *pS
@@ -425,7 +441,7 @@ func parseSlice0(idxSlash int, stream []byte, pObj unsafe.Pointer, tag *TagInfo)
 	pH.Len, pH.Cap = pH.Len*size, pH.Cap*size
 	copy(*pS, *pSlice)
 
-	tag.Pool.Put(p)
+	store.tag.Pool.Put(p)
 	// }
 
 	return
@@ -668,18 +684,18 @@ type status struct {
 }
 
 //解析 obj: {}, 或 []
-func parseRoot(stream []byte, pObj unsafe.Pointer, tag *TagInfo) (err error) {
+func parseRoot(stream []byte, store PoolStore) (err error) {
 	idxSlash := bytes.IndexByte(stream[1:], '\\')
 	if idxSlash < 0 {
 		idxSlash = math.MaxInt
 	}
 	// sts := status{}
 	if stream[0] == '{' {
-		parseObj(idxSlash, stream[1:], pObj, tag)
+		parseObj(idxSlash, stream[1:], store)
 		return
 	}
 	if stream[0] == '[' {
-		parseSlice(idxSlash, stream[1:], pObj, tag)
+		parseSlice(idxSlash, stream[1:], store)
 		return
 	}
 	return

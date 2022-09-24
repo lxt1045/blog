@@ -722,7 +722,7 @@ Time: Nov 28, 2021 at 2:24pm (CST)
              testing.(*B).run1.func1
 -----------+-------------------------------------------------------
      bytes:  160B
-      640B   github.com/lxt1045/Experiment/golang/json/pkg/json.TagInfo.Store
+      640B   github.com/lxt1045/Experiment/golang/json/pkg/json.TagInfo.PoolStore
              github.com/lxt1045/Experiment/golang/json/pkg/json.NewStructTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.NewStructTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
@@ -781,7 +781,7 @@ Time: Nov 28, 2021 at 2:24pm (CST)
              testing.(*B).run1.func1
 -----------+-------------------------------------------------------
      bytes:  160B
-    1.09kB   github.com/lxt1045/Experiment/golang/json/pkg/json.TagInfo.Store
+    1.09kB   github.com/lxt1045/Experiment/golang/json/pkg/json.TagInfo.PoolStore
              github.com/lxt1045/Experiment/golang/json/pkg/json.NewStructTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.(*tagNode).GetTagInfo
              github.com/lxt1045/Experiment/golang/json/pkg/json.Unmarshal

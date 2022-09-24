@@ -5,10 +5,21 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
 )
+
+type Store struct {
+	obj unsafe.Pointer
+	tag *TagInfo
+}
+type PoolStore struct {
+	obj  unsafe.Pointer
+	pool unsafe.Pointer
+	tag  *TagInfo
+}
 
 //TagInfo 拥有tag的struct的成员的解析结果
 type TagInfo struct {
@@ -38,13 +49,62 @@ type TagInfo struct {
 	MakeN  int
 	SPool  sync.Pool
 
+	Builder *TypeBuilder
+	BPool   sync.Pool
+
+	xPool unsafe.Pointer
 	// 学 Nginx，每个 tag 都搞一个 []type,用于集中分配，slice type还可以动态增长，
 	// 1. 通过 pool 动态分配: slice, 可以动态增长，然后截断留下未使用部分
 	// 2. 通过 动态定义的 struct:reflect.StructOf(fileIDs), 通过 reflect.New()一次性分配此次需要的所有内存
 }
+type XPool struct {
+	BPools    []uint8
+	idxBPools int32
+}
 
 func (p *TagInfo) cacheKey() (k string) {
 	return p.TagName
+}
+func (p *TagInfo) NewPool() unsafe.Pointer {
+	if len(p.Builder.fields) == 0 {
+		return nil
+	}
+
+	s := p.BPool.Get().(*[]uint8)
+	pp := unsafe.Pointer(&(*s)[0])
+	if cap(*s) > p.TypeSize*2 {
+		*s = (*s)[p.TypeSize:]
+		p.BPool.Put(s)
+	}
+
+	return pp
+}
+func (p *TagInfo) NewPool2() unsafe.Pointer {
+	if len(p.Builder.fields) == 0 {
+		return nil
+	}
+	ppp := atomic.LoadPointer(&p.xPool)
+	if ppp == nil {
+		N := 10240
+		pp := unsafe_NewArray(p.Builder.goType, N)
+		pH := &reflect.SliceHeader{
+			Data: uintptr(pp),
+			Len:  N * int(p.TypeSize),
+			Cap:  N * int(p.TypeSize),
+		}
+
+		us := *(*[]uint8)(unsafe.Pointer(pH))
+		ppp = unsafe.Pointer(&us)
+	}
+
+	s := p.BPool.Get().(*[]uint8)
+	pp := unsafe.Pointer(&(*s)[0])
+	if cap(*s) > p.TypeSize*2 {
+		*s = (*s)[p.TypeSize:]
+		p.BPool.Put(s)
+	}
+
+	return pp
 }
 func (t *TagInfo) buildChildMap() {
 	if len(t.ChildList) == 0 {
@@ -106,58 +166,58 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 	switch baseType.Kind() {
 	case reflect.Bool:
 		ti.JSONType = Bool
-		ti.fSet, ti.fGet = boolFuncs(ptrDeep)
+		ti.fSet, ti.fGet = boolFuncs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = boolMFuncs()
 	case reflect.Uint, reflect.Uint64, reflect.Uintptr:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = uint64Funcs(ptrDeep)
+		ti.fSet, ti.fGet = uint64Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int, reflect.Int64:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = int64Funcs(ptrDeep)
+		ti.fSet, ti.fGet = int64Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint32:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = uint32Funcs(ptrDeep)
+		ti.fSet, ti.fGet = uint32Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int32:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = int32Funcs(ptrDeep)
+		ti.fSet, ti.fGet = int32Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint16:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = uint16Funcs(ptrDeep)
+		ti.fSet, ti.fGet = uint16Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int16:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = int16Funcs(ptrDeep)
+		ti.fSet, ti.fGet = int16Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint8:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = uint8Funcs(ptrDeep)
+		ti.fSet, ti.fGet = uint8Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int8:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = int8Funcs(ptrDeep)
+		ti.fSet, ti.fGet = int8Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Float64:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = float64Funcs(ptrDeep)
+		ti.fSet, ti.fGet = float64Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Float32:
 		ti.JSONType = Number
-		ti.fSet, ti.fGet = float32Funcs(ptrDeep)
+		ti.fSet, ti.fGet = float32Funcs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.String:
 		ti.JSONType = String
-		ti.fSet, ti.fGet = stringFuncs(ptrDeep)
+		ti.fSet, ti.fGet = stringFuncs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = stringMFuncs()
 	case reflect.Slice: // &[]byte; Array
 		ti.fUnm, ti.fM = sliceMFuncs()
 		ti.MakeN = 4
 		if isBytes(baseType) {
 			ti.JSONType = Bytes
-			ti.fSet, ti.fGet = bytesFuncs(ptrDeep)
+			ti.fSet, ti.fGet = bytesFuncs(ti.Builder, ti.TagName, ptrDeep)
 		} else {
 			ti.JSONType = Slice
 			ti.BaseType = baseType
@@ -166,6 +226,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 				TagName:  `"son"`,
 				Type:     sliceType,
 				TypeSize: int(sliceType.Size()),
+				Builder:  ti.Builder,
 			}
 			err = son.setFuncs(sliceType)
 			if err != nil {
@@ -175,7 +236,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			if err != nil {
 				return lxterrs.Wrap(err, "Struct")
 			}
-			ti.fSet, ti.fGet = sliceFuncs(ptrDeep)
+			ti.fSet, ti.fGet = sliceFuncs(ti.Builder, ti.TagName, ptrDeep)
 
 			if ptrDeep > 0 || son.hasPtr {
 				ti.hasPtr = true
@@ -195,7 +256,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 	case reflect.Struct:
 		ti.fUnm, ti.fM = structMFuncs()
 		ti.JSONType = Struct
-		son, e := NewStructTagInfo(baseType, false)
+		son, e := NewStructTagInfo(baseType, false, ti.Builder)
 		if err = e; err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
@@ -208,16 +269,11 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 				}
 			}
 			ti.buildChildMap()
-			ti.fSet, ti.fGet = structChildFuncs(ptrDeep, func() unsafe.Pointer {
-				v := reflect.New(baseType)
-				return reflectValueToPointer(&v)
-			})
+			ti.fSet, ti.fGet = structChildFuncs(ti.Builder, ti.TagName, ptrDeep, baseType)
 		} else {
 			for _, c := range son.ChildList {
-				c.fSet, c.fGet = anonymousStructFuncs(ptrDeep, ti.Offset, c.fSet, c.fGet, func() unsafe.Pointer {
-					v := reflect.New(baseType)
-					return reflectValueToPointer(&v)
-				})
+				c.fSet, c.fGet = anonymousStructFuncs(
+					ti.Builder, ti.TagName, ptrDeep, baseType, ti.Offset, c.fSet, c.fGet)
 				err = ti.AddChild(c)
 				if err != nil {
 					return lxterrs.Wrap(err, "AddChild")
@@ -227,15 +283,17 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 	case reflect.Interface:
 		ti.JSONType = Interface
 		// Interface 需要根据实际类型创建
-		ti.fSet, ti.fGet = iterfaceFuncs(ptrDeep)
+		ti.fSet, ti.fGet = iterfaceFuncs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = interfaceMFuncs()
 	case reflect.Map:
 		ti.JSONType = Map
-		ti.fSet, ti.fGet = mapFuncs(ptrDeep)
+		ti.fSet, ti.fGet = mapFuncs(ti.Builder, ti.TagName, ptrDeep)
 		valueType := baseType.Elem()
 		son := &TagInfo{
-			TagName: `"son"`,
-			Type:    valueType,
+			TagName:  `"son"`,
+			Type:     valueType,
+			Builder:  ti.Builder,
+			TypeSize: int(valueType.Size()),
 		}
 		err = ti.AddChild(son)
 		if err != nil {
@@ -255,15 +313,20 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 
 //NewStructTagInfo 解析struct的tag字段，并返回解析的结果
 //只需要type, 不需要 interface 也可以? 不着急,分步来
-func NewStructTagInfo(typIn reflect.Type, noBuildmap bool) (ti *TagInfo, err error) {
+func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder) (ti *TagInfo, err error) {
 	if typIn.Kind() != reflect.Struct {
 		err = lxterrs.New("NewStructTagInfo only accepts structs; got %v", typIn.Kind())
 		return
+	}
+	if builder == nil {
+		builder = NewTypeBuilder()
 	}
 	ti = &TagInfo{
 		TagName:  typIn.String(),
 		BaseKind: typIn.Kind(), // 解析出最内层类型
 		JSONType: Struct,
+		Builder:  builder,
+		TypeSize: int(typIn.Size()),
 	}
 
 	for i := 0; i < typIn.NumField(); i++ {
@@ -275,6 +338,8 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool) (ti *TagInfo, err err
 			Offset:    field.Offset,
 			BaseKind:  field.Type.Kind(),
 			Anonymous: field.Anonymous,
+			Builder:   builder,
+			TypeSize:  int(field.Type.Size()),
 		}
 		if !field.IsExported() {
 			continue
@@ -376,6 +441,12 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 	if err != nil {
 		return
 	}
-	err = parseRoot(bs[i:], eface.Value, (*TagInfo)(n))
+	tag := (*TagInfo)(n)
+	store := PoolStore{
+		tag:  tag,
+		obj:  eface.Value,
+		pool: tag.NewPool(),
+	}
+	err = parseRoot(bs[i:], store)
 	return
 }
