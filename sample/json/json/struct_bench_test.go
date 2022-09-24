@@ -191,11 +191,27 @@ go tool pprof ./json.test cpu.prof
 func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 	type Name struct {
 		ZHCN  *string `json:"ZH_CN"`
+		ZHCN1 *string `json:"ZH_CN1"`
+		ZHCN2 *string `json:"ZH_CN2"`
+		ZHCN3 *string `json:"ZH_CN3"`
+		ZHCN4 *string `json:"ZH_CN4"`
+		ZHCN5 *string `json:"ZH_CN5"`
+		ZHCN6 *string `json:"ZH_CN6"`
+		ZHCN7 *string `json:"ZH_CN7"`
+		ZHCN8 *string `json:"ZH_CN8"`
 		ENUS  *string `json:"EN_US"`
 		Count *int    `json:"count"`
 	}
 	bs := []byte(`{
 		"ZH_CN":"chinesechinesec",
+		"ZH_CN1":"chinesechinesec",
+		"ZH_CN2":"chinesechinesec",
+		"ZH_CN3":"chinesechinesec",
+		"ZH_CN4":"chinesechinesec",
+		"ZH_CN5":"chinesechinesec",
+		"ZH_CN6":"chinesechinesec",
+		"ZH_CN7":"chinesechinesec",
+		"ZH_CN8":"chinesechinesec",
 		"EN_US":"English",
 		"count":8
 	}`)
@@ -222,7 +238,7 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
-	return
+	// return
 	b.Run("sonic", func(b *testing.B) {
 		d := Name{}
 		b.ReportAllocs()
