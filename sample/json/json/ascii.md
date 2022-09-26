@@ -1,6 +1,10 @@
+RFC8259:
+空格： '\ ', '\t', '\r', '\n' 
+
 JSON格式是1999年《JavaScript Programming Language, Standard ECMA-262 3rd Edition》的子集合，所以可以在JavaScript以eval()函数（javascript通过eval()调用解析器）读入。不过这并不代表JSON无法使用于其他语言，事实上几乎所有与网络开发相关的语言都有JSON函数库。
 
-JSON的基本数据类型：
+JSON的基本数据类型： false / null / true / object / array / number / string
+number = [ minus ] int [ frac ] [ exp ]
 
 数值：十进制数，不能有前导0，可以为负数，可以有小数部分。还可以用e或者E表示指数部分。不能包含非数，如NaN。不区分整数与浮点数。JavaScript用双精度浮点数表示所有数值。
 字符串：以双引号""括起来的零个或多个Unicode码位。支持反斜杠开始的转义字符序列。

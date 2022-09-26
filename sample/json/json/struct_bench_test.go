@@ -50,6 +50,133 @@ type Description struct {
 	ENUS string `json:"EN_US"`
 }
 
+func Test_Marshal(t *testing.T) {
+	type Name struct {
+		ZHCN  string `json:"ZH_CN"`
+		ENUS  string `json:"EN_US"`
+		ZHCN1 string
+		ZHCN2 string
+		ZHCN3 string
+		ZHCN4 string
+		ZHCN5 string
+		ZHCN6 string
+		Count int `json:"count"`
+	}
+	bs := []byte(`{
+		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN2":"chinesechinesechinesechines",
+		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
+		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZH_CN":"chinesechinesec",
+		"EN_US":"English",
+		"count":8
+	}`)
+
+	t.Run("Marshal", func(t *testing.T) {
+		d := Name{}
+		err := json.Unmarshal(bs, &d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bs, err = Marshal(&d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("to:%s", string(bs))
+	})
+}
+
+func BenchmarkMarshal(b *testing.B) {
+	type Name struct {
+		ZHCN  string `json:"ZH_CN"`
+		ENUS  string `json:"EN_US"`
+		ZHCN1 string
+		ZHCN2 string
+		ZHCN3 string
+		ZHCN4 string
+		ZHCN5 string
+		ZHCN6 string
+		Count int `json:"count"`
+	}
+	bs := []byte(`{
+		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN2":"chinesechinesechinesechines",
+		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
+		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
+		"ZH_CN":"chinesechinesec",
+		"EN_US":"English",
+		"count":8
+	}`)
+
+	d := Name{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	err = sonic.Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	name := "Marshal"
+	b.Run(name, func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := Marshal(&d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("sonic", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := sonic.Marshal(&d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run(name, func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := Marshal(&d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("sonic", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := sonic.Marshal(&d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+}
+
 func Test_Unmarshal_0(t *testing.T) {
 	type Name struct {
 		ZHCN  string `json:"ZH_CN"`
@@ -192,19 +319,38 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 	type Name struct {
 		ZHCN  *string `json:"ZH_CN"`
 		ZHCN1 *string `json:"ZH_CN1"`
-		ZHCN2 *string `json:"ZH_CN2"`
-		ZHCN3 *string `json:"ZH_CN3"`
-		ZHCN4 *string `json:"ZH_CN4"`
-		Count *int    `json:"count"`
+		ZHCN2 *string `json:"xx"`
+		ZHCN3 *string `json:"yy"`
+		ZHCN4 *string `json:"DD"`
+		ZHCN5 *string `json:"os"`
+		ZHCN6 *string `json:"test"`
+		ZHCN7 *string `json:"zxzv"`
+		ZHCN8 *string `json:"XDS1"`
+		ENUS  *string `json:"EN_US"`
+	}
+	type NameA struct {
+		ZHCN  string `json:"ZH_CN"`
+		ZHCN1 string `json:"ZH_CN1"`
+		ZHCN2 string `json:"xx"`
+		ZHCN3 string `json:"yy"`
+		ZHCN4 string `json:"DD"`
+		ZHCN5 string `json:"os"`
+		ZHCN6 string `json:"test"`
+		ZHCN7 string `json:"zxzv"`
+		ZHCN8 string `json:"XDS1"`
+		ENUS  string `json:"EN_US"`
 	}
 	bs := []byte(`{
 		"ZH_CN":"chinesechinesec",
 		"ZH_CN1":"chinesechinesec",
-		"ZH_CN2":"chinesechinesec",
-		"ZH_CN3":"chinesechinesec",
-		"ZH_CN4":"chinesechinesec",
-		"EN_US":"English",
-		"count":8
+		"xx":"chinesechinesec",
+		"yy":"chinesechinesec",
+		"DD":"chinesechinesec",
+		"os":"chinesechinesec",
+		"test":"chinesechinesec",
+		"zxzv":"chinesechinesec",
+		"XDS1":"chinesechinesec",
+		"EN_US":"English"
 	}`)
 	str := string(bs)
 	{
@@ -213,10 +359,42 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+		runtime.GC()
+		sonic.UnmarshalString(str, &d)
+		Unmarshal(bs, &d)
 	}
 
-	name := "Unmarshal"
-	b.Run(name, func(b *testing.B) {
+	//
+	b.Run("Marshal-p", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := Marshal(&d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("sonic.Marshal-p", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := sonic.MarshalString(&d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+
+	//
+
+	b.Run("Unmarshal-p0", func(b *testing.B) {
 		d := Name{}
 		b.ReportAllocs()
 		b.ResetTimer()
@@ -230,8 +408,48 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 		b.SetBytes(int64(b.N))
 	})
 	// return
-	b.Run("sonic", func(b *testing.B) {
+	b.Run("Unmarshal-p", func(b *testing.B) {
 		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := Unmarshal(bs, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("sonic-p", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := sonic.UnmarshalString(str, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("Unmarshal", func(b *testing.B) {
+		d := NameA{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := Unmarshal(bs, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	// return
+	b.Run("sonic", func(b *testing.B) {
+		d := NameA{}
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -324,6 +542,8 @@ func BenchmarkMyUnmarshal3(b *testing.B) {
 }
 
 /*
+go test -benchmem -run=^$ -bench ^BenchmarkUnMarshalStruct$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+
 go test -benchmem -run=^$ -benchtime=10000000x -bench "^BenchmarkUnMarshalStruct$"
 BenchmarkUnMarshalStruct/lxt-st-12              10000000               129.2 ns/op      77375851.24 MB/s               0 B/op          0 allocs/op
 BenchmarkUnMarshalStruct/sonic-st-12            10000000               155.8 ns/op      64166301.93 MB/s               0 B/op          0 allocs/op
@@ -349,6 +569,7 @@ func BenchmarkUnMarshalStruct(b *testing.B) {
 	str := string(bs)
 	var d Name
 	Unmarshal(bs, &d)
+	sonic.UnmarshalString(str, &d)
 
 	runs := []struct {
 		name string
@@ -376,9 +597,20 @@ func BenchmarkUnMarshalStruct(b *testing.B) {
 				sonic.UnmarshalString(str, &d)
 			},
 		},
+		{"lxt.marshal-st",
+			func() {
+				Marshal(&d)
+			},
+		},
+		{
+			"sonic.marshal-st",
+			func() {
+				sonic.Marshal(&d)
+			},
+		},
 	}
 
-	for _, r := range runs {
+	for _, r := range runs[:] {
 		b.Run(r.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
@@ -390,49 +622,94 @@ func BenchmarkUnMarshalStruct(b *testing.B) {
 	}
 }
 
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkUnMarshalStructMap$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkUnMarshalStructMap$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+//   */
 func BenchmarkUnMarshalStructMap(b *testing.B) {
 	bs := []byte(`{
-		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN2":"chinesechinesechinesechines",
-		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
-		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZH_CN":"chinesechinesec",
+		"ZH_CN1":"chinesechinese",
+		"xx":"chinese",
+		"yy":"chinese",
+		"os":"chinesechinese",
+		"test":"chinesechinese",
+		"zxzv":"chinesechinese",
+		"ZH_CN":"chinese",
 		"EN_US":"English",
-		"count":8
+		"XDS1":"English"
 	}`)
+	type Name struct {
+		ZHCN  *string `json:"ZH_CN"`
+		ZHCN1 *string `json:"ZH_CN1"`
+		ZHCN2 *string `json:"xx"`
+		ZHCN3 *string `json:"yy"`
+		ZHCN5 *string `json:"os"`
+		ZHCN6 *string `json:"test"`
+		ZHCN7 *string `json:"zxzv"`
+		ZHCN8 *string `json:"XDS1"`
+		ENUS  *string `json:"EN_US"`
+	}
+	st := Name{}
 	str := string(bs)
 	var d map[string]interface{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	err = sonic.UnmarshalString(str, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
 	runs := []struct {
 		name string
 		f    func()
 	}{
 		{"lxt-map",
 			func() {
-				Unmarshal(bs, &d)
+				err := Unmarshal(bs, &d)
+				if err != nil {
+					b.Fatal(err)
+				}
 			},
 		},
 		{
 			"sonic-map",
 			func() {
-				sonic.UnmarshalString(str, &d)
+				err := sonic.UnmarshalString(str, &d)
+				if err != nil {
+					b.Fatal(err)
+				}
 			},
 		},
 		{"lxt-map",
 			func() {
-				Unmarshal(bs, &d)
+				err := Unmarshal(bs, &d)
+				if err != nil {
+					b.Fatal(err)
+				}
 			},
 		},
 		{
 			"sonic-map",
 			func() {
-				sonic.UnmarshalString(str, &d)
+				err := sonic.UnmarshalString(str, &d)
+				if err != nil {
+					b.Fatal(err)
+				}
+			},
+		},
+		{"lxt-st",
+			func() {
+				err := Unmarshal(bs, &st)
+				if err != nil {
+					b.Fatal(err)
+				}
 			},
 		},
 	}
 
-	for _, r := range runs {
+	for _, r := range runs[:] {
 		b.Run(r.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
@@ -524,6 +801,11 @@ func BenchmarkUnmarshalStruct1x(b *testing.B) {
 	}
 }
 
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1xMap$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1xMap$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+//   */
 func BenchmarkUnmarshalStruct1xMap(b *testing.B) {
 	bs := []byte(j0)
 	data := string(bs)
@@ -599,7 +881,7 @@ func BenchmarkUnmarshalStruct1xMap(b *testing.B) {
 		},
 	}
 
-	for _, r := range runs {
+	for _, r := range runs[:] {
 		b.Run(r.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				r.f()
@@ -692,6 +974,25 @@ func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 				}
 			},
 		},
+		{
+			"sonic.marshal-st",
+			func() {
+				m := testdata.Book{}
+				_, err := sonic.Marshal(&m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{"std.marshal-st",
+			func() {
+				m := testdata.Book{}
+				_, err := json.Marshal(&m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
 	}
 
 	for _, r := range runs[:] {
@@ -778,6 +1079,25 @@ func BenchmarkUnmarshalStruct1x_middle(b *testing.B) {
 			func() {
 				m := testdata.Book{}
 				err := json.Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic.marshal-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				_, err := sonic.Marshal(&m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{"std.marshal-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				_, err := json.Marshal(&m)
 				if err != nil {
 					panic(err)
 				}
@@ -877,8 +1197,27 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 		},
 		{"std-st",
 			func() {
-				m := testdata.Book{}
+				m := testdata.TwitterStruct{}
 				err := json.Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic.marshal-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				_, err := sonic.Marshal(&m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{"std.marshal-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				_, err := json.Marshal(&m)
 				if err != nil {
 					panic(err)
 				}

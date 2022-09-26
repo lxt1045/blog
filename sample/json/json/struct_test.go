@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strconv"
 	"testing"
+	"time"
 
 	asrt "github.com/stretchr/testify/assert"
 )
@@ -21,7 +22,7 @@ func TestStruct(t *testing.T) {
 		_, file = filepath.Split(file)
 		return file + ":" + strconv.Itoa(line)
 	}
-	idx := -9
+	idx := -3
 
 	datas := []struct {
 		name   string
@@ -209,7 +210,7 @@ func TestStruct(t *testing.T) {
 			}
 			bs, err := json.Marshal(d.data)
 			if err != nil {
-				t.Fatalf("%s:%v\n", d.name, err)
+				t.Fatalf("i:%d, %s:%v\n", i, d.name, err)
 			}
 			if _, ok := (d.data).(*map[string]interface{}); ok {
 				t.Logf("\n%s\n%s", string(d.target), string(bs))
@@ -225,4 +226,305 @@ func TestStruct(t *testing.T) {
 			_ = fmt.Sprintf("d :%+v", d)
 		})
 	}
+}
+
+func TestStructMarshalInterface(t *testing.T) {
+	type st struct {
+		Count string `json:"count"`
+		X     interface{}
+	}
+	s := &st{
+		Count: "xxx",
+		X: st{
+			Count: "xxx",
+			X:     "xxx",
+		},
+	}
+	bs, err := json.Marshal(&s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("json:%s", string(bs))
+}
+
+func TestStructMarshal(t *testing.T) {
+	type Anonymous struct {
+		Count int `json:"count"`
+		X     string
+	}
+	fLine := func() string {
+		_, file, line, _ := runtime.Caller(1)
+		_, file = filepath.Split(file)
+		return file + ":" + strconv.Itoa(line)
+	}
+	idx := -10
+
+	datas := []struct {
+		name    string
+		bs      string
+		target  string
+		target2 string
+		data    interface{}
+	}{
+		{
+			name:    "interface:" + fLine(),
+			bs:      `{"out":88,"struct_0":{"a":"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"}}`,
+			target:  `{"out":88,"struct_0":{"a":"\u003ca href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\"\u003eTwitter for Mac\u003c/a\u003e"}}`,
+			target2: `{"out":88,"struct_0":{"a":"<a href="//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22" rel="\"nofollow\"">Twitter for Mac</a>"}}`,
+			data: &struct {
+				Out    int         `json:"out"`
+				Struct interface{} `json:"struct_0"`
+			}{},
+		},
+		{
+			name:    "interface:" + fLine(),
+			bs:      `{"out":"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"}`,
+			target:  "{\"out\":\"\\u003ca href=\\\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\\\" rel=\\\"\\\\\\\"nofollow\\\\\\\"\\\"\\u003eTwitter for Mac\\u003c/a\\u003e\"}",
+			target2: `{"out":"<a href="//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22" rel="\"nofollow\"">Twitter for Mac</a>"}`,
+			data: &struct {
+				Out string `json:"out"`
+			}{},
+		},
+		{
+			name:   "interface:" + fLine(),
+			bs:     `{"out": 11 , "struct_0": { "count":8}}`,
+			target: `{"out":11,"struct_0":{"count":8}}`,
+			data: &struct {
+				Out    int         `json:"out"`
+				Struct interface{} `json:"struct_0"`
+			}{},
+		},
+		{
+			name:   "map" + fLine(),
+			bs:     `{"out": 11 , "map_0": { "count":8,"y":"yyy"}}`,
+			target: `{"out":11,"map_0":{"count":8,"y":"yyy"}}`,
+			data:   &map[string]interface{}{},
+		},
+
+		// 匿名类型; 指针匿名类型
+		{
+			name:   "struct-Anonymous:" + fLine(),
+			bs:     `{"out": 11 , "count":8,"X":"xxx"}`,
+			target: `{"out":11,"count":8,"X":"xxx"}`,
+			data: &struct {
+				Out int `json:"out"`
+				Anonymous
+			}{},
+		},
+		{
+			name:   "struct:" + fLine(),
+			bs:     `{"out": 11 , "struct_0": { "count":8}}`,
+			target: `{"out":11,"struct_0":{"count":8}}`,
+			data: &struct {
+				Out    int `json:"out"`
+				Struct struct {
+					Count int `json:"count"`
+				} `json:"struct_0"`
+			}{},
+		},
+		{
+			name:   "struct:" + fLine(),
+			bs:     `{"out": 11 , "struct_0": { "count":8,"slice":[1,2,3]}}`,
+			target: `{"out":11,"struct_0":{"count":8,"slice":[1,2,3]}}`,
+			data: &struct {
+				Out    int `json:"out"`
+				Struct struct {
+					Count int   `json:"count"`
+					Slice []int `json:"slice"`
+				} `json:"struct_0"`
+			}{},
+		},
+		{
+			name:   "slice:" + fLine(),
+			bs:     `{"count":8 , "slice":[1,2,3] }`,
+			target: `{"count":8,"slice":[1,2,3]}`,
+			data: &struct {
+				Count int   `json:"count"`
+				Slice []int `json:"slice"`
+			}{},
+		},
+		{
+			name:   "bool:" + fLine(),
+			bs:     `{"count":true , "false_0":false }`,
+			target: `{"count":true,"false_0":false}`,
+			data: &struct {
+				Count bool `json:"count"`
+				False bool `json:"false_0"`
+			}{},
+		},
+		{
+			name:   "bool-ptr:" + fLine(),
+			bs:     `{"count":true , "false_0":false }`,
+			target: `{"count":true,"false_0":false}`,
+			data: &struct {
+				Count *bool `json:"count"`
+				False *bool `json:"false_0"`
+			}{},
+		},
+		{
+			name:   "bool-ptr-null:" + fLine(),
+			bs:     `{"count":true , "false_0":null }`,
+			target: `{"count":true,"false_0":null}`,
+			data: &struct {
+				Count *bool `json:"count"`
+				False *bool `json:"false_0"`
+			}{},
+		},
+		{
+			name:   "bool-ptr-empty:" + fLine(),
+			bs:     `{"count":true }`,
+			target: `{"count":true,"false_0":null}`,
+			data: &struct {
+				Count *bool `json:"count"`
+				False *bool `json:"false_0"`
+			}{},
+		},
+		{
+			name:   "float64:" + fLine(),
+			bs:     `{"count":8.11 }`,
+			target: `{"count":8.11}`,
+			data: &struct {
+				Count float64 `json:"count"`
+			}{},
+		},
+		{
+			name:   "float64-ptr:" + fLine(),
+			bs:     `{"count":8.11 }`,
+			target: `{"count":8.11}`,
+			data: &struct {
+				Count *float64 `json:"count"`
+			}{},
+		},
+		{
+			name:   "int-ptr:" + fLine(),
+			bs:     `{"count":8 }`,
+			target: `{"count":8}`,
+			data: &struct {
+				Count *int `json:"count"`
+			}{},
+		},
+		{
+			name:   "int:" + fLine(),
+			bs:     `{"count":8 }`,
+			target: `{"count":8}`,
+			data: &struct {
+				Count int `json:"count"`
+			}{},
+		},
+		{
+			name:   "string-ptr:" + fLine(),
+			bs:     `{ "ZHCN":"chinese"}`,
+			target: `{"ZHCN":"chinese"}`,
+			data: &struct {
+				ZHCN *string
+			}{},
+		},
+		{
+			name:   "string-notag:" + fLine(),
+			bs:     `{ "ZHCN":"chinese"}`,
+			target: `{"ZHCN":"chinese"}`,
+			data: &struct {
+				ZHCN string
+			}{},
+		},
+		{
+			name:   "string:" + fLine(),
+			bs:     `{ "ZH_CN":"chinese", "ENUS":"English", "count":8 }`,
+			target: `{"ZH_CN":"chinese"}`,
+			data: &struct {
+				ZHCN string `json:"ZH_CN"`
+			}{},
+		},
+	}
+	if idx >= 0 {
+		datas = datas[idx : idx+1]
+	}
+
+	for i, d := range datas {
+		t.Run(d.name, func(t *testing.T) {
+			err := Unmarshal([]byte(d.bs), d.data)
+			if err != nil {
+				t.Fatalf("[%d]%s, error:%v\n", i, d.name, err)
+			}
+			bs, err := json.Marshal(d.data)
+			if err != nil {
+				t.Fatalf("i:%d, %s:%v\n", i, d.name, err)
+			}
+			if _, ok := (d.data).(*map[string]interface{}); ok {
+				t.Logf("\n%s\n%s", string(d.target), string(bs))
+				// asrt.EqualValuesf(t, d.target, string(bs), d.name)
+			} else if _, ok := (d.data).(*interface{}); ok {
+				t.Logf("\n%s\n%s", string(d.target), string(bs))
+				// asrt.EqualValuesf(t, d.target, string(bs), d.name)
+			} else {
+				asrt.Equalf(t, d.target, string(bs), fmt.Sprintf("i:%d,%s", i, d.name))
+			}
+
+			runtime.GC()
+			_ = fmt.Sprintf("d :%+v", d)
+
+			bsOut, err := Marshal(d.data)
+			if err != nil {
+				t.Fatalf("i:%d, %s:%v\n", i, d.name, err)
+			}
+			if _, ok := (d.data).(*map[string]interface{}); ok {
+				t.Logf("\n%s\n%s", string(d.target), string(bs))
+				// asrt.EqualValuesf(t, d.target, string(bs), d.name)
+			} else if _, ok := (d.data).(*interface{}); ok {
+				t.Logf("\n%s\n%s", string(d.target), string(bs))
+				// asrt.EqualValuesf(t, d.target, string(bs), d.name)
+			} else {
+				target := d.target2
+				if target == "" {
+					target = d.target
+				}
+				asrt.Equalf(t, target, string(bsOut), fmt.Sprintf("i:%d,%s", i, d.name))
+			}
+
+		})
+	}
+}
+func BenchmarkTestLoop(b *testing.B) {
+	loop := 10000000000
+	b.Run("loop1", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for j := 0; j < loop; j++ {
+			}
+		}
+	})
+	b.Run("loop1", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for j := 0; j < loop; j++ {
+			}
+		}
+	})
+	b.Run("loop1", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for j := 0; j < loop; j++ {
+			}
+			for j := 0; j < loop; j++ {
+			}
+		}
+	})
+}
+
+func TestLoop(t *testing.T) {
+	loop := 10000000000
+	t.Run("loop1", func(t *testing.T) {
+		s := time.Now()
+		for j := 0; j < loop; j++ {
+		}
+		t.Log(time.Since(s).Seconds())
+
+		s = time.Now()
+		for j := 0; j < loop; j++ {
+		}
+		t.Log(time.Since(s).Seconds())
+
+		s = time.Now()
+		for j := 0; j < loop; j++ {
+		}
+		t.Log(time.Since(s).Seconds())
+
+	})
 }

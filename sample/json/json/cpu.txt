@@ -291,12 +291,12 @@ ROUTINE ======================== github.com/lxt1045/Experiment/golang/json/pkg/j
          .          .     98:	pValue := unsafe.Pointer(uintptr(pStruct) + uintptr(field.Offset))
          .          .     99:	typ := field.Type
          .       10ms    100:	if typ.Kind() != reflect.Ptr {
-         .          .    101:		from := reflect.SliceHeader{
+         .          .    101:		from := SliceHeader{
          .          .    102:			Data: uintptr(pIn),
          .       20ms    103:			Len:  int(typ.Size()),
          .          .    104:			Cap:  int(typ.Size()),
          .          .    105:		}
-         .          .    106:		to := reflect.SliceHeader{
+         .          .    106:		to := SliceHeader{
          .          .    107:			Data: uintptr(pValue),
          .          .    108:			Len:  int(typ.Size()),
       10ms       10ms    109:			Cap:  int(typ.Size()),

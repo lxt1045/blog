@@ -108,7 +108,7 @@ func (p *SlicePool) SetMakeN(cap int) {
 	}
 }
 
-func (s *SlicePool) Grow(pHeader *reflect.SliceHeader) {
+func (s *SlicePool) Grow(pHeader *SliceHeader) {
 	l := pHeader.Cap / s.size
 	// c := l * 2 //
 	c := l + l/2
@@ -119,7 +119,7 @@ func (s *SlicePool) Grow(pHeader *reflect.SliceHeader) {
 
 	v := reflect.MakeSlice(s.typ, l, c)
 	p := reflectValueToPointer(&v)
-	pH := (*reflect.SliceHeader)(p)
+	pH := (*SliceHeader)(p)
 	// pH.Len = pHeader.Len
 	pH.Cap = pH.Cap * s.size
 
@@ -148,10 +148,78 @@ func NewSlicePool(typ, sonTyp reflect.Type) (s *SlicePool) {
 		}
 		v := reflect.MakeSlice(typ, s.MakeN, s.MakeN)
 		p := reflectValueToPointer(&v)
-		pH := (*reflect.SliceHeader)(p)
+		pH := (*SliceHeader)(p)
 		pH.Len = pH.Len * s.size
 		pH.Cap = pH.Cap * s.size
 		return p
 	}
+	return
+}
+
+/*
+ 先试试这个；
+ 然后试试 &map[string]interface{} 的时候, 先 sync.pool 获取一个：
+ type pool struct{
+	strs []string
+	efaces []interface{}
+	maps []map[string]interface{} 的底层 array 的列表
+	floats []float64
+	...
+ }
+ 执行过程中直接 make，不需要加锁；
+ 完成后再 put 回去
+//*/
+
+type sliceNode[T any] struct {
+	s   []T
+	idx uint32 // atomic
+}
+type Batch[T any] struct {
+	pool unsafe.Pointer // *sliceNode[T]
+}
+
+func NewBatch[T any]() *Batch[T] {
+	sn := &sliceNode[T]{
+		s:   make([]T, 1024*1024),
+		idx: 0,
+	}
+	return &Batch[T]{
+		pool: unsafe.Pointer(sn),
+	}
+}
+
+func GetStr(b *Batch[string]) (p *string) {
+	sn := (*sliceNode[string])(atomic.LoadPointer(&b.pool))
+	idx := atomic.AddUint32(&sn.idx, 1)
+	if int(idx) >= len(sn.s) {
+		return b.Make()
+	}
+	p = &sn.s[idx-1]
+	return
+}
+
+func (b *Batch[T]) Get() (p *T) {
+	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
+	// sn := (*sliceNode[T])(b.pool)
+	idx := atomic.AddUint32(&sn.idx, 1)
+	if int(idx) > len(sn.s) {
+		sn = &sliceNode[T]{
+			s:   make([]T, 1024*1024),
+			idx: 1,
+		}
+		atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
+		p = &sn.s[0]
+		return
+	}
+	p = &sn.s[idx-1]
+	return
+}
+func (b *Batch[T]) Make() (p *T) {
+	sn := &sliceNode[T]{
+		s:   make([]T, 1024*1024),
+		idx: 1,
+	}
+	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
+	p = &sn.s[0]
 	return
 }

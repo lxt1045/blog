@@ -44,6 +44,19 @@ func parseByte(stream []byte, b byte) (i, n int) {
 		}
 	}
 }
+func parseByte0(stream []byte, b byte) (i, n int) {
+loop:
+	if stream[i] == b {
+		n++
+		i++
+		goto loop
+	}
+	if !spaceTable[stream[i]] {
+		return
+	}
+	i++
+	goto loop
+}
 
 func parseObjToSlice(stream []byte, s []interface{}) (i int) {
 	return 0
@@ -82,7 +95,20 @@ func parseObj(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
 		// 解析 value
-		son := store.tag.GetChild(key)
+		// son := store.tag.GetChild(key)
+		// son := GetTagChild(store.tag, key)
+		var son *TagInfo
+		if store.tag.MChildrenEnable {
+			son = TagMapGetV(&store.tag.MChildren, key)
+
+			// idx := hash2(key, store.tag.MChildren.idxNTable, store.tag.MChildren.idxN)
+			// n := store.tag.MChildren.S[idx]
+			// if bytes.Equal(key, n.K) {
+			// 	son = n.V
+			// }
+		} else {
+			son = store.tag.GetChildFromMap(key)
+		}
 
 		if son != nil {
 			storeSon := PoolStore{
@@ -123,7 +149,8 @@ type pair struct {
 
 var pairPool = sync.Pool{
 	New: func() any {
-		return make([]pair, 0, 256)
+		s := make([]pair, 0, 64)
+		return &s
 	},
 }
 
@@ -138,7 +165,8 @@ func parseMapInterface(idxSlash int, stream []byte) (m map[string]interface{}, i
 	// var v interface{}
 	// value := &v
 	// pairs := make([]pair, 0, 8)
-	pairs := pairPool.Get().([]pair)
+	ppairs := pairPool.Get().(*[]pair)
+	pairs := *ppairs
 	for {
 		i += trimSpace(stream[i:])
 		{
@@ -168,14 +196,15 @@ func parseMapInterface(idxSlash int, stream []byte) (m map[string]interface{}, i
 			if nB == 0 && '}' == stream[i] {
 				i++
 
-				m = make(map[string]interface{}, len(pairs)*2)
+				// map
+				// m = make(map[string]interface{}, len(pairs))
+				m = makeMapEface(len(pairs))
+
 				for i := range pairs {
-					// m[string(pairs[i].k)] = pairs[i].v
-					// m[bytesString(pairs[i].k)] = pairs[i].v
 					m[*(*string)(unsafe.Pointer(&pairs[i].k))] = pairs[i].v
 				}
-				pairs = pairs[:0]
-				pairPool.Put(pairs)
+				*ppairs = pairs[:0]
+				pairPool.Put(ppairs)
 				return
 			}
 			panic(lxterrs.New(ErrStream(stream[i:])))
@@ -220,16 +249,16 @@ func parseSlice(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 	pBase := store.tag.fSet(store, stream[i:])
 	if stream[i] == ']' {
 		i++
-		pHeader := (*reflect.SliceHeader)(pBase)
-		pHeader.Data = uintptr(store.obj)
+		pHeader := (*SliceHeader)(pBase)
+		pHeader.Data = store.obj
 		return
 	}
 	son := store.tag.ChildList[0]
 	// size := int(son.Type.Size())
 	size := son.TypeSize
 	uint8s := store.tag.SPool.Get().(*[]uint8)
-	// pHPool := (*reflect.SliceHeader)(unsafe.Pointer(uint8s))
-	pHeader := (*reflect.SliceHeader)(pBase)
+	// pHPool := (*SliceHeader)(unsafe.Pointer(uint8s))
+	pHeader := (*SliceHeader)(pBase)
 	bases := (*[]uint8)(pBase)
 	for n, nB := 0, 0; ; {
 		if len(*uint8s)+size > cap(*uint8s) {
@@ -240,7 +269,7 @@ func parseSlice(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 			}
 			v := reflect.MakeSlice(store.tag.BaseType, 0, c)
 			p := reflectValueToPointer(&v)
-			pH := (*reflect.SliceHeader)(p)
+			pH := (*SliceHeader)(p)
 			pH.Cap = pH.Cap * size
 			news := (*[]uint8)(p)
 
@@ -292,161 +321,6 @@ func parseSlice(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 	return
 }
 
-func parseSlice1(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
-	iSlash = idxSlash
-	i = trimSpace(stream[i:])
-	store.obj = pointerOffset(store.obj, store.tag.Offset)
-	pBase := store.tag.fSet(store, stream[i:])
-	if stream[i] == ']' {
-		i++
-		pHeader := (*reflect.SliceHeader)(pBase)
-		pHeader.Data = uintptr(store.obj)
-		return
-	}
-	son := store.tag.ChildList[0]
-	size := int(son.Type.Size())
-	// n := store.tag.MakeN
-	// if n < 4 {
-	// 	n = 4
-	// }
-	// n := 4
-
-	v := reflect.MakeSlice(store.tag.BaseType, 0, 4)
-	p0 := reflectValueToPointer(&v)
-	pH := (*reflect.SliceHeader)(p0)
-	pHeader := (*reflect.SliceHeader)(pBase)
-	pHeader.Data = pH.Data
-	pHeader.Cap = 4 * size
-
-	for n, nB := 0, 0; ; {
-		if pHeader.Len+size > pHeader.Cap {
-			// store.tag.Pool.Grow(pHeader)
-			l := pHeader.Cap / size
-			c := l * 2 //l + l/2
-			v := reflect.MakeSlice(store.tag.BaseType, 0, c)
-			p := reflectValueToPointer(&v)
-			pH := (*reflect.SliceHeader)(p)
-			// pH.Len = pHeader.Len
-			pH.Cap = pH.Cap * size
-
-			// copy(*(*[]uint8)(p), *(*[]uint8)(unsafe.Pointer(pHeader)))
-			_ = append((*(*[]uint8)(unsafe.Pointer(pHeader)))[:0], *(*[]uint8)(p)...)
-
-			pHeader.Cap = pH.Cap
-			pHeader.Data = pH.Data
-		}
-		pHeader.Len += size
-
-		p := pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len-size))
-		store.obj = p
-		if son != nil && son.fUnm != nil {
-			store.tag = son
-			n, iSlash = son.fUnm(iSlash-i, store, stream[i:])
-			iSlash += i
-			if n == 0 {
-				pHeader.Len -= size
-			}
-		} else {
-			var iface interface{}
-			n, iSlash = parseInterface(iSlash-i, stream[i:], &iface)
-			iSlash += i
-		}
-		i += n
-		n, nB = parseByte(stream[i:], ',')
-		i += n
-		if nB != 1 {
-			if nB == 0 && ']' == stream[i] {
-				i++
-				break
-			}
-			panic(lxterrs.New(ErrStream(stream[i:])))
-		}
-	}
-
-	pHeader.Len, pHeader.Cap = pHeader.Len/size, pHeader.Cap/size
-	// if pHeader.Len > 4 {
-	// 	store.tag.MakeN = pHeader.Len
-	// }
-	return
-}
-
-func parseSlice0(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
-	iSlash = idxSlash
-	i = trimSpace(stream[i:])
-	store.obj = pointerOffset(store.obj, store.tag.Offset)
-	pBase := store.tag.fSet(store, stream[i:])
-	if stream[i] == ']' {
-		i++
-		pHeader := (*reflect.SliceHeader)(pBase)
-		pHeader.Data = uintptr(store.obj)
-		return
-	}
-	son := store.tag.ChildList[0]
-	size := int(son.Type.Size())
-	// pSlice := (*[]uint8)(pBase) // 此处会被 GC 回收，因为申请的时候没有指示包含指针，所以不会被 GC 标志含有指针
-	// pHeader := (*reflect.SliceHeader)(pBase)
-	// idxPool := 0
-	// 只要一个 pool 就可以了，最后 make 一个大小合适的，这个 put 会 pool 中，减少重复分配
-	p := store.tag.Pool.Get().(unsafe.Pointer)
-	pHeader := (*reflect.SliceHeader)(p)
-	pSlice := (*[]uint8)(p)
-	pHeader.Len = 0
-	// pHeader.Cap, pH.Cap = pH.Cap, pHeader.Cap
-	// pHeader.Data, pH.Data = pH.Data, pHeader.Data
-
-	for n, nB := 0, 0; ; {
-		if pHeader.Len+size > pHeader.Cap {
-			store.tag.Pool.Grow(pHeader)
-		}
-		pHeader.Len += size
-
-		p := pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len-size))
-		store.obj = p
-		if son != nil && son.fUnm != nil {
-			store.tag = son
-			n, iSlash = son.fUnm(iSlash-i, store, stream[i:])
-			iSlash += i
-			if n == 0 {
-				pHeader.Len -= size
-			}
-		} else {
-			var iface interface{}
-			n, iSlash = parseInterface(iSlash-i, stream[i:], &iface)
-			iSlash += i
-		}
-		i += n
-		n, nB = parseByte(stream[i:], ',')
-		i += n
-		if nB != 1 {
-			if nB == 0 && ']' == stream[i] {
-				i++
-				break
-			}
-			panic(lxterrs.New(ErrStream(stream[i:])))
-		}
-	}
-
-	// TODO : 这个设置了 MakeN之后，这个 copy 应该是可以省略的吧？
-	// if pHeader.Cap/pHeader.Len <= 2 {
-	// 	pHeader.Len = pHeader.Len / size
-	// 	pHeader.Cap = pHeader.Cap / size
-	// 	*(*[]uint8)(pBase) = *pSlice
-	// } else {
-	l := pHeader.Len / size
-	v := reflect.MakeSlice(store.tag.BaseType, l, l)
-	p0 := reflectValueToPointer(&v)
-	pS := (*[]uint8)(p0)
-	*(*[]uint8)(pBase) = *pS
-	pH := (*reflect.SliceHeader)(p0)
-	pH.Len, pH.Cap = pH.Len*size, pH.Cap*size
-	copy(*pS, *pSlice)
-
-	store.tag.Pool.Put(p)
-	// }
-
-	return
-}
-
 // key 后面的单元: Num, str, bool, slice, obj, null
 func parseInterface(idxSlash int, stream []byte, p *interface{}) (i, iSlash int) {
 	iSlash = idxSlash
@@ -471,7 +345,12 @@ func parseInterface(idxSlash int, stream []byte, p *interface{}) (i, iSlash int)
 		s, i, iSlash = parseSliceInterface(iSlash-1, stream[1:])
 		iSlash++
 		i++
-		*p = s
+		// *p = s
+		ps := islicePool.Get()
+		*ps = s
+		pEface := (*GoEface)(unsafe.Pointer(p))
+		pEface.Type = isliceEface.Type
+		pEface.Value = unsafe.Pointer(ps)
 		return
 	case ']':
 		return
@@ -502,13 +381,45 @@ func parseInterface(idxSlash int, stream []byte, p *interface{}) (i, iSlash int)
 		var raw []byte
 		//
 		raw, i, iSlash = parseStr(stream, iSlash)
-		// pStr := strCache.Get()
-		// *pStr = bytesString(raw)
-		// *p = pStr
-		*p = bytesString(raw)
+		// *p = bytesString(raw)
+		// return
+
+		// pstr := strPool.Get() //
+		pstr := GetStr(strPool) //
+		// bytesCopyToString(raw, pstr)
+		*pstr = *(*string)(unsafe.Pointer(&raw))
+		pEface := (*GoEface)(unsafe.Pointer(p))
+		pEface.Type = strEface.Type
+		pEface.Value = unsafe.Pointer(pstr)
+
+		// // TODO 探索无GC 分配方式
+		// strs := stringPool.Get().(*[]string)
+		// str := &(*strs)[0]
+		// if len(*strs) >= 2 {
+		// 	*strs = (*strs)[1:]
+		// 	stringPool.Put(strs)
+		// }
+		// bytesCopyToString(raw, str)
+		// pEface := (*GoEface)(unsafe.Pointer(p))
+		// pEface.Type = strEface.Type
+		// pEface.Value = unsafe.Pointer(str)
+
 		return
 	}
 	return
+}
+
+var strPool = NewBatch[string]()
+var islicePool = NewBatch[[]interface{}]()
+
+var strEface = UnpackEface("")
+var isliceEface = UnpackEface([]interface{}{})
+
+var stringPool = sync.Pool{
+	New: func() any {
+		s := make([]string, 512, 512) //8*1024/16
+		return &s
+	},
 }
 
 func parseEmptyObjSlice(stream []byte, bLeft, bRight byte) (i int) {
@@ -701,36 +612,6 @@ func parseRoot(stream []byte, store PoolStore) (err error) {
 	return
 }
 
-//stream: "fgshw1321"...
-func parseStr2(stream []byte) (raw []byte, i int) {
-	lastIdx, i := 1, 1
-	for {
-		if i >= len(stream) || stream[i] == '"' || stream[i] == '\\' {
-			if stream[i] == '\\' {
-				word, wordSize := unescapeStr(stream[i:])
-				if len(raw) <= 0 {
-					raw = stream[1:i:i] //新建 []byte 避免修改员 stream
-					// raw = stream[1:i] //新建 []byte 避免修改员 stream
-				} else if lastIdx < i {
-					raw = append(raw, stream[lastIdx:i]...)
-				}
-				raw = append(raw, word...)
-				i += wordSize
-				lastIdx = i
-				continue
-			}
-			break
-		}
-		i++
-	}
-	if len(raw) == 0 {
-		raw = stream[1:i]
-	} else if lastIdx < i {
-		raw = append(raw, stream[lastIdx:i]...)
-	}
-	return raw, i + 1
-}
-
 func parseStr(stream []byte, nextSlashIdx int) (raw []byte, i, nextSlashIdxOut int) {
 	// TODO: 专业抄，把 '"' 提前准备好，少了个几步，也能快很多了
 	i = bytes.IndexByte(stream[1:], '"')
@@ -745,11 +626,15 @@ func parseStr(stream []byte, nextSlashIdx int) (raw []byte, i, nextSlashIdxOut i
 	return parseUnescapeStr(stream, i, nextSlashIdx)
 }
 
-func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdx int) (raw []byte, i, nextSlashIdxOut int) {
+func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdxIn int) (raw []byte, i, nextSlashIdx int) {
+	nextSlashIdx = nextSlashIdxIn
 	if nextSlashIdx < 0 {
 		nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
 		if nextSlashIdx < 0 {
 			nextSlashIdx = math.MaxInt
+			i += nextQuotesIdx
+			i++
+			return
 		} else {
 			nextSlashIdx++
 		}

@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
@@ -57,14 +56,7 @@ type TagInfo struct {
 	// 1. 通过 pool 动态分配: slice, 可以动态增长，然后截断留下未使用部分
 	// 2. 通过 动态定义的 struct:reflect.StructOf(fileIDs), 通过 reflect.New()一次性分配此次需要的所有内存
 }
-type XPool struct {
-	BPools    []uint8
-	idxBPools int32
-}
 
-func (p *TagInfo) cacheKey() (k string) {
-	return p.TagName
-}
 func (p *TagInfo) NewPool() unsafe.Pointer {
 	if len(p.Builder.fields) == 0 {
 		return nil
@@ -72,34 +64,7 @@ func (p *TagInfo) NewPool() unsafe.Pointer {
 
 	s := p.BPool.Get().(*[]uint8)
 	pp := unsafe.Pointer(&(*s)[0])
-	if cap(*s) > p.TypeSize*2 {
-		*s = (*s)[p.TypeSize:]
-		p.BPool.Put(s)
-	}
-
-	return pp
-}
-func (p *TagInfo) NewPool2() unsafe.Pointer {
-	if len(p.Builder.fields) == 0 {
-		return nil
-	}
-	ppp := atomic.LoadPointer(&p.xPool)
-	if ppp == nil {
-		N := 10240
-		pp := unsafe_NewArray(p.Builder.goType, N)
-		pH := &reflect.SliceHeader{
-			Data: uintptr(pp),
-			Len:  N * int(p.TypeSize),
-			Cap:  N * int(p.TypeSize),
-		}
-
-		us := *(*[]uint8)(unsafe.Pointer(pH))
-		ppp = unsafe.Pointer(&us)
-	}
-
-	s := p.BPool.Get().(*[]uint8)
-	pp := unsafe.Pointer(&(*s)[0])
-	if cap(*s) > p.TypeSize*2 {
+	if cap(*s) >= p.TypeSize*2 {
 		*s = (*s)[p.TypeSize:]
 		p.BPool.Put(s)
 	}
@@ -122,16 +87,15 @@ func (t *TagInfo) buildChildMap() {
 	}
 	if len(t.ChildList) <= 128 {
 		t.MChildrenEnable = true
-		t.MChildren = buildTagMap(nodes)
+		mc := buildTagMap(nodes)
+		t.MChildren = mc
 	}
 }
-func (t *TagInfo) GetChild(key []byte) *TagInfo {
-	// return t.Children[string(key)]
-	if !t.MChildrenEnable {
-		return t.Children[string(key)]
-	}
-	return t.MChildren.GetV(key)
+
+func (t *TagInfo) GetChildFromMap(key []byte) *TagInfo {
+	return t.Children[string(key)]
 }
+
 func (t *TagInfo) AddChild(c *TagInfo) (err error) {
 	if len(t.Children) == 0 {
 		t.Children = make(map[string]*TagInfo)
@@ -212,6 +176,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		ti.JSONType = String
 		ti.fSet, ti.fGet = stringFuncs(ti.Builder, ti.TagName, ptrDeep)
 		ti.fUnm, ti.fM = stringMFuncs()
+		// ti.fUnm, ti.fM = stringMFuncs_0(ti.Builder, ti.TagName, ptrDeep)
 	case reflect.Slice: // &[]byte; Array
 		ti.fUnm, ti.fM = sliceMFuncs()
 		ti.MakeN = 4
@@ -248,7 +213,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			ti.SPool.New = func() any {
 				v := reflect.MakeSlice(ti.BaseType, 0, 1024)
 				p := reflectValueToPointer(&v)
-				pH := (*reflect.SliceHeader)(p)
+				pH := (*SliceHeader)(p)
 				pH.Cap = pH.Cap * int(son.Type.Size())
 				return (*[]uint8)(p)
 			}
@@ -428,6 +393,53 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 		return
 	}
 
+	vi := reflect.Indirect(reflect.ValueOf(in))
+	if !vi.CanSet() {
+		err = fmt.Errorf("%T cannot set", in)
+		return
+	}
+	typ := vi.Type()
+
+	prv := reflectValueToValue(&vi)
+	goType := prv.typ
+	tag, ok := cacheStructTagInfo.Get(goType.Hash)
+	if !ok {
+		tag, err = LoadTagNodeSlow(typ, goType.Hash)
+		if err != nil {
+			return
+		}
+	}
+	store := PoolStore{
+		tag:  tag,
+		obj:  prv.ptr, // eface.Value,
+		pool: tag.NewPool(),
+	}
+	err = parseRoot(bs[i:], store)
+	return
+}
+
+//Marshal []byte
+func Marshal(in interface{}) (bs []byte, err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err1, ok := e.(*lxterrs.Code); ok {
+				err = err1
+			} else {
+				err = lxterrs.New("%+v", e)
+			}
+			return
+		}
+	}()
+
+	if mIn, ok := in.(*map[string]interface{}); ok {
+		_ = mIn
+		return
+	}
+	if _, ok := in.(*[]interface{}); ok {
+
+		return
+	}
+
 	vi := reflect.ValueOf(in)
 	vi = reflect.Indirect(vi)
 	if !vi.CanSet() {
@@ -435,18 +447,20 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 		return
 	}
 	typ := vi.Type()
-	eface := UnpackEface(in)
-	goType := PtrElem(eface.Type)
-	n, err := LoadTagNode(typ, goType.Hash)
-	if err != nil {
-		return
+
+	prv := reflectValueToValue(&vi)
+	goType := prv.typ
+	tag, ok := cacheStructTagInfo.Get(goType.Hash)
+	if !ok {
+		tag, err = LoadTagNodeSlow(typ, goType.Hash)
+		if err != nil {
+			return
+		}
 	}
-	tag := (*TagInfo)(n)
-	store := PoolStore{
-		tag:  tag,
-		obj:  eface.Value,
-		pool: tag.NewPool(),
+	store := Store{
+		tag: tag,
+		obj: prv.ptr, // eface.Value,
 	}
-	err = parseRoot(bs[i:], store)
+	bs, err = marshalRoot(store)
 	return
 }

@@ -61,10 +61,12 @@ func boolFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fG
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 		pBase = pObj
-		if *(*bool)(pObj) {
-			out = append(in, []byte("false")...)
-		} else {
+		if pObj == nil {
+			out = append(in, []byte("null")...)
+		} else if *(*bool)(pObj) {
 			out = append(in, []byte("true")...)
+		} else {
+			out = append(in, []byte("false")...)
 		}
 		return
 	}
@@ -303,6 +305,7 @@ func float32Funcs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc,
 	}
 	return
 }
+
 func stringFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
 	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
 		pBase = store.obj
@@ -312,11 +315,61 @@ func stringFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, 
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 		pBase = pObj
 		str := *(*string)(pObj)
-		out = append(in, str...)
+		out = append(in, '"')
+		out = append(out, str...)
+		out = append(out, '"')
 		return
 	}
 	if ptrDeep > 0 {
-		fSet, fGet = ptrTypeFuncs[string](builder, name, ptrDeep, fSet, fGet)
+		// fSet, fGet = ptrTypeFuncs[string](builder, name, ptrDeep, fSet, fGet)
+		fSet, fGet = ptrTypeFuncsString(builder, name, ptrDeep)
+	}
+	return
+}
+
+func ptrTypeFuncsString(builder *TypeBuilder, name string, ptrDeep int) (fSet1 setFunc, fGet1 getFunc) {
+	var idx *uintptr = &[]uintptr{0}[0]
+	var x string
+	typ := reflect.TypeOf(x)
+	builder.AppendTagField(name, typ, idx)
+	fSet1 = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		// p := pointerOffset(store.pool, *idx)
+		// *(**string)(store.obj) = (*string)(p)
+		// store.obj = p
+		// pBase = store.obj
+		// *(*string)(store.obj) = *(*string)(unsafe.Pointer(&bs))
+		pBase = pointerOffset(store.pool, *idx)
+		*(**string)(store.obj) = (*string)(pBase)
+		*(*string)(pBase) = *(*string)(unsafe.Pointer(&bs))
+		return
+	}
+	fGet1 = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+		pObj = *(*unsafe.Pointer)(pObj)
+		pBase = pObj
+		if pObj == nil {
+			out = append(in, "null"...)
+			return
+		}
+		str := *(*string)(pObj)
+		out = append(in, '"')
+		out = append(out, str...)
+		out = append(out, '"')
+		return
+	}
+	for i := 1; i < ptrDeep; i++ {
+		var idxP *uintptr = &[]uintptr{0}[0]
+		builder.AppendPointer(fmt.Sprintf("%s_%d", name, i), idxP)
+		fSet0, fGet0 := fSet1, fGet1
+		fSet1 = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+			p := pointerOffset(store.pool, *idxP)
+			*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
+			store.obj = p
+			return fSet0(store, bs)
+		}
+		fGet1 = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			p := *(*unsafe.Pointer)(pObj)
+			return fGet0(p, in)
+		}
 	}
 	return
 }
@@ -363,6 +416,7 @@ func sliceFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, f
 	if ptrDeep > 0 {
 		fSet, fGet = ptrTypeFuncs[[]uint8](builder, name, ptrDeep, fSet, fGet)
 	}
+	fGet = nil
 	return
 }
 
@@ -464,6 +518,20 @@ func anonymousStructFuncs(builder *TypeBuilder, name string, ptrDeep int, typ re
 func iterfaceFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fGet getFunc) {
 	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
 		return store.obj
+	}
+
+	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+		pBase = pObj
+		iface := *(*interface{})(pObj)
+		out = marshalInterface(in, iface)
+		// switch iface.(type){
+		// 	case
+		// }
+		// out = append(in, '"')
+		// out = append(out, str...)
+		// out = append(out, '"')
+		_ = iface
+		return
 	}
 	if ptrDeep > 0 {
 		fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {

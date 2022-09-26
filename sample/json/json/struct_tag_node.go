@@ -190,35 +190,50 @@ func strToUintptr(p string) uintptr {
 	return *(*uintptr)(unsafe.Pointer(&p))
 }
 
-func LoadTagNode(typ reflect.Type, hash uint32) (n *TagInfo, err error) {
-	n, ok := cacheStructTagInfo.Get(hash)
+func LoadTagNode(typ reflect.Type, hash uint32) (*TagInfo, error) {
+	tag, ok := cacheStructTagInfo.Get(hash)
 	if ok {
-		return n, nil
+		return tag, nil
 	}
-	// log.Printf("type:%s", typ.String())
+	return LoadTagNodeSlow(typ, hash)
+}
+func LoadTagNodeSlow(typ reflect.Type, hash uint32) (*TagInfo, error) {
 	ti, err := NewStructTagInfo(typ, false, nil)
 	if err != nil {
 		return nil, err
 	}
-	n = (*TagInfo)(ti)
+	n := (*TagInfo)(ti)
 	n.Builder.Build()
 
+	N := (8 * 1024 / n.TypeSize) + 1
+	l := N * int(n.TypeSize)
 	n.BPool.New = func() any {
-		N := 10240
 		p := unsafe_NewArray(n.Builder.goType, N)
-		pH := &reflect.SliceHeader{
-			Data: uintptr(p),
-			Len:  N * int(n.TypeSize),
-			Cap:  N * int(n.TypeSize),
+		// pH := &reflect.SliceHeader{
+		pH := &SliceHeader{
+			Data: p,
+			Len:  l,
+			Cap:  l,
 		}
 		return (*[]uint8)(unsafe.Pointer(pH))
 	}
 	cacheStructTagInfo.Set(hash, n)
-	return
+	return n, nil
+}
+
+type SliceHeader struct {
+	Data unsafe.Pointer
+	Len  int
+	Cap  int
+}
+
+type StringHeader struct {
+	Data unsafe.Pointer
+	Len  int
 }
 
 type Value struct {
-	typ  uintptr
+	typ  *GoType
 	ptr  unsafe.Pointer
 	flag uintptr
 }
@@ -226,9 +241,15 @@ type Value struct {
 func reflectValueToPointer(v *reflect.Value) unsafe.Pointer {
 	return (*Value)(unsafe.Pointer(v)).ptr
 }
+func reflectValueToValue(v *reflect.Value) *Value {
+	return (*Value)(unsafe.Pointer(v))
+}
 
 func bytesString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
+}
+func bytesCopyToString(b []byte, str *string) {
+	*str = *(*string)(unsafe.Pointer(&b))
 }
 
 // emptyInterface is the header for an interface{} value.
@@ -294,6 +315,11 @@ type GoType struct {
 	GCData     *byte
 	Str        int32
 	PtrToSelf  int32
+}
+
+type interfacetype struct {
+	typ GoType
+	//  /src/runtime/type.go: interfacetype
 }
 
 func PtrElem(t *GoType) *GoType {

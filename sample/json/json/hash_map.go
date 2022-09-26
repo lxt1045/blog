@@ -64,6 +64,7 @@ var allMask = func() (allMask []byte) {
 			allMask = append(allMask, a+b)
 		}
 	}
+	return
 
 	// 3bit 的
 	for i, a := range seed {
@@ -150,15 +151,32 @@ func init() {
 }
 
 type tagMap struct {
-	S []mapNode
-	N int
-
+	S         []mapNode
 	idxNTable []int16
 	idxN      []iN
+	idxN2     []iN2
+	N         int
 }
 type mapNode struct {
 	K []byte
 	V *TagInfo
+}
+
+func TagMapGetV(m *tagMap, k []byte) (v *TagInfo) {
+	idx := hash2(k, m.idxNTable, m.idxN)
+	n := m.S[idx]
+	if bytes.Equal(k, n.K) {
+		return n.V
+	}
+	return
+}
+func TagMapGetV3(m *tagMap, k []byte) (v *TagInfo) {
+	idx := hash3(k, m.idxNTable, m.idxN2)
+	n := m.S[idx]
+	if bytes.Equal(k, n.K) {
+		return n.V
+	}
+	return
 }
 
 func (m *tagMap) GetV(k []byte) (v *TagInfo) {
@@ -170,7 +188,7 @@ func (m *tagMap) GetV(k []byte) (v *TagInfo) {
 	return
 }
 func (m *tagMap) Get(k []byte) (v *TagInfo) {
-	idx := hash(k, nil, m.idxN)
+	idx := hash(k, m.idxN)
 	n := m.S[idx]
 	if bytes.Equal(k, n.K) {
 		return n.V
@@ -179,6 +197,14 @@ func (m *tagMap) Get(k []byte) (v *TagInfo) {
 }
 func (m *tagMap) Get2(k []byte) (v *TagInfo) {
 	idx := hash2(k, m.idxNTable, m.idxN)
+	n := m.S[idx]
+	if bytes.Equal(k, n.K) {
+		return n.V
+	}
+	return
+}
+func (m *tagMap) Get3(k []byte) (v *TagInfo) {
+	idx := hash3(k, m.idxNTable, m.idxN2)
 	n := m.S[idx]
 	if bytes.Equal(k, n.K) {
 		return n.V
@@ -246,6 +272,15 @@ func buildTagMap(nodes []mapNode) (m tagMap) {
 	// log.Printf("\n\n\n")
 	idxs := []int{}
 	m.idxN, idxs = logicalHash(bsList)
+	for _, idx := range m.idxN {
+		m.idxN2 = append(m.idxN2, iN2{
+			iByte: int16(idx.iByte), // []byte的偏移量
+			i:     int16(idx.i),
+			iBit:  int16(idx.iBit),
+			mask:  idx.mask,
+		})
+
+	}
 	_ = idxs
 	// log.Printf("idxs:%+v;idxRet:%+v", idxs, m.idxN)
 	nBit := len(m.idxN)
@@ -258,7 +293,8 @@ func buildTagMap(nodes []mapNode) (m tagMap) {
 	m.idxNTable = getHashParam(m.idxN)
 
 	for _, n := range nodes {
-		idx := hash(n.K, m.idxNTable, m.idxN)
+		// idx := hash(n.K, m.idxNTable, m.idxN)
+		idx := hash(n.K, m.idxN)
 		if nn := m.S[idx]; len(nn.K) > 0 && !bytes.Equal(nn.K, n.K) {
 			PrintKeys(bsList)
 			log.Printf("tagMap:%s", m.String())
@@ -275,16 +311,27 @@ func buildTagMap(nodes []mapNode) (m tagMap) {
 }
 
 type iN struct {
-	iByte int // []byte的偏移量
+	iByte   int // []byte的偏移量
+	mask    byte
+	iBit    int
+	i       int
+	ratio   float32 //占比
+	diffSum float32 //分数
+}
+
+type iN2 struct {
+	iByte int16 // []byte的偏移量
+	i     int16
+	iBit  int16
 	mask  byte
-	iBit  int
 }
 
 type Mask struct {
-	iByte int
-	mask  byte
-	diff  float32
-	nMask uint32 // 命中 mask 的数量; (mask & b) == mask
+	iByte   int
+	mask    byte
+	diffSum float32
+	ratio   float32
+	nMask   uint32 // 命中 mask 的数量; (mask & b) == mask
 }
 
 //idxRet:[{iByte:1 mask:1 iBit:3} {iByte:2 mask:1 iBit:1} {iByte:3 mask:1 iBit:7} {iByte:4 mask:1 iBit:6}
@@ -306,16 +353,16 @@ func logicalHash(bsList [][]byte) (idxN []iN, idxRet []int) {
 	masks := getPivotMask(bsList)
 	for i, m := range masks {
 		idxN = append(idxN, iN{
-			iByte: m.iByte,
-			mask:  m.mask,
-			iBit:  1 << i,
+			iByte:   m.iByte,
+			mask:    m.mask,
+			iBit:    1 << i,
+			i:       i,
+			ratio:   m.ratio,
+			diffSum: m.diffSum,
 		})
 	}
 	// log.Printf("---idxN---:%+v", idxN)
 	sort.Slice(idxN, func(i, j int) bool { return idxN[i].iByte < idxN[j].iByte })
-	// for i := range idxN {
-	// 	idxN[i].iBit = 1 << i
-	// }
 	return
 }
 
@@ -323,7 +370,7 @@ func logicalHash(bsList [][]byte) (idxN []iN, idxRet []int) {
 // 通过染色方式来表达是否已分区，比如 1 3 5 给打个 x 标签，当前有 n 个标签（即 n 个区），下一次 13 的标签变成 y，则就变成了 n+1 个区块了；
 // 简单的按区来 进行两层遍历就好了！！！ 完美
 
-func getPivotMask(bsList [][]byte) (ms []Mask) {
+func getPivotMask1(bsList [][]byte) (ms []Mask) {
 	lMax := len(bsList[0])
 	for _, bs := range bsList {
 		if lMax < len(bs) {
@@ -339,9 +386,9 @@ func getPivotMask(bsList [][]byte) (ms []Mask) {
 	type Hit struct {
 		hit         bool
 		blockNO     int
-		nextBlockNO int // 下一级的；延续出来的
-		nMask       float32
-		nNextMask   float32
+		nextBlockNO int     // 下一级的；延续出来的
+		nMask       float32 // 留在当前区块数量
+		nNextMask   float32 // 分到新分裂区块的数量
 	}
 	type BlockNew struct {
 		mask  byte
@@ -352,6 +399,7 @@ func getPivotMask(bsList [][]byte) (ms []Mask) {
 		// 评价体系
 		newBlock int
 		diffSum  float32 // 所有区块 距离中线的分数的和
+		ratio    float32
 	}
 	blocks := []BlockNew{}
 	nextBlockNO := 1
@@ -371,7 +419,7 @@ outfor:
 				list: make([]Block, len(bsList)), // escapes to heap
 			}
 			if len(blocks) > 0 {
-				copy(block.list, blocks[len(blocks)-1].list)
+				copy(block.list, blocks[len(blocks)-1].list) // 继承最新一次区分好的列表
 			}
 
 			mBlockHit := make(map[int]*Hit) // 区块已命中 block
@@ -393,37 +441,47 @@ outfor:
 					continue
 				}
 				if blockHit.hit == hit {
-					blockHit.nMask++
+					blockHit.nMask++ // 留在当前区块数量
 					continue
 				}
 				if blockHit.nextBlockNO == 0 {
 					newBlock++
 					blockHit.nextBlockNO = fNextBlock()
 				}
-				blockHit.nNextMask++
-				block.list[i].NO = blockHit.nextBlockNO
+				blockHit.nNextMask++                    // 分到新分裂区块的数量
+				block.list[i].NO = blockHit.nextBlockNO //
 				block.list[i].iByte = iByte
 			}
 			if newBlock == 0 {
 				continue
 			}
 
+			// diffSum==0 的情形都保留下来作为后备选项？
 			var diffSum float32 = 0
 			for _, hit := range mBlockHit {
-				if hit.nMask > 1 || hit.nNextMask > 1 {
-					diff := hit.nMask - hit.nNextMask
-					diff = diff * diff
-					if diff == 1 {
-						diff = 0
-					}
-					//diff 要用 nMask 做一下修正？
-					diff = diff / (hit.nMask + hit.nNextMask)
-					// diff = diff / float32(newBlock+1)
-					diffSum += diff
+				// 计算 欧拉距离
+				diff := hit.nMask - hit.nNextMask
+				if diff == 0 || diff == 1 || diff == -1 {
+					continue
 				}
+				diff = diff / float32(newBlock*newBlock)
+				diff = diff * diff
+				//diff 要用 nMask 做一下修正？
+				diff = diff / (hit.nMask + hit.nNextMask)
+				// diff = diff / float32(newBlock*newBlock)
+				diffSum += diff
 			}
 			// diffSum = diffSum / float32(newBlock*newBlock)
+			// diffSum = float32(diffSum) / float32(newBlock*newBlock*newBlock)
 
+			m := map[int]bool{}
+			for _, b := range block.list {
+				if !m[b.NO] {
+					block.N++
+					m[b.NO] = true
+				}
+			}
+			ratio := float32(block.N) / float32(len(bsList))
 			// if blockNewMax.newBlock < newBlock || blockNewMax.diffSum > diffSum {
 			if blockNewMax.diffSum > diffSum {
 				blockNewMax = BlockNew{
@@ -432,22 +490,18 @@ outfor:
 					mask:     mask,
 					list:     block.list,
 					diffSum:  diffSum,
+					ratio:    ratio,
 				}
 			}
-			m := map[int]bool{}
-			for _, b := range block.list {
-				if !m[b.NO] {
-					block.N++
-					m[b.NO] = true
-				}
-			}
+
+			// 当前区块的数量和 bsList 一样，则表示达到结束条件
 			if block.N == len(bsList) {
-				ms = append(ms, Mask{iByte: iByte, mask: mask, diff: float32(blockNewMax.diffSum)})
-				blocks = append(blocks, block)
+				ms = append(ms, Mask{iByte: iByte, mask: mask, diffSum: float32(blockNewMax.diffSum), ratio: blockNewMax.ratio})
+				blocks = append(blocks, block) //
 				// log.Printf("len:%d, blocks:%+v", len(blocks), blocks)
 				return
 			}
-			if blockNewMax.diffSum == 0 {
+			if diffSum == 0 {
 				// blocks = append(blocks, blockNewMax)
 				// ms = append(ms, Mask{iByte: blockNewMax.iByte, mask: blockNewMax.mask})
 				// goto start
@@ -456,7 +510,146 @@ outfor:
 		}
 	}
 	blocks = append(blocks, blockNewMax)
-	ms = append(ms, Mask{iByte: blockNewMax.iByte, mask: blockNewMax.mask, diff: float32(blockNewMax.diffSum)})
+	ms = append(ms, Mask{iByte: blockNewMax.iByte, mask: blockNewMax.mask, diffSum: float32(blockNewMax.diffSum), ratio: blockNewMax.ratio})
+	goto start
+}
+
+/*
+先计算出所有 BlockNew.list 然后存为 bitmap，之后再利用递归对边区分度
+*/
+func getPivotMask(bsList [][]byte) (ms []Mask) {
+	lMax := len(bsList[0])
+	for _, bs := range bsList {
+		if lMax < len(bs) {
+			lMax = len(bs)
+		}
+	}
+
+	type Block struct {
+		iByte     int
+		NO        int // 区块编号
+		maskCount int // 命中掩码的数量
+	}
+	type Hit struct {
+		hit         bool
+		blockNO     int
+		nextBlockNO int     // 下一级的；延续出来的
+		nMask       float32 // 留在当前区块数量
+		nNextMask   float32 // 分到新分裂区块的数量
+	}
+	type BlockNew struct {
+		mask  byte
+		iByte int
+		N     int
+		list  []Block
+
+		// 评价体系
+		newBlock int
+		diffSum  float32 // 所有区块 距离中线的分数的和
+		ratio    float32
+	}
+	blocks := []BlockNew{}
+	nextBlockNO := 1
+	fNextBlock := func() (NO int) {
+		NO = nextBlockNO
+		nextBlockNO++
+		return
+	}
+
+	// 设计提前退出的策略
+start:
+	blockNewMax := BlockNew{} // BlockNew{diffSum: math.MaxInt}
+outfor:
+	for iByte := 0; iByte < lMax; iByte++ {
+		for _, mask := range allMask {
+			block := BlockNew{
+				list: make([]Block, len(bsList)), // escapes to heap
+			}
+			if len(blocks) > 0 {
+				copy(block.list, blocks[len(blocks)-1].list) // 继承最新一次区分好的列表
+			}
+
+			mBlockHit := make(map[int]*Hit) // 区块已命中 block
+			newBlock := 0                   // 此次循环新增的区块
+
+			for i, bs := range bsList {
+				hit := false
+				if len(bs) > iByte {
+					hit = (mask & bs[iByte]) == mask // 是否命中掩码 mask
+				}
+				blockNO := block.list[i].NO // 当前 bs 的区块号码
+				blockHit := mBlockHit[blockNO]
+				if blockHit == nil {
+					mBlockHit[blockNO] = &Hit{ // escapes to heap
+						hit:     hit,
+						blockNO: blockNO,
+						nMask:   1,
+					}
+					continue
+				}
+				if blockHit.hit == hit {
+					blockHit.nMask++ // 留在当前区块数量
+					continue
+				}
+				if blockHit.nextBlockNO == 0 {
+					newBlock++
+					blockHit.nextBlockNO = fNextBlock()
+				}
+				blockHit.nNextMask++                    // 分到新分裂区块的数量
+				block.list[i].NO = blockHit.nextBlockNO //
+				block.list[i].iByte = iByte
+			}
+			if newBlock == 0 {
+				continue
+			}
+
+			var diffSum float32 = 0
+			for _, hit := range mBlockHit {
+				diff := float32(hit.nMask)
+				if hit.nMask > hit.nNextMask {
+					diff = float32(hit.nNextMask)
+				}
+				diffSum += diff
+			}
+			diffSum = diffSum * float32(newBlock)
+			// diffSum = float32(newBlock)
+
+			m := map[int]bool{}
+			for _, b := range block.list {
+				if !m[b.NO] {
+					block.N++
+					m[b.NO] = true
+				}
+			}
+
+			if blockNewMax.diffSum < diffSum {
+				blockNewMax = BlockNew{
+					newBlock: newBlock,
+					iByte:    iByte,
+					mask:     mask,
+					list:     block.list,
+					diffSum:  diffSum,
+					ratio:    float32(newBlock),
+				}
+			}
+
+			// 当前区块的数量和 bsList 一样，则表示达到结束条件
+			if block.N == len(bsList) {
+				ms = append(ms, Mask{iByte: iByte, mask: mask, diffSum: float32(blockNewMax.diffSum), ratio: blockNewMax.ratio})
+				blocks = append(blocks, block) //
+				// log.Printf("len:%d, blocks:%+v", len(blocks), blocks)
+				return
+			}
+			if diffSum == math.MaxFloat32 {
+				// blocks = append(blocks, blockNewMax)
+				// ms = append(ms, Mask{iByte: blockNewMax.iByte, mask: blockNewMax.mask})
+				// goto start
+				break outfor
+			}
+		}
+	}
+	blocks = append(blocks, blockNewMax)
+	ms = append(ms, Mask{iByte: blockNewMax.iByte, mask: blockNewMax.mask, diffSum: float32(blockNewMax.diffSum), ratio: blockNewMax.ratio})
 	goto start
 }
 
@@ -480,6 +673,18 @@ func getHashParam(idxN []iN) (idxNTable []int16) {
 	return
 }
 
+func hash(key []byte, idxN []iN) (idx int) {
+	for _, x := range idxN {
+		if x.iByte >= len(key) {
+			break
+		}
+		if (x.mask & key[x.iByte]) == x.mask {
+			idx |= x.iBit
+		}
+	}
+	return
+}
+
 func hash2(key []byte, idxNTable []int16, idxN []iN) (idx int) {
 	n := idxNTable[len(key)]
 	for _, x := range idxN[:n] {
@@ -498,14 +703,138 @@ func hash2(key []byte, idxNTable []int16, idxN []iN) (idx int) {
 	return
 }
 
-func hash(key []byte, idxNTable []int16, idxN []iN) (idx int) {
-	for _, x := range idxN {
-		if x.iByte >= len(key) {
-			break
-		}
+func hash3(key []byte, idxNTable []int16, idxN []iN2) (idx int16) {
+	n := idxNTable[len(key)]
+	for _, x := range idxN[:n] {
 		if (x.mask & key[x.iByte]) == x.mask {
 			idx |= x.iBit
 		}
+		// TODO
+		/*
+			可以改进，用 uint64 来匹配：
+			flag := 0b0010010010
+			if (in & flag) ^ flag == 0 {
+				// 表示匹配
+			}
+		*/
 	}
 	return
 }
+
+// 参考 /usr/local/go/src/runtime/hash64.go: memhashFallback 函数
+func hash4(key []byte, idxNTable []int16, idxN []iN2) (idx int) {
+	n := idxNTable[len(key)]
+	for _, x := range idxN[:n] {
+		// zero := (x.mask & key[x.iByte]) ^ x.mask
+		// one := (1 << zero) & 1
+		// idx |= (one << x.i)
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+
+		// TODO
+		/*
+			可以改进，用 uint64 来匹配：
+			flag := 0b0010010010
+			if (in & flag) ^ flag == 0 {
+				// 表示匹配
+			}
+		*/
+	}
+	return
+}
+
+func byte2bit(b, mask byte) (one byte) {
+	zero := (mask & b) ^ mask
+	one = (1 << zero) & 1
+	return
+}
+
+//*
+func hash5(key []byte, idxNTable []int16, idxN []iN2) (idx int) {
+	n := idxNTable[len(key)]
+	switch {
+	case n == 16:
+		x := idxN[15]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 15:
+		x := idxN[14]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 14:
+		x := idxN[13]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 13:
+		x := idxN[12]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 12:
+		x := idxN[11]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 11:
+		x := idxN[10]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 10:
+		x := idxN[9]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 9:
+		x := idxN[8]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 8:
+		x := idxN[7]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 7:
+		x := idxN[6]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 6:
+		x := idxN[5]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 5:
+		x := idxN[4]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 4:
+		x := idxN[3]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 3:
+		x := idxN[2]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 2:
+		x := idxN[1]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		fallthrough
+	case n == 1:
+		x := idxN[0]
+		one := int(byte2bit(key[x.iByte], x.mask))
+		idx |= (one << x.i)
+		return
+	}
+	return
+}
+
+//*/

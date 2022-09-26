@@ -35,12 +35,12 @@ func getField1(field reflect.StructField, pStruct unsafe.Pointer, pOut unsafe.Po
 		pValue = *ppValue
 	}
 	if uintptr(pValue) != 0 {
-		from := reflect.SliceHeader{
+		from := SliceHeader{
 			Data: uintptr(pValue),
 			Len:  int(typ.Size()),
 			Cap:  int(typ.Size()),
 		}
-		to := reflect.SliceHeader{
+		to := SliceHeader{
 			Data: uintptr(pOut),
 			Len:  int(typ.Size()),
 			Cap:  int(typ.Size()),
@@ -73,12 +73,12 @@ func setField1(field reflect.StructField, pStruct unsafe.Pointer, pIn unsafe.Poi
 	pValue := unsafe.Pointer(uintptr(pStruct) + uintptr(field.Offset))
 	typ := field.Type
 	if typ.Kind() != reflect.Ptr {
-		from := reflect.SliceHeader{
+		from := SliceHeader{
 			Data: uintptr(pIn),
 			Len:  int(typ.Size()),
 			Cap:  int(typ.Size()),
 		}
-		to := reflect.SliceHeader{
+		to := SliceHeader{
 			Data: uintptr(pValue),
 			Len:  int(typ.Size()),
 			Cap:  int(typ.Size()),

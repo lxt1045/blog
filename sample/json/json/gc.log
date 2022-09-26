@@ -1,918 +1,1358 @@
 # github.com/lxt1045/blog/sample/json/json
-./func_get_set.go:14:6: can inline pointerOffset
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.bool_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.bool_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.bool_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.bool_0].func4
-./func_get_set.go:44:9: can inline boolFuncs.func1
-./func_get_set.go:53:9: can inline boolFuncs.func2
-./struct_tag_node.go:218:6: can inline bytesString
+./cache.go:104:6: can inline (*SlicePool).SetMakeN
+./struct_tag_node.go:241:6: can inline reflectValueToPointer
+./cache.go:118:12: inlining call to (*SlicePool).SetMakeN
+./cache.go:121:28: inlining call to reflectValueToPointer
+./cache.go:150:29: inlining call to reflectValueToPointer
+./cache_struct.go:11:24: inlining call to log.Flags
+./cache_struct.go:11:14: inlining call to log.SetFlags
+./cache_struct.go:24:6: can inline NewTypeBuilder
+./cache_struct.go:29:6: can inline (*TypeBuilder).New
+./cache_struct.go:31:28: inlining call to reflectValueToPointer
+./cache_struct.go:36:6: can inline (*TypeBuilder).NewSlice
+./cache_struct.go:43:20: inlining call to reflect.Value.Interface
+./cache_struct.go:47:30: inlining call to reflectValueToPointer
+./cache_struct.go:47:47: inlining call to reflect.Value.Interface
+./struct_tag_node.go:277:6: can inline UnpackType
+./cache_struct.go:56:24: inlining call to UnpackType
+./cache_struct.go:98:43: inlining call to reflect.TypeOf
+./cache_struct.go:98:43: inlining call to reflect.toType
+./cache_struct.go:103:43: inlining call to reflect.TypeOf
+./cache_struct.go:103:43: inlining call to reflect.toType
+./cache_struct.go:107:43: inlining call to reflect.TypeOf
+./cache_struct.go:107:43: inlining call to reflect.toType
+./cache_struct.go:111:43: inlining call to reflect.TypeOf
+./cache_struct.go:111:43: inlining call to reflect.toType
+./cache_struct.go:115:43: inlining call to reflect.TypeOf
+./cache_struct.go:115:43: inlining call to reflect.toType
+./cache_struct.go:119:43: inlining call to reflect.TypeOf
+./cache_struct.go:119:43: inlining call to reflect.toType
+./cache_struct.go:123:6: can inline (*TypeBuilder).AddField
+./cache_struct.go:128:6: can inline (*TypeBuilder).AddString
+./cache_struct.go:129:40: inlining call to reflect.TypeOf
+./cache_struct.go:129:40: inlining call to reflect.toType
+./cache_struct.go:129:19: inlining call to (*TypeBuilder).AddField
+./cache_struct.go:132:6: can inline (*TypeBuilder).AddBool
+./cache_struct.go:133:40: inlining call to reflect.TypeOf
+./cache_struct.go:133:40: inlining call to reflect.toType
+./cache_struct.go:133:19: inlining call to (*TypeBuilder).AddField
+./cache_struct.go:136:6: can inline (*TypeBuilder).AddInt64
+./cache_struct.go:137:40: inlining call to reflect.TypeOf
+./cache_struct.go:137:40: inlining call to reflect.toType
+./cache_struct.go:137:19: inlining call to (*TypeBuilder).AddField
+./cache_struct.go:140:6: can inline (*TypeBuilder).AddFloat64
+./cache_struct.go:141:40: inlining call to reflect.TypeOf
+./cache_struct.go:141:40: inlining call to reflect.toType
+./cache_struct.go:141:19: inlining call to (*TypeBuilder).AddField
+./cache_struct.go:145:21: inlining call to NewTypeBuilder
+./cache_struct.go:146:12: inlining call to (*TypeBuilder).AddString
+./cache_struct.go:146:12: inlining call to reflect.TypeOf
+./cache_struct.go:146:12: inlining call to reflect.toType
+./cache_struct.go:146:12: inlining call to (*TypeBuilder).AddField
+./cache_struct.go:147:11: inlining call to (*TypeBuilder).AddInt64
+./cache_struct.go:147:11: inlining call to reflect.TypeOf
+./cache_struct.go:147:11: inlining call to reflect.toType
+./cache_struct.go:147:11: inlining call to (*TypeBuilder).AddField
+./cache_struct.go:149:12: inlining call to (*TypeBuilder).New
+./cache_struct.go:149:12: inlining call to reflectValueToPointer
+./cache_struct.go:151:23: inlining call to reflect.ValueOf
+./cache_struct.go:151:23: inlining call to reflect.escapes
+./cache_struct.go:151:23: inlining call to reflect.unpackEface
+./cache_struct.go:151:23: inlining call to reflect.(*rtype).Kind
+./cache_struct.go:151:23: inlining call to reflect.ifaceIndir
+./cache_struct.go:151:50: inlining call to reflect.Value.Interface
+./cache_struct.go:152:12: inlining call to fmt.Printf
+./func_get_set.go:16:6: can inline pointerOffset
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.bool_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.bool_0].func4
+./func_get_set.go:53:9: can inline boolFuncs.func1
+./func_get_set.go:62:9: can inline boolFuncs.func2
+./struct_tag_node.go:248:6: can inline bytesString
 ./json.go:17:6: can inline ErrStream
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.uint64_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.uint64_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.uint64_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.uint64_0].func4
-./func_get_set.go:71:44: inlining call to bytesString
-./func_get_set.go:73:37: inlining call to ErrStream
-./func_get_set.go:79:9: can inline uint64Funcs.func2
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.int64_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.int64_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.int64_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.int64_0].func4
-./func_get_set.go:95:43: inlining call to bytesString
-./func_get_set.go:97:37: inlining call to ErrStream
-./func_get_set.go:103:9: can inline int64Funcs.func2
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.uint32_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.uint32_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.uint32_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.uint32_0].func4
-./func_get_set.go:118:44: inlining call to bytesString
-./func_get_set.go:120:37: inlining call to ErrStream
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.int32_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.int32_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.int32_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.int32_0].func4
-./func_get_set.go:141:43: inlining call to bytesString
-./func_get_set.go:143:37: inlining call to ErrStream
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.uint16_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.uint16_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.uint16_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.uint16_0].func4
-./func_get_set.go:164:44: inlining call to bytesString
-./func_get_set.go:166:37: inlining call to ErrStream
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.int16_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.int16_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.int16_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.int16_0].func4
-./func_get_set.go:187:43: inlining call to bytesString
-./func_get_set.go:189:37: inlining call to ErrStream
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.uint8_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.uint8_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.uint8_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.uint8_0].func4
-./func_get_set.go:210:44: inlining call to bytesString
-./func_get_set.go:212:37: inlining call to ErrStream
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.int8_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.int8_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.int8_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.int8_0].func4
-./func_get_set.go:233:43: inlining call to bytesString
-./func_get_set.go:235:37: inlining call to ErrStream
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.float64_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.float64_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.float64_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.float64_0].func4
-./func_get_set.go:256:43: inlining call to bytesString
-./func_get_set.go:258:37: inlining call to ErrStream
-./func_get_set.go:267:28: inlining call to strconv.AppendFloat
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.float32_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.float32_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.float32_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.float32_0].func4
-./func_get_set.go:278:43: inlining call to bytesString
-./func_get_set.go:280:37: inlining call to ErrStream
-./func_get_set.go:289:28: inlining call to strconv.AppendFloat
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.string_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.string_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.string_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.string_0].func4
-./func_get_set.go:298:9: can inline stringFuncs.func1
-./func_get_set.go:303:9: can inline stringFuncs.func2
-./func_get_set.go:19:10: can inline ptrTypeFuncs[go.shape.[]uint8_0].func1
-./func_get_set.go:24:10: can inline ptrTypeFuncs[go.shape.[]uint8_0].func2
-./func_get_set.go:30:11: can inline ptrTypeFuncs[go.shape.[]uint8_0].func3
-./func_get_set.go:35:11: can inline ptrTypeFuncs[go.shape.[]uint8_0].func4
-./func_get_set.go:322:37: inlining call to ErrStream
-./func_get_set.go:331:52: inlining call to base64.(*Encoding).EncodedLen
-./func_get_set.go:346:9: can inline sliceFuncs.func1
-./func_get_set.go:350:9: can inline sliceFuncs.func2
-./func_get_set.go:362:10: can inline structChildFuncs.func1
-./func_get_set.go:373:10: can inline structChildFuncs.func2
-./func_get_set.go:380:13: can inline structChildFuncs.func3
-./func_get_set.go:385:13: can inline structChildFuncs.func4
-./func_get_set.go:399:10: can inline anonymousStructFuncs.func1
-./func_get_set.go:401:25: inlining call to pointerOffset
-./func_get_set.go:406:25: inlining call to pointerOffset
-./func_get_set.go:428:13: can inline anonymousStructFuncs.func5
-./func_get_set.go:433:13: can inline anonymousStructFuncs.func6
-./func_get_set.go:443:9: can inline iterfaceFuncs.func1
-./func_get_set.go:447:10: can inline iterfaceFuncs.func2
-./func_get_set.go:457:9: can inline mapFuncs.func1
-./func_get_set.go:464:10: can inline mapFuncs.func2
-./func_marshal_unmarshal.go:26:69: inlining call to ErrStream
-./func_marshal_unmarshal.go:29:25: inlining call to pointerOffset
-./func_marshal_unmarshal.go:32:7: can inline boolMFuncs.func2
-./func_marshal_unmarshal.go:33:34: inlining call to pointerOffset
-./func_marshal_unmarshal.go:46:42: inlining call to bytesString
-./func_marshal_unmarshal.go:48:36: inlining call to ErrStream
-./func_marshal_unmarshal.go:63:25: inlining call to pointerOffset
-./func_marshal_unmarshal.go:66:7: can inline numMFuncs.func2
-./func_marshal_unmarshal.go:67:34: inlining call to pointerOffset
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.uint64_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.uint64_0].func4
+./func_get_set.go:80:44: inlining call to bytesString
+./func_get_set.go:82:37: inlining call to ErrStream
+./func_get_set.go:88:9: can inline uint64Funcs.func2
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.int64_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.int64_0].func4
+./func_get_set.go:104:43: inlining call to bytesString
+./func_get_set.go:106:37: inlining call to ErrStream
+./func_get_set.go:112:9: can inline int64Funcs.func2
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.uint32_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.uint32_0].func4
+./func_get_set.go:127:44: inlining call to bytesString
+./func_get_set.go:129:37: inlining call to ErrStream
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.int32_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.int32_0].func4
+./func_get_set.go:150:43: inlining call to bytesString
+./func_get_set.go:152:37: inlining call to ErrStream
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.uint16_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.uint16_0].func4
+./func_get_set.go:173:44: inlining call to bytesString
+./func_get_set.go:175:37: inlining call to ErrStream
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.int16_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.int16_0].func4
+./func_get_set.go:196:43: inlining call to bytesString
+./func_get_set.go:198:37: inlining call to ErrStream
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.uint8_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.uint8_0].func4
+./func_get_set.go:219:44: inlining call to bytesString
+./func_get_set.go:221:37: inlining call to ErrStream
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.int8_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.int8_0].func4
+./func_get_set.go:242:43: inlining call to bytesString
+./func_get_set.go:244:37: inlining call to ErrStream
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.float64_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.float64_0].func4
+./func_get_set.go:265:43: inlining call to bytesString
+./func_get_set.go:267:37: inlining call to ErrStream
+./func_get_set.go:276:28: inlining call to strconv.AppendFloat
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.float32_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.float32_0].func4
+./func_get_set.go:287:43: inlining call to bytesString
+./func_get_set.go:289:37: inlining call to ErrStream
+./func_get_set.go:298:28: inlining call to strconv.AppendFloat
+./func_get_set.go:329:23: inlining call to reflect.TypeOf
+./func_get_set.go:329:23: inlining call to reflect.toType
+./func_get_set.go:331:10: can inline ptrTypeFuncsString.func1
+./func_get_set.go:337:24: inlining call to pointerOffset
+./func_get_set.go:342:10: can inline ptrTypeFuncsString.func2
+./func_get_set.go:354:22: inlining call to pointerOffset
+./func_get_set.go:359:11: can inline ptrTypeFuncsString.func4
+./func_get_set.go:308:9: can inline stringFuncs.func1
+./func_get_set.go:313:9: can inline stringFuncs.func2
+./func_get_set.go:23:23: inlining call to reflect.TypeOf
+./func_get_set.go:23:23: inlining call to reflect.toType
+./func_get_set.go:26:21: inlining call to pointerOffset
+./func_get_set.go:31:10: can inline ptrTypeFuncs[go.shape.[]uint8_0].func2
+./func_get_set.go:40:22: inlining call to pointerOffset
+./func_get_set.go:45:11: can inline ptrTypeFuncs[go.shape.[]uint8_0].func4
+./func_get_set.go:374:37: inlining call to ErrStream
+./func_get_set.go:383:52: inlining call to base64.(*Encoding).EncodedLen
+./func_get_set.go:398:9: can inline sliceFuncs.func1
+./func_get_set.go:402:9: can inline sliceFuncs.func2
+./func_get_set.go:416:10: can inline structChildFuncs.func1
+./func_get_set.go:423:22: inlining call to pointerOffset
+./func_get_set.go:428:10: can inline structChildFuncs.func2
+./func_get_set.go:438:23: inlining call to pointerOffset
+./func_get_set.go:443:13: can inline structChildFuncs.func4
+./func_get_set.go:458:25: inlining call to pointerOffset
+./func_get_set.go:464:25: inlining call to pointerOffset
+./func_get_set.go:474:22: inlining call to pointerOffset
+./func_get_set.go:493:23: inlining call to pointerOffset
+./func_get_set.go:498:13: can inline anonymousStructFuncs.func6
+./func_get_set.go:508:9: can inline iterfaceFuncs.func1
+./func_get_set.go:512:10: can inline iterfaceFuncs.func2
+./func_get_set.go:522:9: can inline mapFuncs.func1
+./func_get_set.go:529:10: can inline mapFuncs.func2
+./func_marshal_unmarshal.go:27:69: inlining call to ErrStream
+./func_marshal_unmarshal.go:31:28: inlining call to pointerOffset
+./func_marshal_unmarshal.go:36:21: inlining call to pointerOffset
+./func_marshal_unmarshal.go:50:42: inlining call to bytesString
+./func_marshal_unmarshal.go:52:36: inlining call to ErrStream
+./func_marshal_unmarshal.go:67:28: inlining call to pointerOffset
+./func_marshal_unmarshal.go:72:21: inlining call to pointerOffset
 ./json.go:29:6: can inline trimSpace
 ./json.go:36:6: can inline parseByte
-./hash_map.go:483:6: can inline hash2
-./hash_map.go:164:6: can inline (*tagMap).GetV
-./hash_map.go:165:14: inlining call to hash2
-./hash_map.go:167:16: inlining call to bytes.Equal
-./struct_tag_info.go:67:25: inlining call to (*tagMap).GetV
-./struct_tag_info.go:67:25: inlining call to hash2
-./struct_tag_info.go:67:25: inlining call to bytes.Equal
-./json.go:367:31: inlining call to bytes.IndexByte
-./json.go:400:31: inlining call to bytes.IndexByte
-./json.go:431:64: inlining call to ErrStream
-./json.go:438:64: inlining call to ErrStream
-./json.go:445:65: inlining call to ErrStream
-./json.go:453:29: inlining call to bytes.IndexByte
-./json.go:62:16: inlining call to trimSpace
-./json.go:72:23: inlining call to bytes.IndexByte
-./json.go:79:20: inlining call to parseByte
-./json.go:82:31: inlining call to ErrStream
-./json.go:102:20: inlining call to parseByte
-./json.go:109:31: inlining call to ErrStream
-./func_marshal_unmarshal.go:75:22: inlining call to pointerOffset
-./func_marshal_unmarshal.go:91:23: inlining call to pointerOffset
-./func_marshal_unmarshal.go:100:7: can inline structMFuncs.func2
-./func_marshal_unmarshal.go:101:34: inlining call to pointerOffset
-./struct_tag_node.go:214:6: can inline reflectValueToPointer
-./json.go:646:19: inlining call to "errors".New
-./json.go:614:20: inlining call to "errors".New
-./json.go:619:23: inlining call to utf16.IsSurrogate
-./json.go:625:21: inlining call to "errors".New
-./json.go:629:25: inlining call to utf16.DecodeRune
-./json.go:637:52: inlining call to ErrStream
-./json.go:637:19: inlining call to "errors".New
-./json.go:539:33: inlining call to bytes.IndexByte
-./json.go:568:35: inlining call to bytes.IndexByte
-./json.go:575:33: inlining call to bytes.IndexByte
-./json.go:523:21: inlining call to bytes.IndexByte
-./json.go:312:64: inlining call to ErrStream
-./json.go:319:64: inlining call to ErrStream
-./json.go:327:65: inlining call to ErrStream
-./json.go:340:19: inlining call to bytesString
-./json.go:137:17: inlining call to trimSpace
-./json.go:140:23: inlining call to bytes.IndexByte
-./json.go:147:20: inlining call to parseByte
-./json.go:149:31: inlining call to ErrStream
-./json.go:159:20: inlining call to parseByte
-./json.go:173:31: inlining call to ErrStream
-./json.go:180:15: inlining call to trimSpace
-./json.go:189:20: inlining call to parseByte
-./json.go:196:31: inlining call to ErrStream
-./json.go:202:15: inlining call to trimSpace
-./json.go:203:33: inlining call to pointerOffset
-./json.go:231:30: inlining call to reflectValueToPointer
-./json.go:244:21: inlining call to pointerOffset
-./json.go:257:20: inlining call to parseByte
-./json.go:264:31: inlining call to ErrStream
-./json.go:270:29: inlining call to reflectValueToPointer
-./func_marshal_unmarshal.go:112:35: inlining call to pointerOffset
-./func_marshal_unmarshal.go:124:7: can inline sliceMFuncs.func2
-./func_marshal_unmarshal.go:125:34: inlining call to pointerOffset
-./func_marshal_unmarshal.go:140:23: inlining call to bytes.IndexByte
-./func_marshal_unmarshal.go:151:25: inlining call to pointerOffset
-./func_marshal_unmarshal.go:154:7: can inline stringMFuncs.func2
-./func_marshal_unmarshal.go:155:34: inlining call to pointerOffset
-./func_marshal_unmarshal.go:169:17: inlining call to trimSpace
-./func_marshal_unmarshal.go:171:37: inlining call to pointerOffset
-./func_marshal_unmarshal.go:178:7: can inline interfaceMFuncs.func2
-./func_marshal_unmarshal.go:179:34: inlining call to pointerOffset
+./hash_map.go:675:6: can inline hash2
+./hash_map.go:165:6: can inline TagMapGetV
+./hash_map.go:166:14: inlining call to hash2
+./hash_map.go:168:16: inlining call to bytes.Equal
+./struct_tag_info.go:95:6: can inline (*TagInfo).GetChildFromMap
+./json.go:448:28: inlining call to bytes.IndexByte
+./json.go:449:28: inlining call to bytes.IndexByte
+./json.go:477:34: inlining call to bytes.IndexByte
+./json.go:485:30: inlining call to bytes.IndexByte
+./json.go:505:34: inlining call to bytes.IndexByte
+./json.go:513:30: inlining call to bytes.IndexByte
+./json.go:428:30: inlining call to bytes.IndexByte
+./json.go:553:64: inlining call to ErrStream
+./json.go:560:64: inlining call to ErrStream
+./json.go:567:65: inlining call to ErrStream
+./json.go:575:30: inlining call to bytes.IndexByte
+./json.go:75:16: inlining call to trimSpace
+./json.go:85:23: inlining call to bytes.IndexByte
+./json.go:92:20: inlining call to parseByte
+./json.go:95:31: inlining call to ErrStream
+./json.go:102:20: inlining call to TagMapGetV
+./json.go:102:20: inlining call to hash2
+./json.go:102:20: inlining call to bytes.Equal
+./json.go:110:35: inlining call to (*TagInfo).GetChildFromMap
+./json.go:133:20: inlining call to parseByte
+./json.go:140:31: inlining call to ErrStream
+./func_marshal_unmarshal.go:81:27: inlining call to pointerOffset
+./func_marshal_unmarshal.go:97:28: inlining call to pointerOffset
+./func_marshal_unmarshal.go:107:28: inlining call to pointerOffset
+./stubs.go:102:6: can inline (*bmap).setoverflow
+./stubs.go:103:25: inlining call to pointerOffset
+./stubs.go:214:40: inlining call to pointerOffset
+./stubs.go:215:33: inlining call to pointerOffset
+./stubs.go:216:20: inlining call to (*bmap).setoverflow
+./stubs.go:216:20: inlining call to pointerOffset
+./json.go:759:19: inlining call to "errors".New
+./json.go:727:20: inlining call to "errors".New
+./json.go:732:23: inlining call to utf16.IsSurrogate
+./json.go:738:21: inlining call to "errors".New
+./json.go:742:25: inlining call to utf16.DecodeRune
+./json.go:750:52: inlining call to ErrStream
+./json.go:750:19: inlining call to "errors".New
+./json.go:632:33: inlining call to bytes.IndexByte
+./json.go:651:37: inlining call to bytes.IndexByte
+./json.go:681:35: inlining call to bytes.IndexByte
+./json.go:688:33: inlining call to bytes.IndexByte
+./json.go:617:21: inlining call to bytes.IndexByte
+./json.go:359:64: inlining call to ErrStream
+./json.go:366:64: inlining call to ErrStream
+./json.go:374:65: inlining call to ErrStream
+./json.go:171:17: inlining call to trimSpace
+./json.go:174:23: inlining call to bytes.IndexByte
+./json.go:181:20: inlining call to parseByte
+./json.go:183:31: inlining call to ErrStream
+./json.go:193:20: inlining call to parseByte
+./json.go:210:31: inlining call to ErrStream
+./json.go:221:15: inlining call to trimSpace
+./json.go:229:20: inlining call to parseByte
+./json.go:241:31: inlining call to ErrStream
+./json.go:247:15: inlining call to trimSpace
+./json.go:248:27: inlining call to pointerOffset
+./json.go:271:30: inlining call to reflectValueToPointer
+./json.go:300:20: inlining call to parseByte
+./json.go:307:31: inlining call to ErrStream
+./func_marshal_unmarshal.go:119:29: inlining call to pointerOffset
+./func_marshal_unmarshal.go:133:28: inlining call to pointerOffset
+./func_marshal_unmarshal.go:148:23: inlining call to bytes.IndexByte
+./func_marshal_unmarshal.go:159:28: inlining call to pointerOffset
+./func_marshal_unmarshal.go:163:7: can inline stringMFuncs.func2
+./func_marshal_unmarshal.go:164:40: inlining call to pointerOffset
+./func_marshal_unmarshal.go:175:24: inlining call to reflect.TypeOf
+./func_marshal_unmarshal.go:175:24: inlining call to reflect.toType
+./func_marshal_unmarshal.go:190:23: inlining call to bytes.IndexByte
+./func_marshal_unmarshal.go:201:28: inlining call to pointerOffset
+./func_marshal_unmarshal.go:210:23: inlining call to pointerOffset
+./func_marshal_unmarshal.go:215:21: inlining call to pointerOffset
+./func_marshal_unmarshal.go:220:7: can inline stringMFuncs_0.func2
+./func_marshal_unmarshal.go:221:40: inlining call to pointerOffset
+./func_marshal_unmarshal.go:235:17: inlining call to trimSpace
+./func_marshal_unmarshal.go:237:37: inlining call to pointerOffset
+./func_marshal_unmarshal.go:244:7: can inline interfaceMFuncs.func2
+./func_marshal_unmarshal.go:245:40: inlining call to pointerOffset
 ./hash_map.go:31:6: can inline getHashFuncU64.func1
 ./hash_map.go:46:6: can inline getNLen
-./hash_map.go:149:24: inlining call to log.Flags
-./hash_map.go:149:14: inlining call to log.SetFlags
-./hash_map.go:501:6: can inline hash
-./hash_map.go:172:6: can inline (*tagMap).Get
-./hash_map.go:173:13: inlining call to hash
-./hash_map.go:175:16: inlining call to bytes.Equal
-./hash_map.go:180:6: can inline (*tagMap).Get2
-./hash_map.go:181:14: inlining call to hash2
-./hash_map.go:183:16: inlining call to bytes.Equal
-./hash_map.go:358:16: can inline getPivotMask.func1
-./hash_map.go:401:39: inlining call to getPivotMask.func1
-./hash_map.go:315:19: can inline logicalHash.func1
-./hash_map.go:463:6: can inline getHashParam
-./hash_map.go:252:15: inlining call to getNLen
-./hash_map.go:258:28: inlining call to getHashParam
-./hash_map.go:261:14: inlining call to hash
-./hash_map.go:262:51: inlining call to bytes.Equal
-./json.go:48:6: can inline parseObjToSlice
-./json.go:52:6: can inline bsToStr
-./json.go:120:7: can inline glob..func2
-./json.go:475:29: inlining call to bytes.IndexByte
-./json.go:677:6: can inline fillBytes16
-./struct_tag_info.go:40:6: can inline (*TagInfo).cacheKey
-./struct_tag_info.go:84:26: inlining call to reflect.TypeOf
-./struct_tag_info.go:84:26: inlining call to reflect.toType
-./struct_tag_info.go:194:32: inlining call to reflectValueToPointer
-./struct_tag_info.go:202:32: inlining call to reflectValueToPointer
-./struct_tag_info.go:210:32: inlining call to reflectValueToPointer
-./struct_tag_info.go:218:32: inlining call to reflectValueToPointer
-./struct_tag_info.go:226:32: inlining call to reflectValueToPointer
-./struct_tag_info.go:318:23: inlining call to reflect.StructField.IsExported
-./struct_tag_info.go:322:24: inlining call to reflect.StructTag.Get
-./struct_tag_info.go:331:23: inlining call to strings.Split
-./struct_tag_info.go:250:49: can inline (*TagInfo).setFuncs.func6
-./struct_tag_info.go:252:33: inlining call to reflectValueToPointer
-./struct_tag_info.go:256:79: can inline (*TagInfo).setFuncs.func7
-./struct_tag_info.go:258:34: inlining call to reflectValueToPointer
-./struct_tag_node.go:232:6: can inline UnpackEface
-./struct_tag_node.go:255:6: can inline PtrElem
-./cache.go:42:6: can inline (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
-./struct_tag_node.go:194:33: inlining call to (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
-./struct_tag_info.go:384:16: inlining call to trimSpace
+./hash_map.go:150:24: inlining call to log.Flags
+./hash_map.go:150:14: inlining call to log.SetFlags
+./hash_map.go:693:6: can inline hash3
+./hash_map.go:173:6: can inline TagMapGetV3
+./hash_map.go:174:14: inlining call to hash3
+./hash_map.go:176:16: inlining call to bytes.Equal
+./hash_map.go:182:6: can inline (*tagMap).GetV
+./hash_map.go:183:14: inlining call to hash2
+./hash_map.go:185:16: inlining call to bytes.Equal
+./hash_map.go:731:6: can inline hash
+./hash_map.go:190:6: can inline (*tagMap).Get
+./hash_map.go:191:13: inlining call to hash
+./hash_map.go:193:16: inlining call to bytes.Equal
+./hash_map.go:198:6: can inline (*tagMap).Get2
+./hash_map.go:199:14: inlining call to hash2
+./hash_map.go:201:16: inlining call to bytes.Equal
+./hash_map.go:206:6: can inline (*tagMap).Get3
+./hash_map.go:207:14: inlining call to hash3
+./hash_map.go:209:16: inlining call to bytes.Equal
+./hash_map.go:552:16: can inline getPivotMask.func1
+./hash_map.go:595:39: inlining call to getPivotMask.func1
+./hash_map.go:364:19: can inline logicalHash.func1
+./hash_map.go:655:6: can inline getHashParam
+./hash_map.go:287:15: inlining call to getNLen
+./hash_map.go:293:28: inlining call to getHashParam
+./hash_map.go:296:14: inlining call to hash
+./hash_map.go:297:51: inlining call to bytes.Equal
+./hash_map.go:405:16: can inline getPivotMask1.func1
+./hash_map.go:448:39: inlining call to getPivotMask1.func1
+./hash_map.go:710:6: can inline hash4
+./json.go:47:6: can inline parseByte0
+./json.go:61:6: can inline parseObjToSlice
+./json.go:65:6: can inline bsToStr
+./json.go:151:7: can inline glob..func2
+./json.go:215:41: can inline glob..func3
+./json.go:419:7: can inline glob..func4
+./json.go:599:29: inlining call to bytes.IndexByte
+./json.go:790:6: can inline fillBytes16
+./json_marshal.go:7:29: can inline glob..func5
+./json_marshal.go:19:8: can inline marshalRoot.func1
+./struct_tag_info.go:114:26: inlining call to reflect.TypeOf
+./struct_tag_info.go:114:26: inlining call to reflect.toType
+./struct_tag_info.go:215:31: inlining call to reflectValueToPointer
+./struct_tag_info.go:287:27: inlining call to NewTypeBuilder
+./struct_tag_info.go:309:23: inlining call to reflect.StructField.IsExported
+./struct_tag_info.go:313:24: inlining call to reflect.StructTag.Get
+./struct_tag_info.go:322:23: inlining call to strings.Split
+./struct_tag_node.go:244:6: can inline reflectValueToValue
+./cache.go:44:6: can inline (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
+./struct_tag_info.go:375:16: inlining call to trimSpace
+./struct_tag_info.go:379:69: inlining call to ErrStream
 ./struct_tag_info.go:388:69: inlining call to ErrStream
-./struct_tag_info.go:397:69: inlining call to ErrStream
-./struct_tag_info.go:401:18: inlining call to parseObjToSlice
-./struct_tag_info.go:405:23: inlining call to reflect.ValueOf
-./struct_tag_info.go:405:23: inlining call to reflect.escapes
-./struct_tag_info.go:405:23: inlining call to reflect.unpackEface
-./struct_tag_info.go:405:23: inlining call to reflect.(*rtype).Kind
-./struct_tag_info.go:405:23: inlining call to reflect.ifaceIndir
-./struct_tag_info.go:406:23: inlining call to reflect.Indirect
-./struct_tag_info.go:406:23: inlining call to reflect.Value.Kind
-./struct_tag_info.go:406:23: inlining call to reflect.flag.kind
-./struct_tag_info.go:407:15: inlining call to reflect.Value.CanSet
-./struct_tag_info.go:412:22: inlining call to UnpackEface
-./struct_tag_info.go:413:19: inlining call to PtrElem
+./struct_tag_info.go:392:18: inlining call to parseObjToSlice
+./struct_tag_info.go:396:40: inlining call to reflect.ValueOf
+./struct_tag_info.go:396:40: inlining call to reflect.escapes
+./struct_tag_info.go:396:40: inlining call to reflect.unpackEface
+./struct_tag_info.go:396:40: inlining call to reflect.(*rtype).Kind
+./struct_tag_info.go:396:40: inlining call to reflect.ifaceIndir
+./struct_tag_info.go:396:24: inlining call to reflect.Indirect
+./struct_tag_info.go:396:24: inlining call to reflect.Value.Kind
+./struct_tag_info.go:396:24: inlining call to reflect.flag.kind
+./struct_tag_info.go:397:15: inlining call to reflect.Value.CanSet
+./struct_tag_info.go:403:28: inlining call to reflectValueToValue
+./struct_tag_info.go:405:35: inlining call to (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
+./struct_tag_info.go:443:23: inlining call to reflect.ValueOf
+./struct_tag_info.go:443:23: inlining call to reflect.escapes
+./struct_tag_info.go:443:23: inlining call to reflect.unpackEface
+./struct_tag_info.go:443:23: inlining call to reflect.(*rtype).Kind
+./struct_tag_info.go:443:23: inlining call to reflect.ifaceIndir
+./struct_tag_info.go:444:23: inlining call to reflect.Indirect
+./struct_tag_info.go:444:23: inlining call to reflect.Value.Kind
+./struct_tag_info.go:444:23: inlining call to reflect.flag.kind
+./struct_tag_info.go:445:15: inlining call to reflect.Value.CanSet
+./struct_tag_info.go:451:28: inlining call to reflectValueToValue
+./struct_tag_info.go:453:35: inlining call to (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
 ./struct_tag_node.go:160:6: can inline Type.IsNull
 ./struct_tag_node.go:165:6: can inline Type.String
 ./struct_tag_node.go:189:6: can inline strToUintptr
-./struct_tag_node.go:228:6: can inline unpackEface
-./cache.go:36:6: can inline newCache[go.shape.uint32_0,go.shape.*uint8_1]
-./json.go:667:13: inlining call to fillBytes16
-./json.go:668:13: inlining call to fillBytes16
-./json.go:669:13: inlining call to fillBytes16
-./json.go:670:13: inlining call to fillBytes16
-./json.go:671:13: inlining call to fillBytes16
-./json.go:672:13: inlining call to fillBytes16
-./json.go:673:13: inlining call to fillBytes16
-./json.go:674:13: inlining call to fillBytes16
+./struct_tag_node.go:194:35: inlining call to (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get
+./struct_tag_node.go:251:6: can inline bytesCopyToString
+./struct_tag_node.go:272:6: can inline UnpackNonEface
+./struct_tag_node.go:281:6: can inline unpackEface
+./struct_tag_node.go:285:6: can inline UnpackEface
+./struct_tag_node.go:325:6: can inline PtrElem
+./stubs.go:135:15: can inline glob..func6
+./stubs.go:139:17: can inline glob..func7
+./stubs.go:141:23: inlining call to reflect.TypeOf
+./stubs.go:141:23: inlining call to reflect.toType
+./stubs.go:142:45: inlining call to UnpackType
+./cache.go:181:6: can inline NewBatch[go.shape.string_0]
+./cache.go:181:6: can inline NewBatch[go.shape.[]interface {}_0]
+./cache.go:38:6: can inline newCache[go.shape.uint32_0,go.shape.*uint8_1]
+./cache.go:181:6: can inline NewBatch[go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0]
+./json.go:412:31: inlining call to NewBatch[go.shape.string_0]
+./json.go:413:41: inlining call to NewBatch[go.shape.[]interface {}_0]
+./json.go:415:27: inlining call to UnpackEface
+./json.go:416:30: inlining call to UnpackEface
+./json.go:780:13: inlining call to fillBytes16
+./json.go:781:13: inlining call to fillBytes16
+./json.go:782:13: inlining call to fillBytes16
+./json.go:783:13: inlining call to fillBytes16
+./json.go:784:13: inlining call to fillBytes16
+./json.go:785:13: inlining call to fillBytes16
+./json.go:786:13: inlining call to fillBytes16
+./json.go:787:13: inlining call to fillBytes16
 ./struct_tag_node.go:185:49: inlining call to newCache[go.shape.uint32_0,go.shape.*uint8_1]
-./func_get_set.go:14:20: leaking param: p to result pOut level=0
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:44:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:44:35: raw does not escape
-./func_get_set.go:53:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:53:35: leaking param: in to result out level=0
-./func_get_set.go:44:9: func literal escapes to heap
+./stubs.go:138:2: inlining call to glob..func6
+./stubs.go:143:2: inlining call to glob..func7
+./stubs.go:143:2: inlining call to reflect.TypeOf
+./stubs.go:143:2: inlining call to reflect.toType
+./stubs.go:143:2: inlining call to UnpackType
+./stubs.go:144:30: inlining call to NewBatch[go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0]
+./cache.go:104:7: leaking param: p
+./cache.go:111:7: leaking param: s
+./cache.go:111:26: pHeader does not escape
+./cache.go:133:19: leaking param: typ
+./cache.go:133:24: leaking param: sonTyp
+./cache.go:133:46: moved to heap: s
+./cache.go:134:6: &SlicePool{} escapes to heap
+./cache.go:137:10: func literal escapes to heap
+./cache.go:219:8: &sliceNode[go.shape.string_0]{...} escapes to heap
+./cache.go:220:12: make([]go.shape.string_0, 1024 * 1024) escapes to heap
+./cache.go:192:13: leaking param: b
+./cache_struct.go:25:9: &TypeBuilder{} escapes to heap
+./cache_struct.go:29:7: leaking param content: b
+./stubs.go:22:22: leaking param: typ
+./cache_struct.go:36:7: leaking param content: b
+./cache_struct.go:41:7: leaking param content: b
+./cache_struct.go:45:7: leaking param content: b
+./cache_struct.go:51:7: leaking param content: b
+./cache_struct.go:69:7: leaking param content: b
+./cache_struct.go:69:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:69:38: leaking param: name
+./cache_struct.go:69:51: leaking param: typ
+./cache_struct.go:69:69: leaking param: lazyOffset
+./cache_struct.go:70:14: "X_" + name[1:len(name) - 1] escapes to heap
+./cache_struct.go:78:65: "Array_" + name escapes to heap
+./cache_struct.go:83:7: leaking param content: b
+./cache_struct.go:83:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:83:35: leaking param: name
+./cache_struct.go:83:48: leaking param: typ
+./cache_struct.go:83:66: leaking param: lazyOffset
+./cache_struct.go:91:65: "Array_" + name escapes to heap
+./cache_struct.go:96:7: leaking param content: b
+./cache_struct.go:96:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:96:37: leaking param: name
+./cache_struct.go:96:50: leaking param: lazyOffset
+./cache_struct.go:101:7: leaking param content: b
+./cache_struct.go:101:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:101:38: leaking param: name
+./cache_struct.go:101:51: leaking param: lazyOffset
+./cache_struct.go:103:43: s escapes to heap
+./cache_struct.go:106:7: leaking param content: b
+./cache_struct.go:106:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:106:36: leaking param: name
+./cache_struct.go:106:49: leaking param: lazyOffset
+./cache_struct.go:107:44: "" escapes to heap
+./cache_struct.go:110:7: leaking param content: b
+./cache_struct.go:110:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:110:34: leaking param: name
+./cache_struct.go:110:47: leaking param: lazyOffset
+./cache_struct.go:111:44: true escapes to heap
+./cache_struct.go:114:7: leaking param content: b
+./cache_struct.go:114:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:114:35: leaking param: name
+./cache_struct.go:114:48: leaking param: lazyOffset
+./cache_struct.go:115:49: int64(0) escapes to heap
+./cache_struct.go:118:7: leaking param content: b
+./cache_struct.go:118:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:118:37: leaking param: name
+./cache_struct.go:118:50: leaking param: lazyOffset
+./cache_struct.go:119:51: float64(1.2) escapes to heap
+./cache_struct.go:123:7: leaking param content: b
+./cache_struct.go:123:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:123:32: leaking param: field
+./cache_struct.go:123:46: leaking param: typ
+./cache_struct.go:128:7: leaking param content: b
+./cache_struct.go:128:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:128:33: leaking param: name
+./cache_struct.go:129:41: "" escapes to heap
+./cache_struct.go:132:7: leaking param content: b
+./cache_struct.go:132:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:132:31: leaking param: name
+./cache_struct.go:133:41: true escapes to heap
+./cache_struct.go:136:7: leaking param content: b
+./cache_struct.go:136:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:136:32: leaking param: name
+./cache_struct.go:137:46: int64(0) escapes to heap
+./cache_struct.go:140:7: leaking param content: b
+./cache_struct.go:140:7: leaking param: b to result ~r0 level=0
+./cache_struct.go:140:34: leaking param: name
+./cache_struct.go:141:48: float64(1.2) escapes to heap
+./cache_struct.go:145:21: &TypeBuilder{} does not escape
+./cache_struct.go:146:12: "" escapes to heap
+./cache_struct.go:147:11: int64(0) escapes to heap
+./cache_struct.go:152:12: ... argument does not escape
+./func_get_set.go:16:20: leaking param: p to result pOut level=0
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:52:16: leaking param content: builder
+./func_get_set.go:52:38: leaking param: name
+./func_get_set.go:53:14: leaking param: store to result pBase level=0
+./func_get_set.go:53:31: bs does not escape
+./func_get_set.go:62:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:62:35: leaking param: in to result out level=0
 ./func_get_set.go:53:9: func literal escapes to heap
-./func_get_set.go:56:27: ([]byte)("false") does not escape
-./func_get_set.go:58:27: ([]byte)("true") does not escape
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:69:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:69:35: leaking param: raw
-./func_get_set.go:79:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:79:35: leaking param: in to result out level=0
-./func_get_set.go:69:9: func literal escapes to heap
-./func_get_set.go:73:37: string(stream) escapes to heap
-./func_get_set.go:79:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:93:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:93:35: leaking param: raw
-./func_get_set.go:103:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:103:35: leaking param: in to result out level=0
-./func_get_set.go:93:9: func literal escapes to heap
-./func_get_set.go:97:37: string(stream) escapes to heap
-./func_get_set.go:103:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:116:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:116:35: leaking param: raw
-./func_get_set.go:126:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:126:35: leaking param: in to result out level=0
-./func_get_set.go:116:9: func literal escapes to heap
-./func_get_set.go:120:37: string(stream) escapes to heap
-./func_get_set.go:126:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:139:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:139:35: leaking param: raw
-./func_get_set.go:149:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:149:35: leaking param: in to result out level=0
-./func_get_set.go:139:9: func literal escapes to heap
-./func_get_set.go:143:37: string(stream) escapes to heap
-./func_get_set.go:149:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:162:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:162:35: leaking param: raw
-./func_get_set.go:172:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:172:35: leaking param: in to result out level=0
-./func_get_set.go:162:9: func literal escapes to heap
-./func_get_set.go:166:37: string(stream) escapes to heap
-./func_get_set.go:172:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:185:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:185:35: leaking param: raw
-./func_get_set.go:195:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:195:35: leaking param: in to result out level=0
-./func_get_set.go:185:9: func literal escapes to heap
-./func_get_set.go:189:37: string(stream) escapes to heap
-./func_get_set.go:195:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:208:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:208:35: leaking param: raw
-./func_get_set.go:218:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:218:35: leaking param: in to result out level=0
-./func_get_set.go:208:9: func literal escapes to heap
-./func_get_set.go:212:37: string(stream) escapes to heap
-./func_get_set.go:218:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:231:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:231:35: leaking param: raw
-./func_get_set.go:241:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:241:35: leaking param: in to result out level=0
-./func_get_set.go:231:9: func literal escapes to heap
-./func_get_set.go:235:37: string(stream) escapes to heap
-./func_get_set.go:241:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:254:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:254:35: leaking param: raw
-./func_get_set.go:264:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:264:35: leaking param: in to result out level=0
-./func_get_set.go:254:9: func literal escapes to heap
-./func_get_set.go:258:37: string(stream) escapes to heap
-./func_get_set.go:264:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:276:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:276:35: leaking param: raw
-./func_get_set.go:286:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:286:35: leaking param: in to result out level=0
-./func_get_set.go:276:9: func literal escapes to heap
-./func_get_set.go:280:37: string(stream) escapes to heap
-./func_get_set.go:286:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:298:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:298:35: leaking param: raw
-./func_get_set.go:303:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:303:35: leaking param: in to result out level=0
-./func_get_set.go:298:9: func literal escapes to heap
-./func_get_set.go:303:9: func literal escapes to heap
-./func_get_set.go:19:15: pObj does not escape
-./func_get_set.go:19:36: leaking param: bs
-./func_get_set.go:24:15: leaking param content: pObj
-./func_get_set.go:24:36: leaking param: in
-./func_get_set.go:30:16: pObj does not escape
-./func_get_set.go:30:37: leaking param: bs
-./func_get_set.go:35:16: leaking param content: pObj
-./func_get_set.go:35:37: leaking param: in
-./func_get_set.go:20:7: moved to heap: obj
-./func_get_set.go:31:8: moved to heap: p
-./func_get_set.go:19:10: func literal escapes to heap
-./func_get_set.go:24:10: func literal escapes to heap
-./func_get_set.go:30:11: func literal escapes to heap
-./func_get_set.go:35:11: func literal escapes to heap
-./func_get_set.go:325:8: bytesFuncs.func1 ignoring self-assignment in *pbs = (*pbs)[:n]
-./func_get_set.go:316:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:316:35: raw does not escape
-./func_get_set.go:328:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:328:35: leaking param: in to result out level=0
-./func_get_set.go:316:9: func literal escapes to heap
-./func_get_set.go:319:14: make([]byte, len(raw) * 2) escapes to heap
-./func_get_set.go:322:37: string(stream) escapes to heap
-./func_get_set.go:328:9: func literal escapes to heap
-./func_get_set.go:334:24: make([]byte, need) escapes to heap
-./func_get_set.go:346:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:346:35: raw does not escape
-./func_get_set.go:350:14: leaking param: pObj to result pBase level=1
-./func_get_set.go:350:35: leaking param: in to result out level=0
-./func_get_set.go:346:9: func literal escapes to heap
-./func_get_set.go:350:9: func literal escapes to heap
-./func_get_set.go:360:36: leaking param: fNew
-./func_get_set.go:362:15: leaking param content: pObj
-./func_get_set.go:362:36: raw does not escape
-./func_get_set.go:373:15: leaking param: pObj to result pBase level=1
-./func_get_set.go:373:36: leaking param: in to result out level=0
-./func_get_set.go:380:18: pObj does not escape
-./func_get_set.go:380:39: leaking param: bs
-./func_get_set.go:385:18: leaking param content: pObj
-./func_get_set.go:385:39: leaking param: in
-./func_get_set.go:381:9: moved to heap: p
-./func_get_set.go:362:10: func literal escapes to heap
-./func_get_set.go:373:10: func literal escapes to heap
-./func_get_set.go:380:13: func literal escapes to heap
-./func_get_set.go:385:13: func literal escapes to heap
-./func_get_set.go:396:56: leaking param: fSet0
-./func_get_set.go:396:71: leaking param: fGet0
-./func_get_set.go:397:2: leaking param: fNew
-./func_get_set.go:399:15: leaking param: pObj
-./func_get_set.go:399:36: leaking param: raw
-./func_get_set.go:404:15: leaking param: pObj
-./func_get_set.go:404:36: leaking param: in
-./func_get_set.go:410:15: leaking param content: pObj
-./func_get_set.go:410:36: leaking param: raw
-./func_get_set.go:418:15: leaking param content: pObj
-./func_get_set.go:418:36: leaking param: in
-./func_get_set.go:428:18: pObj does not escape
-./func_get_set.go:428:39: leaking param: bs
-./func_get_set.go:433:18: leaking param content: pObj
-./func_get_set.go:433:39: leaking param: in
-./func_get_set.go:429:9: moved to heap: p
-./func_get_set.go:399:10: func literal escapes to heap
-./func_get_set.go:404:10: func literal escapes to heap
-./func_get_set.go:410:10: func literal escapes to heap
-./func_get_set.go:418:10: func literal escapes to heap
-./func_get_set.go:428:13: func literal escapes to heap
-./func_get_set.go:433:13: func literal escapes to heap
-./func_get_set.go:443:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:443:35: raw does not escape
-./func_get_set.go:447:15: leaking param: pObj to result pBase level=1
-./func_get_set.go:447:36: leaking param: in to result out level=0
-./func_get_set.go:443:9: func literal escapes to heap
-./func_get_set.go:447:10: func literal escapes to heap
-./func_get_set.go:457:14: leaking param: pObj to result pBase level=0
-./func_get_set.go:457:35: raw does not escape
-./func_get_set.go:464:15: leaking param: pObj to result pBase level=1
-./func_get_set.go:464:36: leaking param: in to result out level=0
-./func_get_set.go:457:9: func literal escapes to heap
-./func_get_set.go:459:12: make(map[string]interface {}) escapes to heap
-./func_get_set.go:464:10: func literal escapes to heap
-./func_marshal_unmarshal.go:16:28: leaking param: pObj
-./func_marshal_unmarshal.go:16:49: leaking param: stream
-./func_marshal_unmarshal.go:16:64: tag does not escape
-./func_marshal_unmarshal.go:32:12: leaking param: pObj
-./func_marshal_unmarshal.go:32:33: leaking param: in
-./func_marshal_unmarshal.go:32:44: tag does not escape
-./func_marshal_unmarshal.go:16:9: func literal escapes to heap
-./func_marshal_unmarshal.go:26:22: ... argument does not escape
-./func_marshal_unmarshal.go:26:69: ~R0 escapes to heap
-./func_marshal_unmarshal.go:26:69: string(stream) escapes to heap
-./func_marshal_unmarshal.go:32:7: func literal escapes to heap
-./func_marshal_unmarshal.go:39:22: leaking param: stream
-./func_marshal_unmarshal.go:48:36: string(stream) escapes to heap
-./func_marshal_unmarshal.go:55:28: leaking param: pObj
-./func_marshal_unmarshal.go:55:49: leaking param: stream
-./func_marshal_unmarshal.go:55:64: tag does not escape
-./func_marshal_unmarshal.go:66:12: leaking param: pObj
-./func_marshal_unmarshal.go:66:33: leaking param: in
-./func_marshal_unmarshal.go:66:44: tag does not escape
-./func_marshal_unmarshal.go:55:9: func literal escapes to heap
-./func_marshal_unmarshal.go:66:7: func literal escapes to heap
-./struct_tag_info.go:62:7: leaking param: t to result ~r0 level=2
-./struct_tag_info.go:62:28: key does not escape
-./struct_tag_info.go:65:27: string(key) does not escape
-./struct_tag_info.go:67:25: string(bytes.a) does not escape
-./struct_tag_info.go:67:25: string(bytes.b) does not escape
-./json.go:347:17: stream does not escape
-./json.go:431:22: ... argument does not escape
-./json.go:431:64: ~R0 escapes to heap
-./json.go:431:64: string(stream) escapes to heap
-./json.go:438:22: ... argument does not escape
-./json.go:438:64: ~R0 escapes to heap
-./json.go:438:64: string(stream) escapes to heap
-./json.go:445:22: ... argument does not escape
-./json.go:445:65: ~R0 escapes to heap
-./json.go:445:65: string(stream) escapes to heap
-./json.go:58:29: leaking param: stream
-./json.go:58:44: leaking param: pObj
-./json.go:58:65: leaking param content: tag
-./json.go:61:15: []byte{} does not escape
-./json.go:82:31: string(stream) escapes to heap
-./json.go:109:31: string(stream) escapes to heap
-./func_marshal_unmarshal.go:73:40: leaking param: pObj
-./func_marshal_unmarshal.go:73:61: leaking param: stream
-./func_marshal_unmarshal.go:73:76: leaking param content: tag
-./func_marshal_unmarshal.go:85:28: leaking param: pObj
-./func_marshal_unmarshal.go:85:49: leaking param: stream
-./func_marshal_unmarshal.go:85:64: leaking param content: tag
-./func_marshal_unmarshal.go:100:12: leaking param: pObj
-./func_marshal_unmarshal.go:100:33: leaking param: in
-./func_marshal_unmarshal.go:100:44: tag does not escape
-./func_marshal_unmarshal.go:85:9: func literal escapes to heap
-./func_marshal_unmarshal.go:100:7: func literal escapes to heap
-./json.go:643:21: raw does not escape
-./json.go:644:36: string(raw) escapes to heap
-./json.go:646:64: "err:" + err.Error() + ",ncorrect format: " + string(raw) escapes to heap
-./json.go:646:72: string(raw) does not escape
-./json.go:646:19: &"errors".errorString{...} escapes to heap
-./json.go:592:18: raw does not escape
-./json.go:596:22: []byte{...} escapes to heap
-./json.go:598:22: []byte{...} escapes to heap
-./json.go:600:22: []byte{...} escapes to heap
-./json.go:602:22: []byte{...} escapes to heap
-./json.go:604:22: []byte{...} escapes to heap
-./json.go:606:22: []byte{...} escapes to heap
-./json.go:608:22: []byte{...} escapes to heap
-./json.go:610:22: []byte{...} escapes to heap
-./json.go:614:44: "incorrect format: \\" + string(raw) escapes to heap
-./json.go:614:52: string(raw) does not escape
-./json.go:614:20: &"errors".errorString{...} escapes to heap
-./json.go:625:60: "incorrect format: \\" + string(last) + string(raw[:l]) escapes to heap
-./json.go:625:53: string(last) does not escape
-./json.go:625:68: string(raw[:l]) does not escape
-./json.go:625:21: &"errors".errorString{...} escapes to heap
-./json.go:633:14: make([]byte, 4) escapes to heap
-./json.go:637:41: "incorrect format: " + ~R0 escapes to heap
-./json.go:637:52: string(stream) does not escape
-./json.go:637:19: &"errors".errorString{...} escapes to heap
-./json.go:537:23: leaking param: stream to result raw level=0
-./json.go:548:23: string(stream[i:]) escapes to heap
-./json.go:548:15: string(stream[i:]) escapes to heap
-./json.go:570:25: string(stream[i:]) escapes to heap
-./json.go:570:17: string(stream[i:]) escapes to heap
-./json.go:521:15: leaking param: stream to result raw level=0
-./json.go:283:35: leaking param: stream
-./json.go:283:50: p does not escape
-./json.go:125:38: leaking param: stream
-./json.go:178:40: leaking param: stream
-./json.go:290:4: f escapes to heap
-./json.go:306:4: s escapes to heap
-./json.go:312:22: ... argument does not escape
-./json.go:312:64: ~R0 escapes to heap
-./json.go:312:64: string(stream) escapes to heap
-./json.go:319:22: ... argument does not escape
-./json.go:319:64: ~R0 escapes to heap
-./json.go:319:64: string(stream) escapes to heap
-./json.go:323:4: true escapes to heap
-./json.go:327:22: ... argument does not escape
-./json.go:327:65: ~R0 escapes to heap
-./json.go:327:65: string(stream) escapes to heap
-./json.go:331:4: false escapes to heap
-./json.go:340:4: ~R0 escapes to heap
-./json.go:128:15: []byte{} escapes to heap
-./json.go:149:31: string(stream) escapes to heap
-./json.go:165:13: make(map[string]interface {}, len(pairs) * 1) escapes to heap
-./json.go:167:14: string(pairs[i].k) escapes to heap
-./json.go:170:17: pairs escapes to heap
-./json.go:173:31: string(stream) escapes to heap
-./json.go:196:31: string(stream) escapes to heap
-./json.go:200:31: leaking param: stream
-./json.go:200:46: leaking param: pObj
-./json.go:200:67: leaking param content: tag
-./json.go:264:31: string(stream) escapes to heap
-./func_marshal_unmarshal.go:108:28: leaking param: pObj
-./func_marshal_unmarshal.go:108:49: leaking param: stream
-./func_marshal_unmarshal.go:108:64: leaking param content: tag
-./func_marshal_unmarshal.go:124:12: leaking param: pObj
-./func_marshal_unmarshal.go:124:33: leaking param: in
-./func_marshal_unmarshal.go:124:44: tag does not escape
-./func_marshal_unmarshal.go:108:9: func literal escapes to heap
-./func_marshal_unmarshal.go:124:7: func literal escapes to heap
-./func_marshal_unmarshal.go:132:28: leaking param: pObj
-./func_marshal_unmarshal.go:132:49: leaking param: stream
-./func_marshal_unmarshal.go:132:64: tag does not escape
-./func_marshal_unmarshal.go:154:12: leaking param: pObj
-./func_marshal_unmarshal.go:154:33: leaking param: in
-./func_marshal_unmarshal.go:154:44: tag does not escape
-./func_marshal_unmarshal.go:132:9: func literal escapes to heap
-./func_marshal_unmarshal.go:154:7: func literal escapes to heap
-./func_marshal_unmarshal.go:162:28: pObj does not escape
-./func_marshal_unmarshal.go:162:49: leaking param: stream
-./func_marshal_unmarshal.go:162:64: tag does not escape
-./func_marshal_unmarshal.go:178:12: leaking param: pObj
-./func_marshal_unmarshal.go:178:33: leaking param: in
-./func_marshal_unmarshal.go:178:44: tag does not escape
-./func_marshal_unmarshal.go:162:9: func literal escapes to heap
-./func_marshal_unmarshal.go:178:7: func literal escapes to heap
+./func_get_set.go:62:9: func literal escapes to heap
+./func_get_set.go:65:27: ([]byte)("false") does not escape
+./func_get_set.go:67:27: ([]byte)("true") does not escape
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:77:18: leaking param content: builder
+./func_get_set.go:77:40: leaking param: name
+./func_get_set.go:78:14: leaking param: store to result pBase level=0
+./func_get_set.go:78:31: leaking param: bs
+./func_get_set.go:88:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:88:35: leaking param: in to result out level=0
+./func_get_set.go:78:9: func literal escapes to heap
+./func_get_set.go:82:37: string(stream) escapes to heap
+./func_get_set.go:88:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:101:17: leaking param content: builder
+./func_get_set.go:101:39: leaking param: name
+./func_get_set.go:102:14: leaking param: store to result pBase level=0
+./func_get_set.go:102:31: leaking param: bs
+./func_get_set.go:112:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:112:35: leaking param: in to result out level=0
+./func_get_set.go:102:9: func literal escapes to heap
+./func_get_set.go:106:37: string(stream) escapes to heap
+./func_get_set.go:112:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:124:18: leaking param content: builder
+./func_get_set.go:124:40: leaking param: name
+./func_get_set.go:125:14: leaking param: store to result pBase level=0
+./func_get_set.go:125:31: leaking param: bs
+./func_get_set.go:135:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:135:35: leaking param: in to result out level=0
+./func_get_set.go:125:9: func literal escapes to heap
+./func_get_set.go:129:37: string(stream) escapes to heap
+./func_get_set.go:135:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:147:17: leaking param content: builder
+./func_get_set.go:147:39: leaking param: name
+./func_get_set.go:148:14: leaking param: store to result pBase level=0
+./func_get_set.go:148:31: leaking param: bs
+./func_get_set.go:158:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:158:35: leaking param: in to result out level=0
+./func_get_set.go:148:9: func literal escapes to heap
+./func_get_set.go:152:37: string(stream) escapes to heap
+./func_get_set.go:158:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:170:18: leaking param content: builder
+./func_get_set.go:170:40: leaking param: name
+./func_get_set.go:171:14: leaking param: store to result pBase level=0
+./func_get_set.go:171:31: leaking param: bs
+./func_get_set.go:181:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:181:35: leaking param: in to result out level=0
+./func_get_set.go:171:9: func literal escapes to heap
+./func_get_set.go:175:37: string(stream) escapes to heap
+./func_get_set.go:181:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:193:17: leaking param content: builder
+./func_get_set.go:193:39: leaking param: name
+./func_get_set.go:194:14: leaking param: store to result pBase level=0
+./func_get_set.go:194:31: leaking param: bs
+./func_get_set.go:204:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:204:35: leaking param: in to result out level=0
+./func_get_set.go:194:9: func literal escapes to heap
+./func_get_set.go:198:37: string(stream) escapes to heap
+./func_get_set.go:204:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:216:17: leaking param content: builder
+./func_get_set.go:216:39: leaking param: name
+./func_get_set.go:217:14: leaking param: store to result pBase level=0
+./func_get_set.go:217:31: leaking param: bs
+./func_get_set.go:227:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:227:35: leaking param: in to result out level=0
+./func_get_set.go:217:9: func literal escapes to heap
+./func_get_set.go:221:37: string(stream) escapes to heap
+./func_get_set.go:227:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:239:16: leaking param content: builder
+./func_get_set.go:239:38: leaking param: name
+./func_get_set.go:240:14: leaking param: store to result pBase level=0
+./func_get_set.go:240:31: leaking param: bs
+./func_get_set.go:250:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:250:35: leaking param: in to result out level=0
+./func_get_set.go:240:9: func literal escapes to heap
+./func_get_set.go:244:37: string(stream) escapes to heap
+./func_get_set.go:250:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:262:19: leaking param content: builder
+./func_get_set.go:262:41: leaking param: name
+./func_get_set.go:263:14: leaking param: store to result pBase level=0
+./func_get_set.go:263:31: leaking param: bs
+./func_get_set.go:273:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:273:35: leaking param: in to result out level=0
+./func_get_set.go:263:9: func literal escapes to heap
+./func_get_set.go:267:37: string(stream) escapes to heap
+./func_get_set.go:273:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:284:19: leaking param content: builder
+./func_get_set.go:284:41: leaking param: name
+./func_get_set.go:285:14: leaking param: store to result pBase level=0
+./func_get_set.go:285:31: leaking param: bs
+./func_get_set.go:295:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:295:35: leaking param: in to result out level=0
+./func_get_set.go:285:9: func literal escapes to heap
+./func_get_set.go:289:37: string(stream) escapes to heap
+./func_get_set.go:295:9: func literal escapes to heap
+./func_get_set.go:326:25: leaking param content: builder
+./func_get_set.go:326:47: leaking param: name
+./func_get_set.go:331:15: leaking param: store
+./func_get_set.go:331:32: leaking param: bs
+./func_get_set.go:342:15: leaking param: pObj to result pBase level=0
+./func_get_set.go:342:36: leaking param: in to result out level=0
+./func_get_set.go:353:16: leaking param: store
+./func_get_set.go:353:33: leaking param: bs
+./func_get_set.go:359:16: leaking param content: pObj
+./func_get_set.go:359:37: leaking param: in
+./func_get_set.go:327:31: []uintptr{...} escapes to heap
+./func_get_set.go:329:23: x escapes to heap
+./func_get_set.go:331:10: func literal escapes to heap
+./func_get_set.go:342:10: func literal escapes to heap
+./func_get_set.go:350:33: []uintptr{...} escapes to heap
+./func_get_set.go:351:36: ... argument does not escape
+./func_get_set.go:351:37: name escapes to heap
+./func_get_set.go:351:37: i escapes to heap
+./func_get_set.go:353:11: func literal escapes to heap
+./func_get_set.go:359:11: func literal escapes to heap
+./func_get_set.go:307:18: leaking param content: builder
+./func_get_set.go:307:40: leaking param: name
+./func_get_set.go:308:14: leaking param: store to result pBase level=0
+./func_get_set.go:308:31: leaking param: bs
+./func_get_set.go:313:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:313:35: leaking param: in to result out level=0
+./func_get_set.go:308:9: func literal escapes to heap
+./func_get_set.go:313:9: func literal escapes to heap
+./func_get_set.go:25:15: leaking param: store
+./func_get_set.go:25:32: leaking param: bs
+./func_get_set.go:31:15: leaking param content: pObj
+./func_get_set.go:31:36: leaking param: in
+./func_get_set.go:39:16: leaking param: store
+./func_get_set.go:39:33: leaking param: bs
+./func_get_set.go:45:16: leaking param content: pObj
+./func_get_set.go:45:37: leaking param: in
+./func_get_set.go:21:31: []uintptr{...} escapes to heap
+./func_get_set.go:23:23: unsafe.Pointer(x) escapes to heap
+./func_get_set.go:25:10: func literal escapes to heap
+./func_get_set.go:31:10: func literal escapes to heap
+./func_get_set.go:36:33: []uintptr{...} escapes to heap
+./func_get_set.go:37:36: ... argument does not escape
+./func_get_set.go:37:37: name escapes to heap
+./func_get_set.go:37:37: i escapes to heap
+./func_get_set.go:39:11: func literal escapes to heap
+./func_get_set.go:45:11: func literal escapes to heap
+./func_get_set.go:377:8: bytesFuncs.func1 ignoring self-assignment in *pbs = (*pbs)[:n]
+./func_get_set.go:366:17: leaking param content: builder
+./func_get_set.go:366:39: leaking param: name
+./func_get_set.go:368:14: leaking param: store to result pBase level=0
+./func_get_set.go:368:31: bs does not escape
+./func_get_set.go:380:14: leaking param: pObj to result pBase level=0
+./func_get_set.go:380:35: leaking param: in to result out level=0
+./func_get_set.go:368:9: func literal escapes to heap
+./func_get_set.go:371:14: make([]byte, len(bs) * 2) escapes to heap
+./func_get_set.go:374:37: string(stream) escapes to heap
+./func_get_set.go:380:9: func literal escapes to heap
+./func_get_set.go:386:24: make([]byte, need) escapes to heap
+./func_get_set.go:397:17: leaking param content: builder
+./func_get_set.go:397:39: leaking param: name
+./func_get_set.go:398:14: leaking param: store to result pBase level=0
+./func_get_set.go:398:31: bs does not escape
+./func_get_set.go:402:14: leaking param: pObj to result pBase level=1
+./func_get_set.go:402:35: leaking param: in to result out level=0
+./func_get_set.go:398:9: func literal escapes to heap
+./func_get_set.go:402:9: func literal escapes to heap
+./func_get_set.go:412:23: leaking param content: builder
+./func_get_set.go:412:45: leaking param: name
+./func_get_set.go:412:71: leaking param: typ
+./func_get_set.go:416:15: leaking param: store
+./func_get_set.go:416:32: bs does not escape
+./func_get_set.go:428:15: leaking param: pObj to result pBase level=1
+./func_get_set.go:428:36: leaking param: in to result out level=0
+./func_get_set.go:437:18: leaking param: store
+./func_get_set.go:437:35: leaking param: bs
+./func_get_set.go:443:18: leaking param content: pObj
+./func_get_set.go:443:39: leaking param: in
+./func_get_set.go:414:32: []uintptr{...} escapes to heap
+./func_get_set.go:416:10: func literal escapes to heap
+./func_get_set.go:428:10: func literal escapes to heap
+./func_get_set.go:434:34: []uintptr{...} escapes to heap
+./func_get_set.go:435:37: ... argument does not escape
+./func_get_set.go:435:38: name escapes to heap
+./func_get_set.go:435:38: i escapes to heap
+./func_get_set.go:437:13: func literal escapes to heap
+./func_get_set.go:443:13: func literal escapes to heap
+./func_get_set.go:454:27: leaking param content: builder
+./func_get_set.go:454:49: leaking param: name
+./func_get_set.go:454:75: leaking param: typ
+./func_get_set.go:454:109: leaking param: fSet0
+./func_get_set.go:454:124: leaking param: fGet0
+./func_get_set.go:456:15: leaking param: store
+./func_get_set.go:456:32: leaking param: bs
+./func_get_set.go:462:15: leaking param: pObj
+./func_get_set.go:462:36: leaking param: in
+./func_get_set.go:470:15: leaking param: store
+./func_get_set.go:470:32: leaking param: bs
+./func_get_set.go:480:15: leaking param content: pObj
+./func_get_set.go:480:36: leaking param: in
+./func_get_set.go:492:18: leaking param: store
+./func_get_set.go:492:35: leaking param: bs
+./func_get_set.go:498:18: leaking param content: pObj
+./func_get_set.go:498:39: leaking param: in
+./func_get_set.go:456:10: func literal escapes to heap
+./func_get_set.go:462:10: func literal escapes to heap
+./func_get_set.go:468:32: []uintptr{...} escapes to heap
+./func_get_set.go:470:10: func literal escapes to heap
+./func_get_set.go:480:10: func literal escapes to heap
+./func_get_set.go:489:34: []uintptr{...} escapes to heap
+./func_get_set.go:490:37: ... argument does not escape
+./func_get_set.go:490:38: name escapes to heap
+./func_get_set.go:490:38: i escapes to heap
+./func_get_set.go:492:13: func literal escapes to heap
+./func_get_set.go:498:13: func literal escapes to heap
+./func_get_set.go:507:20: leaking param content: builder
+./func_get_set.go:507:42: leaking param: name
+./func_get_set.go:508:14: leaking param: store to result pBase level=0
+./func_get_set.go:508:31: bs does not escape
+./func_get_set.go:512:15: leaking param: pObj to result pBase level=1
+./func_get_set.go:512:36: leaking param: in to result out level=0
+./func_get_set.go:508:9: func literal escapes to heap
+./func_get_set.go:512:10: func literal escapes to heap
+./func_get_set.go:521:15: leaking param content: builder
+./func_get_set.go:521:37: leaking param: name
+./func_get_set.go:522:14: leaking param: store to result pBase level=0
+./func_get_set.go:522:31: bs does not escape
+./func_get_set.go:529:15: leaking param: pObj to result pBase level=1
+./func_get_set.go:529:36: leaking param: in to result out level=0
+./func_get_set.go:522:9: func literal escapes to heap
+./func_get_set.go:524:12: make(map[string]interface {}) escapes to heap
+./func_get_set.go:529:10: func literal escapes to heap
+./func_marshal_unmarshal.go:17:28: leaking param: store
+./func_marshal_unmarshal.go:17:45: leaking param: stream
+./func_marshal_unmarshal.go:35:12: leaking param: store
+./func_marshal_unmarshal.go:35:25: leaking param: in
+./func_marshal_unmarshal.go:17:9: func literal escapes to heap
+./func_marshal_unmarshal.go:27:22: ... argument does not escape
+./func_marshal_unmarshal.go:27:69: ~R0 escapes to heap
+./func_marshal_unmarshal.go:27:69: string(stream) escapes to heap
+./func_marshal_unmarshal.go:35:7: func literal escapes to heap
+./func_marshal_unmarshal.go:43:22: leaking param: stream
+./func_marshal_unmarshal.go:52:36: string(stream) escapes to heap
+./func_marshal_unmarshal.go:59:28: leaking param: store
+./func_marshal_unmarshal.go:59:45: leaking param: stream
+./func_marshal_unmarshal.go:71:12: leaking param: store
+./func_marshal_unmarshal.go:71:25: leaking param: in
+./func_marshal_unmarshal.go:59:9: func literal escapes to heap
+./func_marshal_unmarshal.go:71:7: func literal escapes to heap
+./json.go:425:25: stream does not escape
+./json.go:426:21: stream does not escape
+./json.go:426:16: func literal does not escape
+./json.go:526:17: stream does not escape
+./json.go:553:22: ... argument does not escape
+./json.go:553:64: ~R0 escapes to heap
+./json.go:553:64: string(stream) escapes to heap
+./json.go:560:22: ... argument does not escape
+./json.go:560:64: ~R0 escapes to heap
+./json.go:560:64: string(stream) escapes to heap
+./json.go:567:22: ... argument does not escape
+./json.go:567:65: ~R0 escapes to heap
+./json.go:567:65: string(stream) escapes to heap
+./json.go:71:29: leaking param: stream
+./json.go:71:44: leaking param: store
+./json.go:74:15: []byte{} does not escape
+./json.go:95:31: string(stream) escapes to heap
+./json.go:102:20: string(bytes.a) does not escape
+./json.go:102:20: string(bytes.b) does not escape
+./json.go:110:35: string(key) does not escape
+./json.go:140:31: string(stream) escapes to heap
+./func_marshal_unmarshal.go:79:40: leaking param: store
+./func_marshal_unmarshal.go:79:57: leaking param: stream
+./func_marshal_unmarshal.go:91:28: leaking param: store
+./func_marshal_unmarshal.go:91:45: leaking param: stream
+./func_marshal_unmarshal.go:106:12: leaking param: store
+./func_marshal_unmarshal.go:106:25: leaking param: in
+./func_marshal_unmarshal.go:91:9: func literal escapes to heap
+./func_marshal_unmarshal.go:106:7: func literal escapes to heap
+./cache.go:207:8: &sliceNode[go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0]{...} escapes to heap
+./cache.go:208:13: make([]go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0, 1024 * 1024) escapes to heap
+./stubs.go:28:18: assuming size is unsafe uintptr
+./stubs.go:207:8: makeMapEface ignoring self-assignment in *bs = (*bs)[l:]
+./stubs.go:179:11: make(map[string]interface {}, hint) escapes to heap
+./stubs.go:219:17: new(mapextra) escapes to heap
+./cache.go:207:8: &sliceNode[go.shape.[]interface {}_0]{...} escapes to heap
+./cache.go:208:13: make([]go.shape.[]interface {}_0, 1024 * 1024) escapes to heap
+./json.go:756:21: raw does not escape
+./json.go:757:36: string(raw) escapes to heap
+./json.go:759:64: "err:" + err.Error() + ",ncorrect format: " + string(raw) escapes to heap
+./json.go:759:72: string(raw) does not escape
+./json.go:759:19: &"errors".errorString{...} escapes to heap
+./json.go:705:18: raw does not escape
+./json.go:709:22: []byte{...} escapes to heap
+./json.go:711:22: []byte{...} escapes to heap
+./json.go:713:22: []byte{...} escapes to heap
+./json.go:715:22: []byte{...} escapes to heap
+./json.go:717:22: []byte{...} escapes to heap
+./json.go:719:22: []byte{...} escapes to heap
+./json.go:721:22: []byte{...} escapes to heap
+./json.go:723:22: []byte{...} escapes to heap
+./json.go:727:44: "incorrect format: \\" + string(raw) escapes to heap
+./json.go:727:52: string(raw) does not escape
+./json.go:727:20: &"errors".errorString{...} escapes to heap
+./json.go:738:60: "incorrect format: \\" + string(last) + string(raw[:l]) escapes to heap
+./json.go:738:53: string(last) does not escape
+./json.go:738:68: string(raw[:l]) does not escape
+./json.go:738:21: &"errors".errorString{...} escapes to heap
+./json.go:746:14: make([]byte, 4) escapes to heap
+./json.go:750:41: "incorrect format: " + ~R0 escapes to heap
+./json.go:750:52: string(stream) does not escape
+./json.go:750:19: &"errors".errorString{...} escapes to heap
+./json.go:629:23: leaking param: stream to result raw level=0
+./json.go:660:23: string(stream[i:]) escapes to heap
+./json.go:660:15: string(stream[i:]) escapes to heap
+./json.go:672:14: make([]byte, 0, nextQuotesIdx) escapes to heap
+./json.go:683:25: string(stream[i:]) escapes to heap
+./json.go:683:17: string(stream[i:]) escapes to heap
+./json.go:615:15: leaking param: stream to result raw level=0
+./json.go:325:35: leaking param: stream
+./json.go:325:50: p does not escape
+./json.go:158:38: leaking param: stream
+./json.go:219:40: leaking param: stream
+./json.go:332:4: f escapes to heap
+./json.go:359:22: ... argument does not escape
+./json.go:359:64: ~R0 escapes to heap
+./json.go:359:64: string(stream) escapes to heap
+./json.go:366:22: ... argument does not escape
+./json.go:366:64: ~R0 escapes to heap
+./json.go:366:64: string(stream) escapes to heap
+./json.go:370:4: true escapes to heap
+./json.go:374:22: ... argument does not escape
+./json.go:374:65: ~R0 escapes to heap
+./json.go:374:65: string(stream) escapes to heap
+./json.go:378:4: false escapes to heap
+./json.go:161:15: []byte{} escapes to heap
+./json.go:183:31: string(stream) escapes to heap
+./json.go:210:31: string(stream) escapes to heap
+./json.go:236:28: sLeft escapes to heap
+./json.go:241:31: string(stream) escapes to heap
+./json.go:281:11: parseSlice ignoring self-assignment in *uint8s = (*uint8s)[:l + size]
+./json.go:313:11: parseSlice ignoring self-assignment in *uint8s = (*uint8s)[len(*uint8s):]
+./json.go:245:31: leaking param: stream
+./json.go:245:46: leaking param: store
+./json.go:307:31: string(stream) escapes to heap
+./func_marshal_unmarshal.go:115:28: leaking param: store
+./func_marshal_unmarshal.go:115:45: leaking param: stream
+./func_marshal_unmarshal.go:132:12: leaking param: store
+./func_marshal_unmarshal.go:132:25: leaking param: in
+./func_marshal_unmarshal.go:115:9: func literal escapes to heap
+./func_marshal_unmarshal.go:132:7: func literal escapes to heap
+./func_marshal_unmarshal.go:140:28: leaking param: store
+./func_marshal_unmarshal.go:140:45: leaking param: stream
+./func_marshal_unmarshal.go:163:12: leaking param: store
+./func_marshal_unmarshal.go:163:25: leaking param: in
+./func_marshal_unmarshal.go:140:9: func literal escapes to heap
+./func_marshal_unmarshal.go:163:7: func literal escapes to heap
+./func_marshal_unmarshal.go:170:21: leaking param content: builder
+./func_marshal_unmarshal.go:170:43: leaking param: name
+./func_marshal_unmarshal.go:182:28: leaking param: store
+./func_marshal_unmarshal.go:182:45: leaking param: stream
+./func_marshal_unmarshal.go:220:12: leaking param: store
+./func_marshal_unmarshal.go:220:25: leaking param: in
+./func_marshal_unmarshal.go:173:33: []uintptr{...} escapes to heap
+./func_marshal_unmarshal.go:175:24: x escapes to heap
+./func_marshal_unmarshal.go:178:34: []uintptr{...} escapes to heap
+./func_marshal_unmarshal.go:179:37: ... argument does not escape
+./func_marshal_unmarshal.go:179:38: name escapes to heap
+./func_marshal_unmarshal.go:179:38: i escapes to heap
+./func_marshal_unmarshal.go:182:9: func literal escapes to heap
+./func_marshal_unmarshal.go:220:7: func literal escapes to heap
+./func_marshal_unmarshal.go:228:28: store does not escape
+./func_marshal_unmarshal.go:228:45: leaking param: stream
+./func_marshal_unmarshal.go:244:12: leaking param: store
+./func_marshal_unmarshal.go:244:25: leaking param: in
+./func_marshal_unmarshal.go:228:9: func literal escapes to heap
+./func_marshal_unmarshal.go:244:7: func literal escapes to heap
 ./hash_map.go:13:21: idxs does not escape
 ./hash_map.go:31:11: key does not escape
 ./hash_map.go:21:14: make([]N, len(idxs)) escapes to heap
 ./hash_map.go:31:6: func literal escapes to heap
 ./hash_map.go:55:16: make([]byte, 0, 256) escapes to heap
 ./hash_map.go:56:16: []byte{...} does not escape
-./hash_map.go:117:34: []byte{...} does not escape
-./hash_map.go:122:11: make(map[byte]struct {}) does not escape
-./hash_map.go:125:21: fmt.Sprintf("%b already exist", ... argument...) escapes to heap
-./hash_map.go:125:21: ... argument does not escape
-./hash_map.go:125:22: b escapes to heap
-./hash_map.go:134:21: fmt.Sprintf("%b not exist", ... argument...) escapes to heap
-./hash_map.go:134:21: ... argument does not escape
-./hash_map.go:134:22: b escapes to heap
-./hash_map.go:140:16: allMask does not escape
-./hash_map.go:143:21: ... argument does not escape
-./hash_map.go:143:22: b escapes to heap
-./hash_map.go:143:22: b escapes to heap
-./hash_map.go:145:12: ... argument does not escape
-./hash_map.go:145:13: str escapes to heap
-./hash_map.go:164:7: leaking param: m to result v level=2
-./hash_map.go:164:23: k does not escape
-./hash_map.go:167:16: string(bytes.a) does not escape
-./hash_map.go:167:16: string(bytes.b) does not escape
-./hash_map.go:172:7: leaking param: m to result v level=2
-./hash_map.go:172:22: k does not escape
-./hash_map.go:175:16: string(bytes.a) does not escape
-./hash_map.go:175:16: string(bytes.b) does not escape
-./hash_map.go:180:7: leaking param: m to result v level=2
-./hash_map.go:180:23: k does not escape
-./hash_map.go:183:16: string(bytes.a) does not escape
-./hash_map.go:183:16: string(bytes.b) does not escape
-./hash_map.go:189:7: leaking param content: m
-./hash_map.go:190:20: ... argument does not escape
-./hash_map.go:190:52: len(m.S) escapes to heap
-./hash_map.go:190:60: m.idxN escapes to heap
-./hash_map.go:191:18: []string{} does not escape
-./hash_map.go:196:29: string(n.K) escapes to heap
-./hash_map.go:197:21: ... argument does not escape
-./hash_map.go:197:22: i escapes to heap
-./hash_map.go:197:43: n.K escapes to heap
-./hash_map.go:197:50: n.V.TagName escapes to heap
-./hash_map.go:202:22: ... argument does not escape
-./hash_map.go:202:30: i / 10 escapes to heap
-./hash_map.go:205:21: ... argument does not escape
-./hash_map.go:205:29: i % 10 escapes to heap
-./hash_map.go:210:22: ... argument does not escape
-./hash_map.go:210:23: b escapes to heap
-./hash_map.go:212:21: ... argument does not escape
-./hash_map.go:212:35: string(bs) escapes to heap
-./hash_map.go:216:16: bsList does not escape
-./hash_map.go:220:22: ... argument does not escape
-./hash_map.go:220:30: i / 10 escapes to heap
+./hash_map.go:118:34: []byte{...} does not escape
+./hash_map.go:123:11: make(map[byte]struct {}) does not escape
+./hash_map.go:126:21: fmt.Sprintf("%b already exist", ... argument...) escapes to heap
+./hash_map.go:126:21: ... argument does not escape
+./hash_map.go:126:22: b escapes to heap
+./hash_map.go:135:21: fmt.Sprintf("%b not exist", ... argument...) escapes to heap
+./hash_map.go:135:21: ... argument does not escape
+./hash_map.go:135:22: b escapes to heap
+./hash_map.go:141:16: allMask does not escape
+./hash_map.go:144:21: ... argument does not escape
+./hash_map.go:144:22: b escapes to heap
+./hash_map.go:144:22: b escapes to heap
+./hash_map.go:146:12: ... argument does not escape
+./hash_map.go:146:13: str escapes to heap
+./hash_map.go:165:17: leaking param: m to result v level=2
+./hash_map.go:165:28: k does not escape
+./hash_map.go:168:16: string(bytes.a) does not escape
+./hash_map.go:168:16: string(bytes.b) does not escape
+./hash_map.go:173:18: leaking param: m to result v level=2
+./hash_map.go:173:29: k does not escape
+./hash_map.go:176:16: string(bytes.a) does not escape
+./hash_map.go:176:16: string(bytes.b) does not escape
+./hash_map.go:182:7: leaking param: m to result v level=2
+./hash_map.go:182:23: k does not escape
+./hash_map.go:185:16: string(bytes.a) does not escape
+./hash_map.go:185:16: string(bytes.b) does not escape
+./hash_map.go:190:7: leaking param: m to result v level=2
+./hash_map.go:190:22: k does not escape
+./hash_map.go:193:16: string(bytes.a) does not escape
+./hash_map.go:193:16: string(bytes.b) does not escape
+./hash_map.go:198:7: leaking param: m to result v level=2
+./hash_map.go:198:23: k does not escape
+./hash_map.go:201:16: string(bytes.a) does not escape
+./hash_map.go:201:16: string(bytes.b) does not escape
+./hash_map.go:206:7: leaking param: m to result v level=2
+./hash_map.go:206:23: k does not escape
+./hash_map.go:209:16: string(bytes.a) does not escape
+./hash_map.go:209:16: string(bytes.b) does not escape
+./hash_map.go:215:7: leaking param content: m
+./hash_map.go:216:20: ... argument does not escape
+./hash_map.go:216:52: len(m.S) escapes to heap
+./hash_map.go:216:60: m.idxN escapes to heap
+./hash_map.go:217:18: []string{} does not escape
+./hash_map.go:222:29: string(n.K) escapes to heap
 ./hash_map.go:223:21: ... argument does not escape
-./hash_map.go:223:29: i % 10 escapes to heap
+./hash_map.go:223:22: i escapes to heap
+./hash_map.go:223:43: n.K escapes to heap
+./hash_map.go:223:50: n.V.TagName escapes to heap
 ./hash_map.go:228:22: ... argument does not escape
-./hash_map.go:228:23: b escapes to heap
-./hash_map.go:230:21: ... argument does not escape
-./hash_map.go:230:35: string(bs) escapes to heap
-./hash_map.go:230:35: string(bs) escapes to heap
-./hash_map.go:232:12: ... argument does not escape
-./hash_map.go:232:13: str escapes to heap
-./hash_map.go:326:19: bsList does not escape
-./hash_map.go:356:22: []BlockNew{} does not escape
-./hash_map.go:358:16: func literal does not escape
-./hash_map.go:371:15: make([]Block, len(bsList)) escapes to heap
-./hash_map.go:377:21: make(map[int]*Hit) does not escape
-./hash_map.go:388:27: &Hit{...} escapes to heap
-./hash_map.go:437:21: map[int]bool{} does not escape
-./hash_map.go:296:18: bsList does not escape
-./hash_map.go:298:14: []iN{...} escapes to heap
-./hash_map.go:315:12: idxN escapes to heap
-./hash_map.go:315:19: func literal does not escape
-./hash_map.go:239:18: leaking param: nodes
-./hash_map.go:240:16: make([][]byte, 0, len(nodes)) escapes to heap
-./hash_map.go:247:15: []int{} does not escape
-./hash_map.go:253:12: make([]mapNode, m.N) escapes to heap
-./hash_map.go:255:21: ... argument does not escape
-./hash_map.go:255:22: nodes escapes to heap
-./hash_map.go:255:58: m.idxN escapes to heap
-./hash_map.go:258:28: make([]int16, 1024) escapes to heap
-./hash_map.go:262:51: string(bytes.a) does not escape
-./hash_map.go:262:51: string(bytes.b) does not escape
-./hash_map.go:264:14: ... argument does not escape
-./hash_map.go:264:36: (*tagMap).String(m) escapes to heap
-./hash_map.go:265:22: ... argument does not escape
-./hash_map.go:266:11: string(nn.K) escapes to heap
-./hash_map.go:266:11: string(nn.K) escapes to heap
-./hash_map.go:266:25: string(n.K) escapes to heap
-./hash_map.go:266:25: string(n.K) escapes to heap
-./hash_map.go:266:33: m.idxN escapes to heap
-./hash_map.go:463:19: idxN does not escape
-./hash_map.go:465:18: make([]int16, 1024) escapes to heap
-./hash_map.go:483:12: key does not escape
-./hash_map.go:483:24: idxNTable does not escape
-./hash_map.go:483:43: idxN does not escape
-./hash_map.go:501:11: key does not escape
-./hash_map.go:501:23: idxNTable does not escape
-./hash_map.go:501:42: idxN does not escape
+./hash_map.go:228:30: i / 10 escapes to heap
+./hash_map.go:231:21: ... argument does not escape
+./hash_map.go:231:29: i % 10 escapes to heap
+./hash_map.go:236:22: ... argument does not escape
+./hash_map.go:236:23: b escapes to heap
+./hash_map.go:238:21: ... argument does not escape
+./hash_map.go:238:35: string(bs) escapes to heap
+./hash_map.go:242:16: bsList does not escape
+./hash_map.go:246:22: ... argument does not escape
+./hash_map.go:246:30: i / 10 escapes to heap
+./hash_map.go:249:21: ... argument does not escape
+./hash_map.go:249:29: i % 10 escapes to heap
+./hash_map.go:254:22: ... argument does not escape
+./hash_map.go:254:23: b escapes to heap
+./hash_map.go:256:21: ... argument does not escape
+./hash_map.go:256:35: string(bs) escapes to heap
+./hash_map.go:256:35: string(bs) escapes to heap
+./hash_map.go:258:12: ... argument does not escape
+./hash_map.go:258:13: str escapes to heap
+./hash_map.go:519:19: bsList does not escape
+./hash_map.go:550:22: []BlockNew{} does not escape
+./hash_map.go:552:16: func literal does not escape
+./hash_map.go:565:15: make([]Block, len(bsList)) escapes to heap
+./hash_map.go:571:21: make(map[int]*Hit) does not escape
+./hash_map.go:582:27: &Hit{...} escapes to heap
+./hash_map.go:616:21: map[int]bool{} does not escape
+./hash_map.go:342:18: bsList does not escape
+./hash_map.go:344:14: []iN{...} escapes to heap
+./hash_map.go:364:12: idxN escapes to heap
+./hash_map.go:364:19: func literal does not escape
+./hash_map.go:265:18: leaking param: nodes
+./hash_map.go:266:16: make([][]byte, 0, len(nodes)) escapes to heap
+./hash_map.go:273:15: []int{} does not escape
+./hash_map.go:288:12: make([]mapNode, m.N) escapes to heap
+./hash_map.go:290:21: ... argument does not escape
+./hash_map.go:290:22: nodes escapes to heap
+./hash_map.go:290:58: m.idxN escapes to heap
+./hash_map.go:293:28: make([]int16, 1024) escapes to heap
+./hash_map.go:297:51: string(bytes.a) does not escape
+./hash_map.go:297:51: string(bytes.b) does not escape
+./hash_map.go:299:14: ... argument does not escape
+./hash_map.go:299:36: (*tagMap).String(m) escapes to heap
+./hash_map.go:300:22: ... argument does not escape
+./hash_map.go:301:11: string(nn.K) escapes to heap
+./hash_map.go:301:11: string(nn.K) escapes to heap
+./hash_map.go:301:25: string(n.K) escapes to heap
+./hash_map.go:301:25: string(n.K) escapes to heap
+./hash_map.go:301:33: m.idxN escapes to heap
+./hash_map.go:372:20: bsList does not escape
+./hash_map.go:403:22: []BlockNew{} does not escape
+./hash_map.go:405:16: func literal does not escape
+./hash_map.go:418:15: make([]Block, len(bsList)) escapes to heap
+./hash_map.go:424:21: make(map[int]*Hit) does not escape
+./hash_map.go:435:27: &Hit{...} escapes to heap
+./hash_map.go:476:21: map[int]bool{} does not escape
+./hash_map.go:655:19: idxN does not escape
+./hash_map.go:657:18: make([]int16, 1024) escapes to heap
+./hash_map.go:675:12: key does not escape
+./hash_map.go:675:24: idxNTable does not escape
+./hash_map.go:675:43: idxN does not escape
+./hash_map.go:693:12: key does not escape
+./hash_map.go:693:24: idxNTable does not escape
+./hash_map.go:693:43: idxN does not escape
+./hash_map.go:710:12: key does not escape
+./hash_map.go:710:24: idxNTable does not escape
+./hash_map.go:710:43: idxN does not escape
+./hash_map.go:731:11: key does not escape
+./hash_map.go:731:23: idxNTable does not escape
+./hash_map.go:731:42: idxN does not escape
 ./json.go:17:16: stream does not escape
 ./json.go:21:15: string(stream) escapes to heap
 ./json.go:29:16: stream does not escape
 ./json.go:36:16: stream does not escape
-./json.go:48:22: stream does not escape
-./json.go:48:37: s does not escape
-./json.go:52:14: leaking param: bs to result ~r0 level=0
-./json.go:121:14: make([]pair, 0, 8) escapes to heap
-./json.go:121:14: make([]pair, 0, 8) escapes to heap
-./json.go:474:16: leaking param: stream
-./json.go:474:31: leaking param: pObj
-./json.go:474:52: leaking param content: tag
-./json.go:492:16: leaking param: stream to result raw level=0
-./json.go:652:16: bs does not escape
-./json.go:655:17: bs does not escape
-./json.go:655:28: cs does not escape
-./json.go:658:18: bs does not escape
-./json.go:658:29: cs does not escape
-./json.go:661:18: bs does not escape
-./json.go:661:29: cs does not escape
-./json.go:664:19: leaking param: xs
-./struct_tag_info.go:40:7: leaking param: p to result k level=1
-./struct_tag_info.go:43:7: leaking param content: t
-./struct_tag_info.go:47:15: make([]mapNode, 0, len(t.ChildList)) escapes to heap
-./struct_tag_info.go:53:13: ([]byte)(child.TagName) escapes to heap
-./struct_tag_info.go:69:7: leaking param content: t
-./struct_tag_info.go:69:28: leaking param: c
-./struct_tag_info.go:71:20: make(map[string]*TagInfo) escapes to heap
-./struct_tag_info.go:74:19: ... argument does not escape
-./struct_tag_info.go:74:70: c.TagName escapes to heap
-./struct_tag_info.go:83:14: leaking param: typ
-./struct_tag_info.go:84:27: &[]byte{} escapes to heap
-./struct_tag_info.go:84:34: []byte{} escapes to heap
-./struct_tag_info.go:88:7: leaking param: ti
-./struct_tag_info.go:88:29: leaking param: typ
-./struct_tag_info.go:297:23: leaking param: typIn
-./struct_tag_info.go:158:11: &TagInfo{...} escapes to heap
-./struct_tag_info.go:191:26: []sync.Pool{...} escapes to heap
-./struct_tag_info.go:192:11: func literal escapes to heap
-./struct_tag_info.go:200:11: func literal escapes to heap
-./struct_tag_info.go:208:11: func literal escapes to heap
-./struct_tag_info.go:216:11: func literal escapes to heap
-./struct_tag_info.go:224:11: func literal escapes to heap
-./struct_tag_info.go:250:49: func literal escapes to heap
-./struct_tag_info.go:256:79: func literal escapes to heap
-./struct_tag_info.go:275:10: &TagInfo{...} escapes to heap
-./struct_tag_info.go:288:21: ... argument does not escape
-./struct_tag_info.go:299:20: ... argument does not escape
-./struct_tag_info.go:299:80: typIn.Kind() escapes to heap
-./struct_tag_info.go:302:7: &TagInfo{...} escapes to heap
-./struct_tag_info.go:310:10: &TagInfo{...} escapes to heap
-./struct_tag_info.go:313:32: `"` + field.Name + `"` escapes to heap
-./struct_tag_info.go:335:30: `"` + tvs[0] + `"` escapes to heap
-./cache.go:53:2: moved to heap: m2
-./cache.go:53:12: make(map[go.shape.uint32_0]go.shape.*uint8_1, len(m) + 10) escapes to heap
-./struct_tag_node.go:193:18: leaking param: typ
-./struct_tag_info.go:373:16: leaking param: bs
-./struct_tag_info.go:373:27: leaking param: in
-./struct_tag_info.go:374:8: func literal does not escape
-./struct_tag_info.go:379:22: ... argument does not escape
+./json.go:47:17: stream does not escape
+./json.go:61:22: stream does not escape
+./json.go:61:37: s does not escape
+./json.go:65:14: leaking param: bs to result ~r0 level=0
+./json.go:152:3: moved to heap: s
+./json.go:152:12: make([]pair, 0, 64) escapes to heap
+./json.go:216:13: make([]interface {}, 1024) escapes to heap
+./json.go:216:13: make([]interface {}, 1024) escapes to heap
+./json.go:420:3: moved to heap: s
+./json.go:420:12: make([]string, 512, 512) escapes to heap
+./json.go:598:16: leaking param: stream
+./json.go:598:31: leaking param: store
+./json.go:765:16: bs does not escape
+./json.go:768:17: bs does not escape
+./json.go:768:28: cs does not escape
+./json.go:771:18: bs does not escape
+./json.go:771:29: cs does not escape
+./json.go:774:18: bs does not escape
+./json.go:774:29: cs does not escape
+./json.go:777:19: leaking param: xs
+./json_marshal.go:8:2: moved to heap: s
+./json_marshal.go:8:11: make([]byte, 0, 1 << 20) escapes to heap
+./json_marshal.go:13:18: store does not escape
+./json_marshal.go:19:8: func literal does not escape
+./json_marshal.go:28:17: leaking param: in
+./json_marshal.go:28:28: leaking param: store
+./struct_tag_info.go:68:6: (*TagInfo).NewPool ignoring self-assignment in *s = (*s)[p.TypeSize:]
+./struct_tag_info.go:60:7: leaking param: p
+./struct_tag_info.go:74:7: leaking param content: t
+./struct_tag_info.go:78:15: make([]mapNode, 0, len(t.ChildList)) escapes to heap
+./struct_tag_info.go:84:13: ([]byte)(child.TagName) escapes to heap
+./struct_tag_info.go:95:7: t does not escape
+./struct_tag_info.go:95:35: key does not escape
+./struct_tag_info.go:96:26: string(key) does not escape
+./struct_tag_info.go:99:7: leaking param content: t
+./struct_tag_info.go:99:28: leaking param: c
+./struct_tag_info.go:101:20: make(map[string]*TagInfo) escapes to heap
+./struct_tag_info.go:104:19: ... argument does not escape
+./struct_tag_info.go:104:70: c.TagName escapes to heap
+./struct_tag_info.go:113:14: leaking param: typ
+./struct_tag_info.go:114:27: &[]byte{} escapes to heap
+./struct_tag_info.go:114:34: []byte{} escapes to heap
+./struct_tag_info.go:118:7: leaking param: ti
+./struct_tag_info.go:118:29: leaking param: typ
+./struct_tag_info.go:281:23: leaking param: typIn
+./struct_tag_info.go:281:60: leaking param: builder
+./struct_tag_info.go:190:11: &TagInfo{...} escapes to heap
+./struct_tag_info.go:213:19: func literal escapes to heap
+./struct_tag_info.go:257:10: &TagInfo{...} escapes to heap
+./struct_tag_info.go:272:21: ... argument does not escape
+./struct_tag_info.go:283:20: ... argument does not escape
+./struct_tag_info.go:283:80: typIn.Kind() escapes to heap
+./struct_tag_info.go:287:27: &TypeBuilder{} escapes to heap
+./struct_tag_info.go:289:7: &TagInfo{...} escapes to heap
+./struct_tag_info.go:299:10: &TagInfo{...} escapes to heap
+./struct_tag_info.go:302:32: `"` + field.Name + `"` escapes to heap
+./struct_tag_info.go:326:30: `"` + tvs[0] + `"` escapes to heap
+./cache.go:55:2: moved to heap: m2
+./cache.go:55:12: make(map[go.shape.uint32_0]go.shape.*uint8_1, len(m) + 10) escapes to heap
+./struct_tag_node.go:200:22: leaking param: typ
+./struct_tag_node.go:210:16: func literal escapes to heap
+./struct_tag_node.go:213:9: &SliceHeader{...} escapes to heap
+./struct_tag_info.go:364:16: leaking param: bs
+./struct_tag_info.go:364:27: leaking param: in
+./struct_tag_info.go:365:8: func literal does not escape
+./struct_tag_info.go:370:22: ... argument does not escape
+./struct_tag_info.go:379:20: ... argument does not escape
+./struct_tag_info.go:379:69: ~R0 escapes to heap
+./struct_tag_info.go:379:69: string(stream) escapes to heap
 ./struct_tag_info.go:388:20: ... argument does not escape
 ./struct_tag_info.go:388:69: ~R0 escapes to heap
 ./struct_tag_info.go:388:69: string(stream) escapes to heap
-./struct_tag_info.go:397:20: ... argument does not escape
-./struct_tag_info.go:397:69: ~R0 escapes to heap
-./struct_tag_info.go:397:69: string(stream) escapes to heap
-./struct_tag_info.go:400:14: make([]interface {}, 0, 32) does not escape
-./struct_tag_info.go:408:19: ... argument does not escape
+./struct_tag_info.go:391:14: make([]interface {}, 0, 32) does not escape
+./struct_tag_info.go:398:19: ... argument does not escape
+./struct_tag_info.go:422:14: leaking param: in
+./struct_tag_info.go:423:8: func literal does not escape
+./struct_tag_info.go:428:22: ... argument does not escape
+./struct_tag_info.go:446:19: ... argument does not escape
 ./struct_tag_node.go:189:19: p does not escape
-./struct_tag_node.go:214:28: leaking param: v to result ~r0 level=1
-./struct_tag_node.go:218:18: leaking param: b to result ~r0 level=0
-./struct_tag_node.go:228:18: moved to heap: v
-./struct_tag_node.go:232:18: leaking param: v to result ~r0 level=0
-./struct_tag_node.go:255:14: leaking param: t to result ~r0 level=1
-./cache.go:76:3: moved to heap: m2
-./cache.go:76:13: make(map[go.shape.uint32_0]go.shape.*uint8_1, len(m) + 10) escapes to heap
-./cache.go:37:2: moved to heap: m
-./cache.go:37:11: make(map[go.shape.uint32_0]go.shape.*uint8_1, 1) escapes to heap
+./struct_tag_node.go:193:18: leaking param: typ
+./struct_tag_node.go:241:28: leaking param: v to result ~r0 level=1
+./struct_tag_node.go:244:26: leaking param: v to result ~r0 level=0
+./struct_tag_node.go:248:18: leaking param: b to result ~r0 level=0
+./struct_tag_node.go:251:24: leaking param: b
+./struct_tag_node.go:251:34: str does not escape
+./struct_tag_node.go:272:21: leaking param: p to result ~r0 level=1
+./struct_tag_node.go:277:17: leaking param: t to result ~r0 level=0
+./struct_tag_node.go:281:18: moved to heap: v
+./struct_tag_node.go:285:18: leaking param: v to result ~r0 level=0
+./struct_tag_node.go:325:14: leaking param: t to result ~r0 level=1
+./stubs.go:10:15: leaking param: a
+./stubs.go:10:18: leaking param: b
+./stubs.go:10:36: assuming size is unsafe uintptr
+./stubs.go:13:32: leaking param: t
+./stubs.go:13:44: leaking param: h
+./stubs.go:13:53: leaking param: key
+./stubs.go:13:65: leaking param: elem
+./stubs.go:16:27: leaking param: typ
+./stubs.go:16:40: leaking param: dst
+./stubs.go:16:45: leaking param: src
+./stubs.go:25:23: leaking param: inter
+./stubs.go:25:45: leaking param: e
+./stubs.go:25:56: leaking param: dst
+./stubs.go:40:35: leaking param: ptr
+./stubs.go:40:55: assuming n is unsafe uintptr
+./stubs.go:43:24: leaking param: ptr
+./stubs.go:43:44: assuming n is unsafe uintptr
+./stubs.go:46:22: leaking param: t
+./stubs.go:46:43: leaking param: dirtyalloc
+./stubs.go:102:7: b does not escape
+./stubs.go:102:28: t does not escape
+./stubs.go:102:40: leaking param: ovf
+./stubs.go:136:11: make(map[string]interface {}) escapes to heap
+./stubs.go:140:11: make(map[string]interface {}) escapes to heap
+./stubs.go:152:7: &SliceHeader{...} escapes to heap
+./stubs.go:160:39: moved to heap: ch
+./stubs.go:162:5: func literal escapes to heap
+./stubs.go:166:9: &SliceHeader{...} escapes to heap
+./cache.go:207:8: &sliceNode[go.shape.string_0]{...} escapes to heap
+./cache.go:208:13: make([]go.shape.string_0, 1024 * 1024) escapes to heap
+./cache.go:219:8: &sliceNode[go.shape.[]interface {}_0]{...} escapes to heap
+./cache.go:220:12: make([]go.shape.[]interface {}_0, 1024 * 1024) escapes to heap
+./cache.go:78:3: moved to heap: m2
+./cache.go:78:13: make(map[go.shape.uint32_0]go.shape.*uint8_1, len(m) + 10) escapes to heap
+./cache.go:219:8: &sliceNode[go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0]{...} escapes to heap
+./cache.go:220:12: make([]go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0, 1024 * 1024) escapes to heap
+./cache.go:183:8: &sliceNode[go.shape.string_0]{...} escapes to heap
+./cache.go:184:12: make([]go.shape.string_0, 1024 * 1024) escapes to heap
+./cache.go:187:9: &Batch[go.shape.string_0]{...} escapes to heap
+./cache.go:183:8: &sliceNode[go.shape.[]interface {}_0]{...} escapes to heap
+./cache.go:184:12: make([]go.shape.[]interface {}_0, 1024 * 1024) escapes to heap
+./cache.go:187:9: &Batch[go.shape.[]interface {}_0]{...} escapes to heap
+./cache.go:39:2: moved to heap: m
+./cache.go:39:11: make(map[go.shape.uint32_0]go.shape.*uint8_1, 1) escapes to heap
+./cache.go:183:8: &sliceNode[go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0]{...} escapes to heap
+./cache.go:184:12: make([]go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0, 1024 * 1024) escapes to heap
+./cache.go:187:9: &Batch[go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0]{...} escapes to heap
 ./struct_tag_node.go:185:49: moved to heap: m
 ./hash_map.go:54:15: func literal does not escape
+./json.go:412:31: &sliceNode[go.shape.string_0]{...} escapes to heap
+./json.go:412:31: make([]go.shape.string_0, 1024 * 1024) escapes to heap
+./json.go:412:31: &Batch[go.shape.string_0]{...} escapes to heap
+./json.go:413:41: &sliceNode[go.shape.[]interface {}_0]{...} escapes to heap
+./json.go:413:41: make([]go.shape.[]interface {}_0, 1024 * 1024) escapes to heap
+./json.go:413:41: &Batch[go.shape.[]interface {}_0]{...} escapes to heap
+./json.go:415:28: "" escapes to heap
+./json.go:416:44: []interface {}{} escapes to heap
+./json.go:416:44: []interface {}{} escapes to heap
 ./struct_tag_node.go:185:49: make(map[go.shape.uint32_0]go.shape.*uint8_1, 1) escapes to heap
-./func_marshal_unmarshal.go:42:16: index bounds check elided
-./func_marshal_unmarshal.go:59:17: index bounds check elided
-./func_marshal_unmarshal.go:169:17: index bounds check elided
+./stubs.go:138:2: make(map[string]interface {}) escapes to heap
+./stubs.go:143:2: make(map[string]interface {}) escapes to heap
+./stubs.go:144:30: &sliceNode[go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0]{...} escapes to heap
+./stubs.go:144:30: make([]go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0, 1024 * 1024) escapes to heap
+./stubs.go:144:30: &Batch[go.shape.struct { "".count int; "".flags uint8; B uint8; "".noverflow uint16; "".hash0 uint32; "".buckets unsafe.Pointer; "".oldbuckets unsafe.Pointer; "".nevacuate uintptr; "".extra *"".mapextra }_0]{...} escapes to heap
+./stubs.go:160:31: func literal does not escape
+./func_marshal_unmarshal.go:46:16: index bounds check elided
+./func_marshal_unmarshal.go:63:17: index bounds check elided
+./func_marshal_unmarshal.go:235:17: index bounds check elided
 ./json.go:30:18: index bounds check elided
 ./json.go:42:17: index bounds check elided
-./json.go:62:16: index bounds check elided
-./json.go:79:20: index bounds check elided
-./json.go:102:20: index bounds check elided
-./json.go:137:17: index bounds check elided
-./json.go:147:20: index bounds check elided
-./json.go:159:20: index bounds check elided
-./json.go:180:15: index bounds check elided
-./json.go:189:20: index bounds check elided
-./json.go:202:15: index bounds check elided
-./json.go:257:20: index bounds check elided
-./struct_tag_info.go:384:16: index bounds check elided
+./json.go:54:16: index bounds check elided
+./json.go:75:16: index bounds check elided
+./json.go:92:20: index bounds check elided
+./json.go:133:20: index bounds check elided
+./json.go:171:17: index bounds check elided
+./json.go:181:20: index bounds check elided
+./json.go:193:20: index bounds check elided
+./json.go:221:15: index bounds check elided
+./json.go:229:20: index bounds check elided
+./json.go:247:15: index bounds check elided
+./json.go:300:20: index bounds check elided
+./struct_tag_info.go:375:16: index bounds check elided
 <autogenerated>:1: inlining call to Type.IsNull
 <autogenerated>:1: inlining call to Type.String
 <autogenerated>:1: inlining call to (*cache[go.shape.uint32_0,go.shape.*uint8_1]).Get

@@ -164,7 +164,7 @@ func Test_Map(t *testing.T) {
 	m := make(map[string]interface{})
 	var in interface{} = m
 	eface := UnpackEface(in)
-	typ := eface.Type
+	typ := (*maptype)(unsafe.Pointer(eface.Type))
 	var hint int = 16
 	pHmap := *(**hmap)(unsafe.Pointer(&m))
 	B := uint8(0)
@@ -187,7 +187,7 @@ func Benchmark_makeMap(b *testing.B) {
 		m := make(map[string]interface{})
 		var in interface{} = m
 		eface := UnpackEface(in)
-		typ := eface.Type
+		typ := (*maptype)(unsafe.Pointer(eface.Type))
 		var hint int = 16
 		pHmap := *(**hmap)(unsafe.Pointer(&m))
 		B := uint8(0)
@@ -195,7 +195,7 @@ func Benchmark_makeMap(b *testing.B) {
 			B++
 		}
 		pHmap.B = B
-		size := typ.Size
+		size := typ.typ.Size
 
 		pHmap.buckets, _ = makeBucketArray(typ, pHmap.B, nil)
 
@@ -206,8 +206,8 @@ func Benchmark_makeMap(b *testing.B) {
 				nbuckets := bucketShift(B)
 				h := reflect.SliceHeader{
 					Data: uintptr(buckets),
-					Len:  int(nbuckets * typ.Size),
-					Cap:  int(nbuckets * typ.Size),
+					Len:  int(nbuckets * typ.typ.Size),
+					Cap:  int(nbuckets * typ.typ.Size),
 				}
 				uints := *(*[]uint8)(unsafe.Pointer(&h))
 				return uints
