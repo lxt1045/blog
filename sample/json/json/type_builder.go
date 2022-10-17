@@ -2,14 +2,9 @@ package json
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"unsafe"
 )
-
-func init() {
-	log.SetFlags(log.Flags() | log.Lmicroseconds | log.Lshortfile) //log.Llongfile
-}
 
 // 构造器
 type TypeBuilder struct {
