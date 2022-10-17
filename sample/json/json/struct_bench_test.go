@@ -984,6 +984,16 @@ func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 				}
 			},
 		},
+		{
+			"lxt.marshal-st",
+			func() {
+				m := testdata.Book{}
+				_, err := Marshal(&m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
 		{"std.marshal-st",
 			func() {
 				m := testdata.Book{}
@@ -1089,6 +1099,16 @@ func BenchmarkUnmarshalStruct1x_middle(b *testing.B) {
 			func() {
 				m := testdata.TwitterStruct{}
 				_, err := sonic.Marshal(&m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"lxt.marshal-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				_, err := Marshal(&m)
 				if err != nil {
 					panic(err)
 				}
@@ -1209,6 +1229,16 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 			func() {
 				m := testdata.TwitterStruct{}
 				_, err := sonic.Marshal(&m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"lxt.marshal-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				_, err := Marshal(&m)
 				if err != nil {
 					panic(err)
 				}

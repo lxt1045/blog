@@ -164,6 +164,7 @@ func (s *SlicePool) Grow(pHeader *SliceHeader) {
 	pH.Cap = pH.Cap * s.size
 
 	// copy(*(*[]uint8)(p), *(*[]uint8)(unsafe.Pointer(pHeader)))
+	// memove golink?
 	_ = append((*(*[]uint8)(unsafe.Pointer(pHeader)))[:0], *(*[]uint8)(p)...)
 
 	pHeader.Cap = pH.Cap

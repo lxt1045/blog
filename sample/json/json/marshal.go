@@ -10,6 +10,11 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
+/*
+    fget 函数 list ，打入slice中，然后依次遍历slice，避免了遍历struct 的多个for循环！！ greate！
+    golang不支持尾递归，可能嵌套调用性能没有fget list 方式好
+*/
+
 var bsPool = sync.Pool{New: func() any {
 	s := make([]byte, 0, 1<<20)
 	return (*[]byte)(&s)
