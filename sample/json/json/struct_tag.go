@@ -20,6 +20,12 @@ type PoolStore struct {
 	tag  *TagInfo
 }
 
+func (ps PoolStore) Idx(idx uintptr) (p unsafe.Pointer) {
+	p = pointerOffset(ps.pool, idx)
+	*(*unsafe.Pointer)(ps.obj) = p
+	return
+}
+
 //TagInfo 拥有tag的struct的成员的解析结果
 type TagInfo struct {
 	Offset          uintptr //偏移量
@@ -27,7 +33,6 @@ type TagInfo struct {
 	TypeSize        int
 	BaseType        reflect.Type
 	BaseKind        reflect.Kind // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
-	JSONType        Type         // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
 	TagName         string       //
 	StringTag       bool         // `json:"field,string"`: 此情形下,需要把struct的int转成json的string
 	OmitemptyTag    bool         //  `json:"some_field,omitempty"`
@@ -40,13 +45,12 @@ type TagInfo struct {
 	fSet setFunc
 	fGet getFunc
 
-	fUnm   unmFunc
-	fM     mFunc
-	hasPtr bool // TODO： 是否有指针，如果没有指针，则不需要用 reflect.New reflect.MakeSlice,可以更快速的分配空间
-	Pool   *SlicePool
-	fMake  func(l int) unsafe.Pointer // make slice/map
-	MakeN  int
-	SPool  sync.Pool
+	fUnm  unmFunc
+	fM    mFunc
+	Pool  *SlicePool
+	fMake func(l int) unsafe.Pointer // make slice/map
+	MakeN int
+	SPool sync.Pool
 
 	Builder     *TypeBuilder
 	PointerPool sync.Pool
@@ -98,6 +102,7 @@ func isBytes(typ reflect.Type) bool {
 
 func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 	ptrDeep, baseType := 0, typ
+	var pidx *uintptr
 	for ; ; typ = typ.Elem() {
 		if typ.Kind() == reflect.Ptr {
 			ptrDeep++
@@ -106,66 +111,55 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		baseType = typ
 		break
 	}
+	if ptrDeep > 0 {
+		pidx = &[]uintptr{0}[0]
+		ti.Builder.AppendTagField(ti.TagName, baseType, pidx)
+	}
 
 	// 先从最后一个基础类型开始处理
 	switch baseType.Kind() {
 	case reflect.Bool:
-		ti.JSONType = Bool
-		ti.fSet, ti.fGet = boolFuncs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = boolFuncs(pidx)
 		ti.fUnm, ti.fM = boolMFuncs()
 	case reflect.Uint, reflect.Uint64, reflect.Uintptr:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = uint64Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = uint64Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int, reflect.Int64:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = int64Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = int64Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint32:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = uint32Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = uint32Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int32:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = int32Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = int32Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint16:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = uint16Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = uint16Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int16:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = int16Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = int16Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Uint8:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = uint8Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = uint8Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Int8:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = int8Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = int8Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Float64:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = float64Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = float64Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.Float32:
-		ti.JSONType = Number
-		ti.fSet, ti.fGet = float32Funcs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = float32Funcs(pidx)
 		ti.fUnm, ti.fM = numMFuncs()
 	case reflect.String:
-		ti.JSONType = String
-		ti.fSet, ti.fGet = stringFuncs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = stringFuncs(pidx)
 		ti.fUnm, ti.fM = stringMFuncs()
-		// ti.fUnm, ti.fM = stringMFuncs_0(ti.Builder, ti.TagName, ptrDeep)
 	case reflect.Slice: // &[]byte; Array
 		ti.fUnm, ti.fM = sliceMFuncs()
 		ti.MakeN = 4
 		if isBytes(baseType) {
-			ti.JSONType = Bytes
-			ti.fSet, ti.fGet = bytesFuncs(ti.Builder, ti.TagName, ptrDeep)
+			ti.fSet, ti.fGet = bytesFuncs(pidx)
 		} else {
-			ti.JSONType = Slice
 			ti.BaseType = baseType
 			sliceType := baseType.Elem()
 			son := &TagInfo{
@@ -182,14 +176,8 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			if err != nil {
 				return lxterrs.Wrap(err, "Struct")
 			}
-			ti.fSet, ti.fGet = sliceFuncs(ti.Builder, ti.TagName, ptrDeep)
+			ti.fSet, ti.fGet = sliceFuncs(pidx)
 
-			if ptrDeep > 0 || son.hasPtr {
-				ti.hasPtr = true
-			}
-			if !son.hasPtr {
-			} else {
-			}
 			ti.Pool = NewSlicePool(ti.BaseType, son.Type)
 			ti.SPool.New = func() any {
 				v := reflect.MakeSlice(ti.BaseType, 0, 1024)
@@ -201,7 +189,6 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		}
 	case reflect.Struct:
 		ti.fUnm, ti.fM = structMFuncs()
-		ti.JSONType = Struct
 		son, e := NewStructTagInfo(baseType, false, ti.Builder)
 		if err = e; err != nil {
 			return lxterrs.Wrap(err, "Struct")
@@ -215,11 +202,10 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 				}
 			}
 			ti.buildChildMap()
-			ti.fSet, ti.fGet = structChildFuncs(ti.Builder, ti.TagName, ptrDeep, baseType)
+			ti.fSet, ti.fGet = structChildFuncs(pidx)
 		} else {
 			for _, c := range son.ChildList {
-				c.fSet, c.fGet = anonymousStructFuncs(
-					ti.Builder, ti.TagName, ptrDeep, baseType, ti.Offset, c.fSet, c.fGet)
+				c.fSet, c.fGet = anonymousStructFuncs(pidx, ti.Offset, c.fSet, c.fGet)
 				err = ti.AddChild(c)
 				if err != nil {
 					return lxterrs.Wrap(err, "AddChild")
@@ -227,13 +213,11 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			}
 		}
 	case reflect.Interface:
-		ti.JSONType = Interface
 		// Interface 需要根据实际类型创建
-		ti.fSet, ti.fGet = iterfaceFuncs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = iterfaceFuncs(pidx)
 		ti.fUnm, ti.fM = interfaceMFuncs()
 	case reflect.Map:
-		ti.JSONType = Map
-		ti.fSet, ti.fGet = mapFuncs(ti.Builder, ti.TagName, ptrDeep)
+		ti.fSet, ti.fGet = mapFuncs(pidx)
 		valueType := baseType.Elem()
 		son := &TagInfo{
 			TagName:  `"son"`,
@@ -253,7 +237,22 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		return lxterrs.New("errors type:%s", baseType)
 	}
 
-	//一些共同的操作
+	// 处理一下指针
+	for i := 1; i < ptrDeep; i++ {
+		var idxP *uintptr = &[]uintptr{0}[0]
+		ti.Builder.AppendPointer(fmt.Sprintf("%s_%d", ti.TagName, i), idxP)
+		fSet, fGet := ti.fSet, ti.fGet
+		ti.fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+			p := pointerOffset(store.pool, *idxP)
+			*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
+			store.obj = p
+			return fSet(store, bs)
+		}
+		ti.fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
+			p := *(*unsafe.Pointer)(pObj)
+			return fGet(p, in)
+		}
+	}
 	return
 }
 
@@ -270,7 +269,6 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 	ti = &TagInfo{
 		TagName:  typIn.String(),
 		BaseKind: typIn.Kind(), // 解析出最内层类型
-		JSONType: Struct,
 		Builder:  builder,
 		TypeSize: int(typIn.Size()),
 	}

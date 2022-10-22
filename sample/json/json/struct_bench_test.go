@@ -392,21 +392,6 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 		b.SetBytes(int64(b.N))
 	})
 
-	//
-
-	b.Run("Unmarshal-p0", func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			err := Unmarshal(bs, &d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
 	// return
 	b.Run("Unmarshal-p", func(b *testing.B) {
 		d := Name{}

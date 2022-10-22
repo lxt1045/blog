@@ -257,7 +257,7 @@ func TestStructMarshal(t *testing.T) {
 		_, file = filepath.Split(file)
 		return file + ":" + strconv.Itoa(line)
 	}
-	idx := -10
+	idx := -6
 
 	datas := []struct {
 		name    string
