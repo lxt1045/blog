@@ -100,12 +100,6 @@ func parseObj(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 		var son *TagInfo
 		if store.tag.MChildrenEnable {
 			son = TagMapGetV(&store.tag.MChildren, key)
-
-			// idx := hash2(key, store.tag.MChildren.idxNTable, store.tag.MChildren.idxN)
-			// n := store.tag.MChildren.S[idx]
-			// if bytes.Equal(key, n.K) {
-			// 	son = n.V
-			// }
 		} else {
 			son = store.tag.GetChildFromMap(key)
 		}
@@ -254,10 +248,8 @@ func parseSlice(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 		return
 	}
 	son := store.tag.ChildList[0]
-	// size := int(son.Type.Size())
 	size := son.TypeSize
 	uint8s := store.tag.SPool.Get().(*[]uint8)
-	// pHPool := (*SliceHeader)(unsafe.Pointer(uint8s))
 	pHeader := (*SliceHeader)(pBase)
 	bases := (*[]uint8)(pBase)
 	for n, nB := 0, 0; ; {

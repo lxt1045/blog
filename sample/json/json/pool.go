@@ -24,7 +24,6 @@ package json
 
 import (
 	"reflect"
-	"sync"
 	"sync/atomic"
 	"unsafe"
 )
@@ -118,71 +117,6 @@ func (c *cache[T, V]) GetOrSet(key T, load func() (v V)) (v V) {
 	return
 }
 
-//SlicePool 用于分配 Slice，避免频繁 grow
-type SlicePool struct {
-	sync.Pool
-	MakeN int
-	NewN  uint32
-	size  int
-	typ   reflect.Type
-}
-
-func (p *SlicePool) SetMakeN(cap int) {
-	atomic.StoreUint32(&p.NewN, 1)
-	if p.MakeN < cap {
-		p.MakeN = cap
-	}
-}
-
-func (s *SlicePool) Grow(pHeader *SliceHeader) {
-	l := pHeader.Cap / s.size
-	// c := l * 2 //
-	c := l + l/2
-	if c == 0 {
-		c = 4
-	}
-	s.SetMakeN(c)
-
-	v := reflect.MakeSlice(s.typ, l, c)
-	p := reflectValueToPointer(&v)
-	pH := (*SliceHeader)(p)
-	// pH.Len = pHeader.Len
-	pH.Cap = pH.Cap * s.size
-
-	// copy(*(*[]uint8)(p), *(*[]uint8)(unsafe.Pointer(pHeader)))
-	// memove golink?
-	_ = append((*(*[]uint8)(unsafe.Pointer(pHeader)))[:0], *(*[]uint8)(p)...)
-
-	pHeader.Cap = pH.Cap
-	pHeader.Data = pH.Data
-}
-
-func NewSlicePool(typ, sonTyp reflect.Type) (s *SlicePool) {
-	s = &SlicePool{}
-	s.typ = typ
-	s.size = int(sonTyp.Size())
-	s.New = func() any {
-		n := s.MakeN
-		if n < 4 {
-			n = 4
-		}
-		if atomic.AddUint32(&s.NewN, 1)%4000 == 1 {
-			n := s.MakeN / 2
-			if n < 4 {
-				n = 4
-			}
-			s.MakeN = n
-		}
-		v := reflect.MakeSlice(typ, s.MakeN, s.MakeN)
-		p := reflectValueToPointer(&v)
-		pH := (*SliceHeader)(p)
-		pH.Len = pH.Len * s.size
-		pH.Cap = pH.Cap * s.size
-		return p
-	}
-	return
-}
-
 /*
  先试试这个；
  然后试试 &map[string]interface{} 的时候, 先 sync.pool 获取一个：
@@ -227,7 +161,6 @@ func GetStr(b *Batch[string]) (p *string) {
 
 func (b *Batch[T]) Get() (p *T) {
 	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
-	// sn := (*sliceNode[T])(b.pool)
 	idx := atomic.AddUint32(&sn.idx, 1)
 	if int(idx) > len(sn.s) {
 		sn = &sliceNode[T]{
@@ -248,127 +181,5 @@ func (b *Batch[T]) Make() (p *T) {
 	}
 	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
 	p = &sn.s[0]
-	return
-}
-
-const N = 1024
-
-// /*
-
-var (
-// bsCache        = NewSliceCache[[]byte](N)
-// strCache       = NewSliceCache[string](N)
-// interfaceCache = NewSliceCache[interface{}](N)
-// mapCache       = NewSliceCache[map[string]interface{}](N)
-)
-
-type sliceCache[T any] struct {
-	c []T
-	i int32
-}
-
-type SliceCache[T any] struct {
-	c      unsafe.Pointer
-	n      int32
-	ch     chan *sliceCache[T]
-	makeTs func() (ts []T)
-}
-
-//go:inline
-func (s *SliceCache[T]) Get() (p *T) {
-	c := (*sliceCache[T])(atomic.LoadPointer(&s.c))
-	i := atomic.AddInt32(&c.i, 1)
-	if i <= s.n {
-		p = &c.c[i-1]
-		return
-	}
-	c = <-s.ch
-	// c = &sliceCache[T]{
-	// 	c: s.makeTs(),
-	// 	i: 1,
-	// }
-	p = &c.c[0]
-	atomic.StorePointer(&s.c, unsafe.Pointer(c))
-	return
-}
-func (s *SliceCache[T]) GetT() (p T) {
-	c := (*sliceCache[T])(atomic.LoadPointer(&s.c))
-	i := atomic.AddInt32(&c.i, 1)
-	if i <= s.n {
-		p = c.c[i-1]
-		return
-	}
-	c = <-s.ch
-	p = c.c[0]
-	atomic.StorePointer(&s.c, unsafe.Pointer(c))
-	return
-}
-func (s *SliceCache[T]) GetP() (p unsafe.Pointer) {
-	c := (*sliceCache[T])(atomic.LoadPointer(&s.c))
-	i := atomic.AddInt32(&c.i, 1)
-	if i <= s.n {
-		p = unsafe.Pointer(&c.c[i-1])
-		return
-	}
-	c = <-s.ch
-	p = unsafe.Pointer(&c.c[0])
-	atomic.StorePointer(&s.c, unsafe.Pointer(c))
-	return
-}
-func NewSliceCache[T any](n int32) (s *SliceCache[T]) {
-	var t T
-	var value interface{} = t
-	_, bMap := value.(map[string]interface{})
-
-	makeTs := func() (ts []T) {
-		ts = make([]T, n)
-		return
-	}
-	if bMap {
-		makeTs = func() (ts []T) {
-			m := make([]map[string]interface{}, n)
-			for i := range m {
-				m[i] = make(map[string]interface{})
-			}
-			p := (*[]map[string]interface{})(unsafe.Pointer(&ts))
-			*p = m
-			return
-		}
-	}
-
-	s = &SliceCache[T]{
-		c: unsafe.Pointer(&sliceCache[T]{
-			c: makeTs(),
-		}),
-		n: int32(n),
-	}
-	s.makeTs = makeTs
-	s.ch = make(chan *sliceCache[T], 8)
-
-	{
-		sc := make([]sliceCache[T], cap(s.ch))
-		for i := range sc {
-			sc[i].i = 1
-			sc[i].c = makeTs()
-			s.ch <- &sc[i]
-		}
-	}
-	N := 1
-	if bMap {
-		//单独测试 cache 时，单协程生产速度太慢
-		// N = 48
-	}
-	for i := 0; i < N; i++ {
-		go func() {
-			for {
-				sc := make([]sliceCache[T], cap(s.ch))
-				for i := range sc {
-					sc[i].i = 1
-					sc[i].c = makeTs()
-					s.ch <- &sc[i]
-				}
-			}
-		}()
-	}
 	return
 }

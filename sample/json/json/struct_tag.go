@@ -28,32 +28,33 @@ func (ps PoolStore) Idx(idx uintptr) (p unsafe.Pointer) {
 
 //TagInfo 拥有tag的struct的成员的解析结果
 type TagInfo struct {
-	Offset          uintptr //偏移量
-	Type            reflect.Type
-	TypeSize        int
-	BaseType        reflect.Type
-	BaseKind        reflect.Kind // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
-	TagName         string       //
-	StringTag       bool         // `json:"field,string"`: 此情形下,需要把struct的int转成json的string
-	OmitemptyTag    bool         //  `json:"some_field,omitempty"`
-	Anonymous       bool
+	TagName      string       //
+	BaseType     reflect.Type //
+	BaseKind     reflect.Kind // 次成员可能是 **string,[]int 等这种复杂类型,这个 用来指示 "最里层" 的类型
+	Offset       uintptr      //偏移量
+	TypeSize     int          //
+	StringTag    bool         // `json:"field,string"`: 此情形下,需要把struct的int转成json的string
+	OmitemptyTag bool         //  `json:"some_field,omitempty"`
+
+	/*
+		MChildrenEnable: true 时表示使用 MChildren
+		Children： son 超过 128 时tagMap解析很慢，用 map 替代
+		ChildList： 遍历 map 性能较差，加个 list
+	*/
+	MChildrenEnable bool
 	Children        map[string]*TagInfo
 	ChildList       []*TagInfo // 遍历的顺序和速度
 	MChildren       tagMap
-	MChildrenEnable bool
 
 	fSet setFunc
 	fGet getFunc
 
-	fUnm  unmFunc
-	fM    mFunc
-	Pool  *SlicePool
-	fMake func(l int) unsafe.Pointer // make slice/map
-	MakeN int
+	fUnm unmFunc
+	fM   mFunc
+
 	SPool sync.Pool
 
-	Builder     *TypeBuilder
-	PointerPool sync.Pool
+	Builder *TypeBuilder
 }
 
 func (t *TagInfo) buildChildMap() {
@@ -74,6 +75,7 @@ func (t *TagInfo) buildChildMap() {
 		t.MChildrenEnable = true
 		mc := buildTagMap(nodes)
 		t.MChildren = mc
+		t.Children = nil // 减少 gc 扫描指针
 	}
 }
 
@@ -100,7 +102,7 @@ func isBytes(typ reflect.Type) bool {
 	return typ.PkgPath() == bsType.PkgPath() && typ.String() == bsType.String()
 }
 
-func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
+func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 	ptrDeep, baseType := 0, typ
 	var pidx *uintptr
 	for ; ; typ = typ.Elem() {
@@ -156,7 +158,6 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		ti.fUnm, ti.fM = stringMFuncs()
 	case reflect.Slice: // &[]byte; Array
 		ti.fUnm, ti.fM = sliceMFuncs()
-		ti.MakeN = 4
 		if isBytes(baseType) {
 			ti.fSet, ti.fGet = bytesFuncs(pidx)
 		} else {
@@ -164,11 +165,10 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			sliceType := baseType.Elem()
 			son := &TagInfo{
 				TagName:  `"son"`,
-				Type:     sliceType,
 				TypeSize: int(sliceType.Size()),
 				Builder:  ti.Builder,
 			}
-			err = son.setFuncs(sliceType)
+			err = son.setFuncs(sliceType, false /*anonymous*/)
 			if err != nil {
 				return lxterrs.Wrap(err, "Struct")
 			}
@@ -178,12 +178,11 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			}
 			ti.fSet, ti.fGet = sliceFuncs(pidx)
 
-			ti.Pool = NewSlicePool(ti.BaseType, son.Type)
 			ti.SPool.New = func() any {
 				v := reflect.MakeSlice(ti.BaseType, 0, 1024)
 				p := reflectValueToPointer(&v)
 				pH := (*SliceHeader)(p)
-				pH.Cap = pH.Cap * int(son.Type.Size())
+				pH.Cap = pH.Cap * int(sliceType.Size())
 				return (*[]uint8)(p)
 			}
 		}
@@ -194,7 +193,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 			return lxterrs.Wrap(err, "Struct")
 		}
 		// 匿名成员的处理; 这里只能处理费指针嵌入，指针嵌入逻辑在上一层
-		if !ti.Anonymous {
+		if !anonymous {
 			for _, c := range son.ChildList {
 				err = ti.AddChild(c)
 				if err != nil {
@@ -221,7 +220,6 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		valueType := baseType.Elem()
 		son := &TagInfo{
 			TagName:  `"son"`,
-			Type:     valueType,
 			Builder:  ti.Builder,
 			TypeSize: int(valueType.Size()),
 		}
@@ -229,7 +227,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type) (err error) {
 		if err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
-		err = son.setFuncs(valueType)
+		err = son.setFuncs(valueType, false /*anonymous*/)
 		if err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
@@ -276,14 +274,12 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 	for i := 0; i < typIn.NumField(); i++ {
 		field := typIn.Field(i)
 		son := &TagInfo{
-			Type:      field.Type,
-			BaseType:  field.Type,
-			TagName:   `"` + field.Name + `"`,
-			Offset:    field.Offset,
-			BaseKind:  field.Type.Kind(),
-			Anonymous: field.Anonymous,
-			Builder:   builder,
-			TypeSize:  int(field.Type.Size()),
+			BaseType: field.Type,
+			TagName:  `"` + field.Name + `"`,
+			Offset:   field.Offset,
+			BaseKind: field.Type.Kind(),
+			Builder:  builder,
+			TypeSize: int(field.Type.Size()),
 		}
 
 		if !field.IsExported() {
@@ -315,12 +311,12 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 			}
 		}
 
-		err = son.setFuncs(field.Type)
+		err = son.setFuncs(field.Type, field.Anonymous)
 		if err != nil {
 			err = lxterrs.Wrap(err, "son.setFuncs")
 			return
 		}
-		if !son.Anonymous {
+		if !field.Anonymous {
 			err = ti.AddChild(son)
 			if err != nil {
 				return

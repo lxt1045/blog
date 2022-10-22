@@ -10,38 +10,6 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
-func getHashFuncU64(idxs []int) (f func(key []byte) (idx int)) {
-	// 可以提前聚合成 byte ，然后打表合并 bit 增速最高 8 倍？
-
-	type N struct {
-		iByte int // []byte的偏移量
-		mask  byte
-		iBit  int
-	}
-	idxN := make([]N, len(idxs))
-	for i, idx := range idxs {
-		iKey := idx / 8 // key 的偏移量
-		iBit := idx % 8 // byte 内部偏移量
-		idxN[i] = N{
-			iByte: iKey, // key 的偏移量
-			mask:  1 << iBit,
-			iBit:  1 << i,
-		}
-	}
-	f = func(key []byte) (idx int) {
-		for i, x := range idxN {
-			if i >= len(key) {
-				break
-			}
-			if x.mask&key[x.iByte] > 0 {
-				idx |= x.iBit
-			}
-		}
-		return
-	}
-	return
-}
-
 //根据状态数 返回 bit 数
 func getNLen(nBit int) (nStatus int) {
 	nStatus = 1

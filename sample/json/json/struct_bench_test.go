@@ -365,32 +365,6 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 	}
 
 	//
-	b.Run("Marshal-p", func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := Marshal(&d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
-	b.Run("sonic.Marshal-p", func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := sonic.MarshalString(&d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
 
 	// return
 	b.Run("Unmarshal-p", func(b *testing.B) {
@@ -439,6 +413,45 @@ func BenchmarkMyUnmarshalPoniter(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			err := sonic.UnmarshalString(str, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("Marshal-p", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := Marshal(&d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("sonic.Marshal-p", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := sonic.Marshal(&d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run("sonic.Marshal-p-string", func(b *testing.B) {
+		d := Name{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := sonic.MarshalString(&d)
 			if err != nil {
 				b.Fatalf("[%d]:%v", i, err)
 			}
@@ -791,6 +804,7 @@ go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1xMap$ github.com/lxt1
 go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1xMap$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
 go tool pprof ./json.test cpu.prof
 //   */
+
 func BenchmarkUnmarshalStruct1xMap(b *testing.B) {
 	bs := []byte(j0)
 	data := string(bs)
@@ -1337,114 +1351,6 @@ var bs []byte
 var pbool *bool
 var b0 byte
 var iface *interface{}
-
-/*
-go test -benchmem -run=^$ -bench ^BenchmarkCache$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
-go test -benchmem -run=^$ -bench ^BenchmarkCache$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
-go tool pprof ./json.test cpu.prof
-*/
-func BenchmarkCache(b *testing.B) {
-	var (
-		bsCache        = NewSliceCache[[]byte](N)
-		strCache       = NewSliceCache[string](N)
-		interfaceCache = NewSliceCache[interface{}](N)
-		mapCache       = NewSliceCache[map[string]interface{}](N)
-		boolCache      = NewSliceCache[bool](N)
-	)
-	b.Run("map-cache", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			pm = mapCache.Get()
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("map-cache-m", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			m = *mapCache.Get()
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	// return
-	b.Run("map", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			m1 := make(map[string]interface{})
-			m = m1
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("string-cache", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			str = strCache.Get()
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("string", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			s := ""
-			str = &s
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("[]byte-cache", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			bs = *bsCache.Get()
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("[]byte", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			pbs = &[]byte{}
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("bool-cache", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			pbool = boolCache.Get()
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("bool", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			bb := true
-			pbool = &bb
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("interface-cache", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			iface = interfaceCache.Get()
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("interface", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			var bb interface{}
-			iface = &bb
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-}
 
 func BenchmarkUnmarshalStruct20(b *testing.B) {
 	bs := []byte(j0)

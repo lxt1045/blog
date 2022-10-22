@@ -100,10 +100,10 @@ type bmap struct {
 	tophash [8]uint8
 }
 
-const PtrSize = 4 << (^uintptr(0) >> 63)
+const ptrSize = 4 << (^uintptr(0) >> 63)
 
 func (b *bmap) setoverflow(t *maptype, ovf *bmap) {
-	*(**bmap)(pointerOffset(unsafe.Pointer(b), uintptr(t.bucketsize)-PtrSize)) = ovf
+	*(**bmap)(pointerOffset(unsafe.Pointer(b), uintptr(t.bucketsize)-ptrSize)) = ovf
 }
 
 type maptype struct {
@@ -146,22 +146,8 @@ var mapGoType = func() *maptype {
 }()
 var imapPool = NewBatch[hmap]()
 
-var poolMapArrayInterface = sync.Pool{New: func() any {
-	return <-chPoolMapArrayInterface
-
-	// N := 1 << 10
-	N := 1 << 10
-	p := unsafe_NewArray(mapGoType.bucket, N)
-	s := &SliceHeader{
-		Data: p,
-		Len:  N * int(mapGoType.bucket.Size),
-		Cap:  N * int(mapGoType.bucket.Size),
-	}
-	return (*[]byte)(unsafe.Pointer(s))
-}}
-
-var chPoolMapArrayInterface = func() (ch chan *[]byte) {
-	ch = make(chan *[]byte, 4) // runtime.GOMAXPROCS(0))
+var poolMapArrayInterface = func() sync.Pool {
+	ch := make(chan *[]byte, 4) // runtime.GOMAXPROCS(0))
 	go func() {
 		for {
 			N := 1 << 20
@@ -174,7 +160,9 @@ var chPoolMapArrayInterface = func() (ch chan *[]byte) {
 			ch <- (*[]byte)(unsafe.Pointer(s))
 		}
 	}()
-	return
+	return sync.Pool{New: func() any {
+		return <-ch
+	}}
 }()
 
 func makeMapEface(hint int) (m map[string]interface{}) {

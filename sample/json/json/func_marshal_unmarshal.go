@@ -2,10 +2,7 @@ package json
 
 import (
 	"bytes"
-	"fmt"
-	"reflect"
 	"strconv"
-	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
 )
@@ -158,63 +155,6 @@ func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 		}
 		store.obj = pointerOffset(store.obj, store.tag.Offset)
 		store.tag.fSet(store, raw)
-		return
-	}
-	fM = func(store Store, in []byte) (out []byte) {
-		_, out = store.tag.fGet(pointerOffset(store.obj, store.tag.Offset), in)
-		return
-	}
-	return
-}
-
-func stringMFuncs_0(builder *TypeBuilder, name string, ptrDeep int) (fUnm unmFunc, fM mFunc) {
-	var idxs []*uintptr
-	if ptrDeep > 0 {
-		idxs = append(idxs, &[]uintptr{0}[0])
-		var x string
-		typ := reflect.TypeOf(x)
-		builder.AppendTagField(name, typ, idxs[0])
-		for i := 1; i < ptrDeep; i++ {
-			idxs = append(idxs, &[]uintptr{0}[0])
-			builder.AppendPointer(fmt.Sprintf("%s_%d", name, i), idxs[i])
-		}
-	}
-	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
-		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
-			i = 4
-			iSlash = idxSlash
-			return
-		}
-		var raw []byte
-		{
-			i = bytes.IndexByte(stream[1:], '"')
-			if i >= 0 && idxSlash > i+1 {
-				i++
-				raw = stream[1:i]
-				i++
-				iSlash = idxSlash
-			} else {
-				i++
-				raw, i, iSlash = parseUnescapeStr(stream, i, idxSlash)
-			}
-		}
-		store.obj = pointerOffset(store.obj, store.tag.Offset)
-		// store.tag.fSet(store, raw) // 匿名嵌入是有问题
-		if ptrDeep <= 0 {
-			*(*string)(store.obj) = *(*string)(unsafe.Pointer(&raw))
-			return
-		}
-
-		if ptrDeep > 1 {
-			for i := 1; i < ptrDeep; i++ {
-				p := pointerOffset(store.pool, *idxs[i])
-				*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
-				store.obj = p
-			}
-		}
-		p := pointerOffset(store.pool, *idxs[0])
-		*(**string)(store.obj) = (*string)(p)
-		*(*string)(p) = *(*string)(unsafe.Pointer(&raw))
 		return
 	}
 	fM = func(store Store, in []byte) (out []byte) {
