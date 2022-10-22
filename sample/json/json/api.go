@@ -45,21 +45,17 @@ func Unmarshal(bs []byte, in interface{}) (err error) {
 		err = fmt.Errorf("%T cannot set", in)
 		return
 	}
-	typ := vi.Type()
-
 	prv := reflectValueToValue(&vi)
 	goType := prv.typ
-	tag, ok := cacheStructTagInfo.Get(goType.Hash)
-	if !ok {
-		tag, err = LoadTagNodeSlow(typ, goType.Hash)
-		if err != nil {
-			return
-		}
+	tag, err := LoadTagNode(vi, goType.Hash)
+	if err != nil {
+		return
 	}
+
 	store := PoolStore{
 		tag:  tag,
 		obj:  prv.ptr, // eface.Value,
-		pool: tag.NewPool(),
+		pool: tag.Builder.NewFromPool(),
 	}
 	err = parseRoot(bs[i:], store)
 	return
@@ -87,27 +83,34 @@ func Marshal(in interface{}) (bs []byte, err error) {
 		return
 	}
 
-	vi := reflect.ValueOf(in)
-	vi = reflect.Indirect(vi)
+	vi := reflect.Indirect(reflect.ValueOf(in))
 	if !vi.CanSet() {
 		err = fmt.Errorf("%T cannot set", in)
 		return
 	}
-	typ := vi.Type()
-
 	prv := reflectValueToValue(&vi)
 	goType := prv.typ
-	tag, ok := cacheStructTagInfo.Get(goType.Hash)
-	if !ok {
-		tag, err = LoadTagNodeSlow(typ, goType.Hash)
-		if err != nil {
-			return
-		}
+	tag, err := LoadTagNode(vi, goType.Hash)
+	if err != nil {
+		return
 	}
+
 	store := Store{
 		tag: tag,
 		obj: prv.ptr, // eface.Value,
 	}
-	bs, err = marshalRoot(store)
+
+	pbs := bsPool.Get().(*[]byte)
+	if cap(*pbs) < 128 {
+		pbs = bsPool.New().(*[]byte)
+	}
+	bs = *pbs
+	defer func() {
+		*pbs = bs[len(bs):]
+		bs = bs[:len(bs):len(bs)]
+		bsPool.Put(pbs)
+	}()
+
+	bs = marshalObj(bs[:0], store)
 	return
 }

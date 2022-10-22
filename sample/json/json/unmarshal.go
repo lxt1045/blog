@@ -653,7 +653,6 @@ func parseRoot(stream []byte, store PoolStore) (err error) {
 	if idxSlash < 0 {
 		idxSlash = math.MaxInt
 	}
-	// sts := status{}
 	if stream[0] == '{' {
 		parseObj(idxSlash, stream[1:], store)
 		return

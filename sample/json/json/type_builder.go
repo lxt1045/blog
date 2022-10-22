@@ -3,6 +3,7 @@ package json
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"unsafe"
 )
 
@@ -14,6 +15,8 @@ type TypeBuilder struct {
 	lazyOffsets []*uintptr
 
 	goType *GoType
+	size   int
+	pool   sync.Pool
 }
 
 func NewTypeBuilder() *TypeBuilder {
@@ -56,6 +59,42 @@ func (b *TypeBuilder) Build() reflect.Type {
 		}
 	}
 	return typ
+}
+
+//Init 调用 Build() 并初始化缓存
+func (b *TypeBuilder) Init() {
+	b.Build()
+
+	// 处理缓存
+	if len(b.fields) == 0 {
+		return
+	}
+	goType := b.goType
+	b.size = int(goType.Size)
+	N := (8 * 1024 / b.size) + 1
+	l := N * b.size
+	b.pool.New = func() any {
+		ps := unsafe_NewArray(goType, N)
+		pH := &SliceHeader{
+			Data: ps,
+			Len:  l,
+			Cap:  l,
+		}
+		return (*[]uint8)(unsafe.Pointer(pH))
+	}
+}
+
+func (b *TypeBuilder) NewFromPool() unsafe.Pointer {
+	if len(b.fields) == 0 {
+		return nil
+	}
+	s := b.pool.Get().(*[]uint8)
+	pp := unsafe.Pointer(&(*s)[0])
+	if cap(*s) >= b.size*2 {
+		*s = (*s)[b.size:]
+		b.pool.Put(s)
+	}
+	return pp
 }
 
 /*

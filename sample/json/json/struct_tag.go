@@ -48,29 +48,10 @@ type TagInfo struct {
 	MakeN  int
 	SPool  sync.Pool
 
-	Builder *TypeBuilder
-	BPool   sync.Pool
-
-	xPool unsafe.Pointer
-	// 学 Nginx，每个 tag 都搞一个 []type,用于集中分配，slice type还可以动态增长，
-	// 1. 通过 pool 动态分配: slice, 可以动态增长，然后截断留下未使用部分
-	// 2. 通过 动态定义的 struct:reflect.StructOf(fileIDs), 通过 reflect.New()一次性分配此次需要的所有内存
+	Builder     *TypeBuilder
+	PointerPool sync.Pool
 }
 
-func (p *TagInfo) NewPool() unsafe.Pointer {
-	if len(p.Builder.fields) == 0 {
-		return nil
-	}
-
-	s := p.BPool.Get().(*[]uint8)
-	pp := unsafe.Pointer(&(*s)[0])
-	if cap(*s) >= p.TypeSize*2 {
-		*s = (*s)[p.TypeSize:]
-		p.BPool.Put(s)
-	}
-
-	return pp
-}
 func (t *TagInfo) buildChildMap() {
 	if len(t.ChildList) == 0 {
 		return
@@ -306,8 +287,9 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 			Builder:   builder,
 			TypeSize:  int(field.Type.Size()),
 		}
+
 		if !field.IsExported() {
-			continue
+			continue // 非导出成员不处理
 		}
 
 		tagv := field.Tag.Get("json")  //从tag列表中取出下标为i的tag //json:"field,string"
@@ -316,14 +298,14 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 			continue //如果tag字段没有内容，则不处理
 		}
 		if len(tagv) == 0 {
-			tagv = field.Name
+			tagv = field.Name // 没有 tag 则以成员名为 tag
 		}
 
 		tvs := strings.Split(tagv, ",")
 		for i := range tvs {
 			tvs[i] = strings.TrimSpace(tvs[i])
 		}
-		son.TagName = `"` + tvs[0] + `"`
+		son.TagName = `"` + tvs[0] + `"` // 此处加上 双引号 是为了方便使用 改进后的 hash map
 		for i := 1; i < len(tvs); i++ {
 			if strings.TrimSpace(tvs[i]) == "string" {
 				son.StringTag = true
@@ -346,6 +328,8 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 				return
 			}
 		} else {
+			// 如果是匿名成员类型，需要将其子成员插入为父节点的子成员；
+			// 此外，get set 函数也要做相应修改
 			for _, c := range son.ChildList {
 				err = ti.AddChild(c)
 				if err != nil {

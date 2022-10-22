@@ -62,11 +62,11 @@ func boolFuncs(builder *TypeBuilder, name string, ptrDeep int) (fSet setFunc, fG
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
 		pBase = pObj
 		if pObj == nil {
-			out = append(in, []byte("null")...)
+			out = append(in, "null"...)
 		} else if *(*bool)(pObj) {
-			out = append(in, []byte("true")...)
+			out = append(in, "true"...)
 		} else {
-			out = append(in, []byte("false")...)
+			out = append(in, "false"...)
 		}
 		return
 	}

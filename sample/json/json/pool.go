@@ -38,39 +38,25 @@ func strToUintptr(p string) uintptr {
 	return *(*uintptr)(unsafe.Pointer(&p))
 }
 
-func LoadTagNode(typ reflect.Type, hash uint32) (*TagInfo, error) {
+func LoadTagNode(v reflect.Value, hash uint32) (*TagInfo, error) {
 	tag, ok := cacheStructTagInfo.Get(hash)
 	if ok {
 		return tag, nil
 	}
-	return LoadTagNodeSlow(typ, hash)
+	return LoadTagNodeSlow(v, hash)
 }
-func LoadTagNodeSlow(typ reflect.Type, hash uint32) (*TagInfo, error) {
-	ti, err := NewStructTagInfo(typ, false, nil)
+func LoadTagNodeSlow(v reflect.Value, hash uint32) (*TagInfo, error) {
+	typ := v.Type()
+	ti, err := NewStructTagInfo(typ, false /*noBuildmap*/, nil)
 	if err != nil {
 		return nil, err
 	}
-	n := (*TagInfo)(ti)
-	n.Builder.Build()
-
-	N := (8 * 1024 / n.TypeSize) + 1
-	l := N * int(n.TypeSize)
-	n.BPool.New = func() any {
-		p := unsafe_NewArray(n.Builder.goType, N)
-		// pH := &reflect.SliceHeader{
-		pH := &SliceHeader{
-			Data: p,
-			Len:  l,
-			Cap:  l,
-		}
-		return (*[]uint8)(unsafe.Pointer(pH))
-	}
-	cacheStructTagInfo.Set(hash, n)
-	return n, nil
+	ti.Builder.Init()
+	cacheStructTagInfo.Set(hash, ti)
+	return ti, nil
 }
 
-// json.go 中有很多用完就写入 map[string] interface{} 中的，可以用 sync.pool
-
+//cache 依据 RCU(Read Copy Update) 原理实现
 type cache[T uintptr | uint32 | string | int, V any] struct {
 	m unsafe.Pointer
 }

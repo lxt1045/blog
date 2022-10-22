@@ -20,24 +20,6 @@ var bsPool = sync.Pool{New: func() any {
 	return (*[]byte)(&s)
 }}
 
-//解析 obj: {}, 或 []
-func marshalRoot(store Store) (stream []byte, err error) {
-	bs := bsPool.Get().(*[]byte)
-	if cap(*bs) < 128 {
-		bs = bsPool.New().(*[]byte)
-	}
-	stream = *bs
-	defer func() {
-		*bs = stream[len(stream):]
-		stream = stream[:len(stream):len(stream)]
-		bsPool.Put(bs)
-	}()
-
-	stream = marshalObj(stream[:0], store)
-
-	return
-}
-
 func marshalObj(in []byte, store Store) (out []byte) {
 	out = append(in, '{')
 	for _, tag := range store.tag.ChildList {
@@ -49,34 +31,6 @@ func marshalObj(in []byte, store Store) (out []byte) {
 			tag: tag,
 		})
 		out = append(out, ',')
-		// if tag.fGet != nil {
-		// 	pObj := pointerOffset(store.obj, tag.Offset)
-		// 	_, out = tag.fGet(pObj, out)
-		// 	out = append(out, ',')
-		// } else {
-		// 	switch tag.BaseKind {
-		// 	case reflect.Interface:
-		// 		pObj := pointerOffset(store.obj, tag.Offset)
-		// 		iface := *(*interface{})(pObj)
-		// 		out = marshalInterface(out, iface)
-		// 		out = append(out, ',')
-		// 	case reflect.Struct:
-		// 		pObj := pointerOffset(store.obj, tag.Offset)
-		// 		out = marshalObj(out, Store{
-		// 			obj: pObj,
-		// 			tag: tag,
-		// 		})
-		// 		out = append(out, ',')
-		// 	// case reflect.Slice, reflect.Array:
-		// 	case reflect.Slice:
-		// 		pObj := pointerOffset(store.obj, tag.Offset)
-		// 		pHeader := (*SliceHeader)(pObj)
-		// 		son := store.tag.ChildList[0]
-		// 		out = marshalSlice(out, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
-		// 		out = append(out, ',')
-		// 	}
-		// }
-
 	}
 	out[len(out)-1] = '}'
 	return
@@ -86,23 +40,19 @@ func marshalType(in []byte, store Store) (out []byte) {
 	tag := store.tag
 	out = in
 	if tag.fGet != nil {
-		// pObj := pointerOffset(store.obj, tag.Offset)
 		_, out = store.tag.fGet(store.obj, out)
 	} else {
 		switch tag.BaseKind {
 		case reflect.Interface:
-			// pObj := pointerOffset(store.obj, tag.Offset)
 			iface := *(*interface{})(store.obj)
 			out = marshalInterface(out, iface)
 		case reflect.Struct:
-			// pObj := pointerOffset(store.obj, tag.Offset)
 			out = marshalObj(out, Store{
 				obj: store.obj,
 				tag: tag,
 			})
-		// case reflect.Slice, reflect.Array:
+		// case reflect.Array:
 		case reflect.Slice:
-			// pObj := pointerOffset(store.obj, tag.Offset)
 			pHeader := (*SliceHeader)(store.obj)
 			son := store.tag.ChildList[0]
 			out = marshalSlice(out, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
@@ -171,11 +121,8 @@ func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 		out = append(out, '{')
 		l := len(out)
 		for iter.Next() {
-			// encodeReflectValue(state, iter.Key(), keyOp, keyIndir)
-			// encodeReflectValue(state, iter.Value(), elemOp, elemIndir)
 			out = marshalKey(out, iter.Key())
 			out = append(out, ':')
-			// out = marshalValue(out, iter.Value())
 			out = marshalInterface(out, iter.Value().Interface())
 			out = append(out, ',')
 		}
@@ -195,18 +142,14 @@ func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 		}
 		return
 	case reflect.Struct:
-		typ := value.Type()
-
 		prv := reflectValueToValue(&value)
 		goType := prv.typ
-		tag, ok := cacheStructTagInfo.Get(goType.Hash)
-		var err error
-		if !ok {
-			tag, err = LoadTagNodeSlow(typ, goType.Hash)
-			if err != nil {
-				return
-			}
+
+		tag, err := LoadTagNode(value, goType.Hash)
+		if err != nil {
+			return
 		}
+
 		store := Store{
 			tag: tag,
 			obj: prv.ptr, // eface.Value,
