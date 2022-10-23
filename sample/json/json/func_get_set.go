@@ -8,14 +8,14 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
-type setFunc = func(store PoolStore, bs []byte) (pBase unsafe.Pointer)
+type setFunc = func(store PoolStore, bs string) (pBase unsafe.Pointer)
 type getFunc = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte)
 
 func pointerOffset(p unsafe.Pointer, offset uintptr) (pOut unsafe.Pointer) {
 	return unsafe.Pointer(uintptr(p) + uintptr(offset))
 }
 
-func boolSet(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func boolSet(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
 	if bs[0] == 't' {
 		*(*bool)(store.obj) = true
@@ -37,7 +37,7 @@ func boolFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return boolSet, boolGet
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return boolSet(store, bs)
 	}
@@ -52,9 +52,9 @@ func boolFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func uint64Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func uint64Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	num, err := strconv.ParseUint(bytesString(bs), 10, 64)
+	num, err := strconv.ParseUint(bs, 10, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -73,7 +73,7 @@ func uint64Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return uint64Set, uint64Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return uint64Set(store, bs)
 	}
@@ -88,9 +88,9 @@ func uint64Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func int64Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func int64Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	num, err := strconv.ParseInt(bytesString(bs), 10, 64)
+	num, err := strconv.ParseInt(bs, 10, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -109,7 +109,7 @@ func int64Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return int64Set, int64Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return int64Set(store, bs)
 	}
@@ -124,9 +124,9 @@ func int64Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func uint32Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func uint32Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	num, err := strconv.ParseUint(bytesString(bs), 10, 64)
+	num, err := strconv.ParseUint(bs, 10, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -145,7 +145,7 @@ func uint32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return uint32Set, uint32Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return uint32Set(store, bs)
 	}
@@ -160,9 +160,9 @@ func uint32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func int32Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func int32Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	num, err := strconv.ParseInt(bytesString(bs), 10, 64)
+	num, err := strconv.ParseInt(bs, 10, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -181,7 +181,7 @@ func int32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return int32Set, int32Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return int32Set(store, bs)
 	}
@@ -196,9 +196,9 @@ func int32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func uint16Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func uint16Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	num, err := strconv.ParseUint(bytesString(bs), 10, 64)
+	num, err := strconv.ParseUint(bs, 10, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -217,7 +217,7 @@ func uint16Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return uint16Set, uint16Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return uint16Set(store, bs)
 	}
@@ -232,9 +232,9 @@ func uint16Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func int16Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func int16Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	num, err := strconv.ParseInt(bytesString(bs), 10, 64)
+	num, err := strconv.ParseInt(bs, 10, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -253,7 +253,7 @@ func int16Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return int16Set, int16Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return int16Set(store, bs)
 	}
@@ -268,9 +268,9 @@ func int16Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func uint8Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func uint8Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	num, err := strconv.ParseUint(bytesString(bs), 10, 64)
+	num, err := strconv.ParseUint(bs, 10, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -289,7 +289,7 @@ func uint8Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return uint8Set, uint8Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return uint8Set(store, bs)
 	}
@@ -304,9 +304,9 @@ func uint8Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func int8Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func int8Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	num, err := strconv.ParseInt(bytesString(bs), 10, 64)
+	num, err := strconv.ParseInt(bs, 10, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -325,7 +325,7 @@ func int8Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return int8Set, int8Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return int8Set(store, bs)
 	}
@@ -340,9 +340,9 @@ func int8Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func float64Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func float64Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	f, err := strconv.ParseFloat(bytesString(bs), 64)
+	f, err := strconv.ParseFloat(bs, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -360,7 +360,7 @@ func float64Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return float64Set, float64Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return float64Set(store, bs)
 	}
@@ -375,9 +375,9 @@ func float64Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func float32Set(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func float32Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	f, err := strconv.ParseFloat(bytesString(bs), 64)
+	f, err := strconv.ParseFloat(bs, 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
@@ -395,7 +395,7 @@ func float32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return float32Set, float32Get
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return float32Set(store, bs)
 	}
@@ -410,7 +410,7 @@ func float32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func stringSet(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func stringSet(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
 	*(*string)(store.obj) = *(*string)(unsafe.Pointer(&bs))
 	return
@@ -427,7 +427,7 @@ func stringFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return stringSet, stringGet
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return stringSet(store, bs)
 	}
@@ -442,16 +442,18 @@ func stringFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	return
 }
 
-func bytesSet(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+func bytesSet(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
 	pbs := (*[]byte)(store.obj)
-	*pbs = make([]byte, len(bs)*2)
-	n, err := base64.StdEncoding.Decode(*pbs, bs)
+	// *pbs = make([]byte, len(bs)*2)
+	// n, err := base64.StdEncoding.Decode(*pbs, stringBytes(bs))
+	var err error
+	*pbs, err = base64.StdEncoding.DecodeString(bs)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(bs))
 		return
 	}
-	*pbs = (*pbs)[:n]
+	// *pbs = (*pbs)[:n]
 	return
 }
 func bytesGet(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -470,7 +472,7 @@ func bytesFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
 		return bytesSet, bytesGet
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		return bytesSet(store, bs)
 	}
@@ -487,13 +489,13 @@ func bytesFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 
 func sliceFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
-		fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 			pBase = store.obj
 			return
 		}
 		return
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = store.Idx(*pidx)
 		pBase = store.obj
 		return
@@ -503,7 +505,7 @@ func sliceFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 
 func structChildFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 	if pidx != nil {
-		fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 			p := *(*unsafe.Pointer)(store.obj)
 			if p == nil {
 				store.obj = store.Idx(*pidx)
@@ -521,7 +523,7 @@ func structChildFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 // 匿名嵌入
 func anonymousStructFuncs(pidx *uintptr, offset uintptr, fSet0 setFunc, fGet0 getFunc) (fSet setFunc, fGet getFunc) {
 	if pidx == nil {
-		fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 			pSon := pointerOffset(store.obj, offset)
 			store.obj = pSon
 			return fSet0(store, bs)
@@ -532,7 +534,7 @@ func anonymousStructFuncs(pidx *uintptr, offset uintptr, fSet0 setFunc, fGet0 ge
 		}
 		return
 	}
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		store.obj = *(*unsafe.Pointer)(store.obj)
 		if store.obj == nil {
 			store.obj = store.Idx(*pidx)
@@ -550,7 +552,7 @@ func anonymousStructFuncs(pidx *uintptr, offset uintptr, fSet0 setFunc, fGet0 ge
 }
 
 func iterfaceFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		return store.obj
 	}
 	fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
@@ -560,7 +562,7 @@ func iterfaceFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 		return
 	}
 	if pidx != nil {
-		fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 			store.obj = store.Idx(*pidx)
 			return store.obj
 		}
@@ -580,14 +582,14 @@ func iterfaceFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 }
 
 func mapFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
-	fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 		p := (*map[string]interface{})(store.obj)
 		*p = make(map[string]interface{})
 		return store.obj
 	}
 
 	if pidx != nil {
-		fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 			store.obj = store.Idx(*pidx)
 			p := (*map[string]interface{})(store.obj)
 			*p = make(map[string]interface{})

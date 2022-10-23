@@ -8,7 +8,62 @@ import (
 )
 
 //Unmarshal 转成struct
-func Unmarshal(bs []byte, in interface{}) (err error) {
+func Unmarshal(bsIn []byte, in interface{}) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err1, ok := e.(*lxterrs.Code); ok {
+				err = err1
+			} else {
+				err = lxterrs.New("%+v", e)
+			}
+			return
+		}
+	}()
+	bs := bytesString(bsIn)
+	i := trimSpace(bs)
+
+	if mIn, ok := in.(*map[string]interface{}); ok {
+		if bs[i] != '{' {
+			err = fmt.Errorf("json must start with '{' or '[', %s", ErrStream(bs[i:]))
+			return
+		}
+		m, _, _ := parseMapInterface(-1, bs[i+1:])
+		*mIn = m
+		return nil
+	}
+	if _, ok := in.(*[]interface{}); ok {
+		if bs[i] != '[' {
+			err = fmt.Errorf("json must start with '{' or '[', %s", ErrStream(bs[i:]))
+			return
+		}
+		out := make([]interface{}, 0, 32)
+		parseObjToSlice(bs[i+1:], out)
+		return
+	}
+
+	vi := reflect.Indirect(reflect.ValueOf(in))
+	if !vi.CanSet() {
+		err = fmt.Errorf("%T cannot set", in)
+		return
+	}
+	prv := reflectValueToValue(&vi)
+	goType := prv.typ
+	tag, err := LoadTagNode(vi, goType.Hash)
+	if err != nil {
+		return
+	}
+
+	store := PoolStore{
+		tag:  tag,
+		obj:  prv.ptr, // eface.Value,
+		pool: tag.Builder.NewFromPool(),
+	}
+	err = parseRoot(bs[i:], store)
+	return
+}
+
+//UnmarshalString Unmarshal string
+func UnmarshalString(bs string, in interface{}) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			if err1, ok := e.(*lxterrs.Code); ok {

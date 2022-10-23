@@ -67,7 +67,7 @@ func (t *TagInfo) buildChildMap() {
 			continue
 		}
 		nodes = append(nodes, mapNode{
-			K: []byte(child.TagName),
+			K: child.TagName,
 			V: child,
 		})
 	}
@@ -79,7 +79,7 @@ func (t *TagInfo) buildChildMap() {
 	}
 }
 
-func (t *TagInfo) GetChildFromMap(key []byte) *TagInfo {
+func (t *TagInfo) GetChildFromMap(key string) *TagInfo {
 	return t.Children[string(key)]
 }
 
@@ -240,7 +240,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 		var idxP *uintptr = &[]uintptr{0}[0]
 		ti.Builder.AppendPointer(fmt.Sprintf("%s_%d", ti.TagName, i), idxP)
 		fSet, fGet := ti.fSet, ti.fGet
-		ti.fSet = func(store PoolStore, bs []byte) (pBase unsafe.Pointer) {
+		ti.fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
 			p := pointerOffset(store.pool, *idxP)
 			*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
 			store.obj = p

@@ -235,7 +235,7 @@ func TestState(t *testing.T) {
 func Test_Unmarshal_1(t *testing.T) {
 	t.Run("map", func(t *testing.T) {
 		src := `"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"`
-		raw, i, n := parseStr([]byte(src), -1)
+		raw, i, n := parseStr(src, -1)
 		t.Logf("%s, i:%d, n:%d", string(raw), i, n)
 	})
 }
@@ -582,6 +582,11 @@ func BenchmarkUnMarshalStruct(b *testing.B) {
 			"sonic-st",
 			func() {
 				sonic.UnmarshalString(str, &d)
+			},
+		},
+		{"lxt-st-string",
+			func() {
+				UnmarshalString(str, &d)
 			},
 		},
 		{"lxt-st",
@@ -1566,11 +1571,11 @@ func BenchmarkIsSpace(b *testing.B) {
 }
 
 func BenchmarkCron(b *testing.B) {
-	bss := [][]byte{
-		[]byte(":x"),
-		[]byte(": x"),
-		[]byte("    :    x"),
-		[]byte(" x"),
+	bss := []string{
+		":x",
+		": x",
+		"    :    x",
+		" x",
 	}
 	var j int
 	for x, bs := range bss {

@@ -1,17 +1,17 @@
 package json
 
 import (
-	"bytes"
 	"strconv"
+	"strings"
 
 	lxterrs "github.com/lxt1045/errors"
 )
 
-type unmFunc = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int)
+type unmFunc = func(idxSlash int, store PoolStore, stream string) (i, iSlash int)
 type mFunc = func(store Store, in []byte) (out []byte)
 
 func boolMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 		iSlash = idxSlash
 		if stream[0] == 't' && stream[i+1] == 'r' && stream[i+2] == 'u' && stream[i+3] == 'e' {
 			i = 4
@@ -37,14 +37,14 @@ func boolMFuncs() (fUnm unmFunc, fM mFunc) {
 	return
 }
 
-func float64UnmFuncs(stream []byte) (f float64, i int) {
+func float64UnmFuncs(stream string) (f float64, i int) {
 	for ; i < len(stream); i++ {
 		c := stream[i]
 		if spaceTable[c] || c == ']' || c == '}' || c == ',' {
 			break
 		}
 	}
-	f, err := strconv.ParseFloat(bytesString(stream[:i]), 64)
+	f, err := strconv.ParseFloat(stream[:i], 64)
 	if err != nil {
 		err = lxterrs.Wrap(err, ErrStream(stream[:i]))
 		panic(err)
@@ -53,7 +53,7 @@ func float64UnmFuncs(stream []byte) (f float64, i int) {
 }
 
 func numMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 		iSlash = idxSlash
 		for ; i < len(stream); i++ {
 			c := stream[i]
@@ -73,7 +73,7 @@ func numMFuncs() (fUnm unmFunc, fM mFunc) {
 	return
 }
 
-func structMFuncsStatus1(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
+func structMFuncsStatus1(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 	i++
 	store.obj = pointerOffset(store.obj, store.tag.Offset)
 	if store.tag.fSet != nil {
@@ -85,7 +85,7 @@ func structMFuncsStatus1(idxSlash int, store PoolStore, stream []byte) (i, iSlas
 }
 
 func structMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
 			iSlash = idxSlash
@@ -109,7 +109,7 @@ func structMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
 			iSlash = idxSlash
@@ -134,15 +134,15 @@ func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
 	return
 }
 func stringMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
 			iSlash = idxSlash
 			return
 		}
-		var raw []byte
+		var raw string
 		{
-			i = bytes.IndexByte(stream[1:], '"')
+			i = strings.IndexByte(stream[1:], '"')
 			if i >= 0 && idxSlash > i+1 {
 				i++
 				raw = stream[1:i]
@@ -165,7 +165,7 @@ func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 }
 
 func interfaceMFuncs() (fUnm unmFunc, fM mFunc) {
-	fUnm = func(idxSlash int, store PoolStore, stream []byte) (i, iSlash int) {
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
 			iSlash = idxSlash

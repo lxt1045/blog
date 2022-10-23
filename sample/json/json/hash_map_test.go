@@ -23,16 +23,12 @@ func Test_getPivotMask(t *testing.T) {
 	for i := 0; i < 256; i++ {
 		keys = append(keys, getRandStr(rand.Intn(18)+2))
 	}
-	bsList := [][]byte{}
-	for _, k := range keys {
-		bsList = append(bsList, []byte(k))
-	}
 
 	lens := []int{8, 16, 32, 64, 128, 256}
 	for _, l := range lens {
 		name := fmt.Sprintf("getPivotMask-%d", l)
 		t.Run(name, func(t *testing.T) {
-			m := getPivotMask(bsList[:l])
+			m := getPivotMask(keys[:l])
 			// t.Logf("l:%d, len:%d, m: %+v", l, len(m), m)
 			t.Logf("l:%d, len:%d", l, len(m))
 		})
@@ -45,10 +41,6 @@ func Test_getPivotMask2(t *testing.T) {
 	for i := 0; i < 160; i++ {
 		keys = append(keys, getRandStr(rand.Intn(10)+5))
 	}
-	bsList := [][]byte{}
-	for _, k := range keys {
-		bsList = append(bsList, []byte(k))
-	}
 
 	lens := []int{
 		8,
@@ -57,7 +49,7 @@ func Test_getPivotMask2(t *testing.T) {
 	for _, l := range lens {
 		name := fmt.Sprintf("getPivotMask-%d", l)
 		t.Run(name, func(t *testing.T) {
-			m := getPivotMask(bsList[:l])
+			m := getPivotMask(keys[:l])
 			t.Logf("l:%d, len:%d, m: %+v", l, len(m), m)
 		})
 	}
@@ -82,10 +74,6 @@ func Test_logicalHash_new(t *testing.T) {
 	for i := 0; i < 160; i++ {
 		keys = append(keys, getRandStr(rand.Intn(10)+5))
 	}
-	bsList := [][]byte{}
-	for _, k := range keys {
-		bsList = append(bsList, []byte(k))
-	}
 
 	lens := []int{
 		8,
@@ -94,17 +82,17 @@ func Test_logicalHash_new(t *testing.T) {
 	for _, l := range lens {
 		name := fmt.Sprintf("getPivotMask-%d", l)
 		t.Run(name, func(t *testing.T) {
-			m, _ := logicalHash(bsList[:l])
+			m, _ := logicalHash(keys[:l])
 			t.Logf("l:%d, len:%d, m: %+v", l, len(m), m)
 			// t.Logf("l:%d, len:%d", l, len(m))
 
 			exist := map[int]string{}
-			for _, bs := range bsList[:l] {
+			for _, bs := range keys[:l] {
 				idx := hash(bs, m)
 				if _, ok := exist[idx]; !ok {
 					exist[idx] = string(bs)
 				} else {
-					PrintKeys(bsList[:l])
+					PrintKeys(keys[:l])
 					t.Fatalf("insert_key:%s, idx:%d, exist:%+v", string(bs), idx, exist)
 				}
 			}
@@ -138,11 +126,6 @@ func Benchmark_getPivotMask(b *testing.B) {
 	for i := 0; i < 160; i++ {
 		keys = append(keys, getRandStr(rand.Intn(18)+2))
 	}
-	bsList := [][]byte{}
-	for _, k := range keys {
-		bsList = append(bsList, []byte(k))
-	}
-
 	lens := []int{8, 16, 32, 64, 128}
 	// lens = []int{8, 64, 128}
 	// lens = []int{128}
@@ -152,7 +135,7 @@ func Benchmark_getPivotMask(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				getPivotMask(bsList[:l])
+				getPivotMask(keys[:l])
 			}
 			b.StopTimer()
 			b.SetBytes(int64(b.N))
@@ -180,7 +163,7 @@ func Test_divide(t *testing.T) {
 	ns := []mapNode{}
 	for _, k := range keys {
 		ns = append(ns, mapNode{
-			K: []byte(k),
+			K: k,
 			V: &TagInfo{},
 		})
 	}
@@ -190,11 +173,11 @@ func Test_divide(t *testing.T) {
 
 }
 func Test_logicalHash(t *testing.T) {
-	bsList := [][]byte{
-		[]byte("111"),
-		[]byte("122"),
-		[]byte("333"),
-		[]byte("433"),
+	bsList := []string{
+		"111",
+		"122",
+		"333",
+		"433",
 	}
 	idxList, _ := logicalHash(bsList)
 	t.Logf("%+v", idxList)
@@ -224,7 +207,7 @@ func Test_buildMap(t *testing.T) {
 	}
 	for _, k := range keys {
 		ns = append(ns, mapNode{
-			K: []byte(k),
+			K: k,
 			V: &TagInfo{},
 		})
 	}
@@ -252,14 +235,10 @@ func Benchmark_buildMap(b *testing.B) {
 	for i := 0; i < 16; i++ {
 		keys = append(keys, getRandStr(rand.Intn(20)+5))
 	}
-	bsList := [][]byte{}
-	for _, k := range keys {
-		bsList = append(bsList, []byte(k))
-	}
 	ns := []mapNode{}
 	for _, k := range keys {
 		ns = append(ns, mapNode{
-			K: []byte(k),
+			K: k,
 			V: &TagInfo{},
 		})
 	}
@@ -275,10 +254,10 @@ func Benchmark_buildMap(b *testing.B) {
 	runtime.GC()
 
 	b.Run("TagMapGetV", func(b *testing.B) {
-		NN := (b.N * 100) / len(bsList)
+		NN := (b.N * 100) / len(keys)
 		p := &m
 		for i := 0; i < NN; i++ {
-			for _, k := range bsList {
+			for _, k := range keys {
 				v := TagMapGetV3(p, k)
 				if v == nil {
 					b.Fatalf("[%s] not found", string(k))
@@ -295,9 +274,9 @@ func Benchmark_buildMap(b *testing.B) {
 	n := ns[len(ns)/2]
 	for x := 0; x < 2; x++ {
 		b.Run("Get", func(b *testing.B) {
-			NN := (b.N * 100) / len(bsList)
+			NN := (b.N * 100) / len(keys)
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					v := m.Get(k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(n.K))
@@ -306,9 +285,9 @@ func Benchmark_buildMap(b *testing.B) {
 			}
 		})
 		b.Run("Get2", func(b *testing.B) {
-			NN := (b.N * 100) / len(bsList)
+			NN := (b.N * 100) / len(keys)
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					v := m.Get2(k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(n.K))
@@ -317,9 +296,9 @@ func Benchmark_buildMap(b *testing.B) {
 			}
 		})
 		b.Run("Get3", func(b *testing.B) {
-			NN := (b.N * 100) / len(bsList)
+			NN := (b.N * 100) / len(keys)
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					v := m.Get3(k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(n.K))
@@ -328,10 +307,10 @@ func Benchmark_buildMap(b *testing.B) {
 			}
 		})
 		b.Run("TagMapGetV", func(b *testing.B) {
-			NN := (b.N * 100) / len(bsList)
+			NN := (b.N * 100) / len(keys)
 			p := &m
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					v := TagMapGetV(p, k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(n.K))
@@ -340,10 +319,10 @@ func Benchmark_buildMap(b *testing.B) {
 			}
 		})
 		b.Run("TagMapGetV3", func(b *testing.B) {
-			NN := (b.N * 100) / len(bsList)
+			NN := (b.N * 100) / len(keys)
 			p := &m
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					v := TagMapGetV3(p, k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(n.K))
@@ -353,7 +332,7 @@ func Benchmark_buildMap(b *testing.B) {
 		})
 		// return
 		b.Run("map", func(b *testing.B) {
-			NN := (b.N * 100) / len(bsList)
+			NN := (b.N * 100) / len(keys)
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
 					v := mm[k]
@@ -403,14 +382,10 @@ func Benchmark_hash(b *testing.B) {
 	for i := 0; i < 10; i++ {
 		keys = append(keys, getRandStr(rand.Intn(20)+5))
 	}
-	bsList := [][]byte{}
-	for _, k := range keys {
-		bsList = append(bsList, []byte(k))
-	}
 	ns := []mapNode{}
 	for _, k := range keys {
 		ns = append(ns, mapNode{
-			K: []byte(k),
+			K: k,
 			V: &TagInfo{},
 		})
 	}
@@ -429,7 +404,7 @@ func Benchmark_hash(b *testing.B) {
 		b.Run("hash", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					_ = hash(k, m.idxN)
 				}
 			}
@@ -437,7 +412,7 @@ func Benchmark_hash(b *testing.B) {
 		b.Run("hash2", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					_ = hash2(k, m.idxNTable, m.idxN)
 				}
 			}
@@ -445,7 +420,7 @@ func Benchmark_hash(b *testing.B) {
 		b.Run("hash3", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					_ = hash3(k, m.idxNTable, m.idxN2)
 				}
 			}
@@ -453,7 +428,7 @@ func Benchmark_hash(b *testing.B) {
 		b.Run("hash4", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					_ = hash4(k, m.idxNTable, m.idxN2)
 				}
 			}
@@ -461,7 +436,7 @@ func Benchmark_hash(b *testing.B) {
 		b.Run("hash5", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					_ = hash5(k, m.idxNTable, m.idxN2)
 				}
 			}
@@ -469,7 +444,7 @@ func Benchmark_hash(b *testing.B) {
 		b.Run("range", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					for range k {
 					}
 				}
@@ -489,7 +464,7 @@ func Benchmark_hash(b *testing.B) {
 			NN := b.N * 100
 			p := &m
 			for i := 0; i < NN; i++ {
-				for _, k := range bsList {
+				for _, k := range keys {
 					v := TagMapGetV3(p, k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(k))

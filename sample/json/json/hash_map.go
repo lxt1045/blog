@@ -1,7 +1,6 @@
 package json
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"math"
@@ -106,7 +105,7 @@ var allMask = func() (allMask []byte) {
 	return
 }()
 
-func PrintMask(allMask []byte) {
+func PrintMask(allMask string) {
 	str := "PrintMask:\n"
 	for _, b := range allMask {
 		str += fmt.Sprintf("%3d:%08b\n", b, b)
@@ -126,55 +125,55 @@ type tagMap struct {
 	N         int
 }
 type mapNode struct {
-	K []byte
+	K string
 	V *TagInfo
 }
 
-func TagMapGetV(m *tagMap, k []byte) (v *TagInfo) {
+func TagMapGetV(m *tagMap, k string) (v *TagInfo) {
 	idx := hash2(k, m.idxNTable, m.idxN)
 	n := m.S[idx]
-	if bytes.Equal(k, n.K) {
+	if k == n.K {
 		return n.V
 	}
 	return
 }
-func TagMapGetV3(m *tagMap, k []byte) (v *TagInfo) {
+func TagMapGetV3(m *tagMap, k string) (v *TagInfo) {
 	idx := hash3(k, m.idxNTable, m.idxN2)
 	n := m.S[idx]
-	if bytes.Equal(k, n.K) {
+	if k == n.K {
 		return n.V
 	}
 	return
 }
 
-func (m *tagMap) GetV(k []byte) (v *TagInfo) {
+func (m *tagMap) GetV(k string) (v *TagInfo) {
 	idx := hash2(k, m.idxNTable, m.idxN)
 	n := m.S[idx]
-	if bytes.Equal(k, n.K) {
+	if k == n.K {
 		return n.V
 	}
 	return
 }
-func (m *tagMap) Get(k []byte) (v *TagInfo) {
+func (m *tagMap) Get(k string) (v *TagInfo) {
 	idx := hash(k, m.idxN)
 	n := m.S[idx]
-	if bytes.Equal(k, n.K) {
+	if k == n.K {
 		return n.V
 	}
 	return
 }
-func (m *tagMap) Get2(k []byte) (v *TagInfo) {
+func (m *tagMap) Get2(k string) (v *TagInfo) {
 	idx := hash2(k, m.idxNTable, m.idxN)
 	n := m.S[idx]
-	if bytes.Equal(k, n.K) {
+	if k == n.K {
 		return n.V
 	}
 	return
 }
-func (m *tagMap) Get3(k []byte) (v *TagInfo) {
+func (m *tagMap) Get3(k string) (v *TagInfo) {
 	idx := hash3(k, m.idxNTable, m.idxN2)
 	n := m.S[idx]
-	if bytes.Equal(k, n.K) {
+	if k == n.K {
 		return n.V
 	}
 	return
@@ -207,7 +206,7 @@ func (m *tagMap) String() (str string) {
 	}
 	return
 }
-func PrintKeys(bsList [][]byte) {
+func PrintKeys(bsList []string) {
 	str := "\nbsList:\n"
 	for i := 0; i < 128; i++ {
 		if i%10 == 0 {
@@ -231,7 +230,7 @@ func PrintKeys(bsList [][]byte) {
 // 贪婪算法？全遍历？
 // key 带上最后一个 " 以便于比较（第一个也可以带上）
 func buildTagMap(nodes []mapNode) (m tagMap) {
-	bsList := make([][]byte, 0, len(nodes))
+	bsList := make([]string, 0, len(nodes))
 	for _, n := range nodes {
 		bsList = append(bsList, n.K)
 	}
@@ -242,7 +241,7 @@ func buildTagMap(nodes []mapNode) (m tagMap) {
 	m.idxN, idxs = logicalHash(bsList)
 	for _, idx := range m.idxN {
 		m.idxN2 = append(m.idxN2, iN2{
-			iByte: int16(idx.iByte), // []byte的偏移量
+			iByte: int16(idx.iByte), // string的偏移量
 			i:     int16(idx.i),
 			iBit:  int16(idx.iBit),
 			mask:  idx.mask,
@@ -263,7 +262,7 @@ func buildTagMap(nodes []mapNode) (m tagMap) {
 	for _, n := range nodes {
 		// idx := hash(n.K, m.idxNTable, m.idxN)
 		idx := hash(n.K, m.idxN)
-		if nn := m.S[idx]; len(nn.K) > 0 && !bytes.Equal(nn.K, n.K) {
+		if nn := m.S[idx]; len(nn.K) > 0 && nn.K != n.K {
 			PrintKeys(bsList)
 			log.Printf("tagMap:%s", m.String())
 			err := lxterrs.New("buildTagMap: key collision; %s: %s, idxRet:%+v",
@@ -279,7 +278,7 @@ func buildTagMap(nodes []mapNode) (m tagMap) {
 }
 
 type iN struct {
-	iByte   int // []byte的偏移量
+	iByte   int // string的偏移量
 	mask    byte
 	iBit    int
 	i       int
@@ -288,7 +287,7 @@ type iN struct {
 }
 
 type iN2 struct {
-	iByte int16 // []byte的偏移量
+	iByte int16 // string的偏移量
 	i     int16
 	iBit  int16
 	mask  byte
@@ -308,7 +307,7 @@ type Mask struct {
 // 01234567891123456789212345678931234567894123456789512345678961234567897123456789812345678991234567891012345678911123456789121234567
 // 00100010 01101110 01100001 01101101 01100101 00100010:"name"
 // 00100010 01100001 01110110 01100001 01110100 011000010111001000100010:"avatar"
-func logicalHash(bsList [][]byte) (idxN []iN, idxRet []int) {
+func logicalHash(bsList []string) (idxN []iN, idxRet []int) {
 	if len(bsList) <= 1 {
 		idxN = []iN{{
 			iByte: 0, // key 的偏移量
@@ -338,7 +337,7 @@ func logicalHash(bsList [][]byte) (idxN []iN, idxRet []int) {
 // 通过染色方式来表达是否已分区，比如 1 3 5 给打个 x 标签，当前有 n 个标签（即 n 个区），下一次 13 的标签变成 y，则就变成了 n+1 个区块了；
 // 简单的按区来 进行两层遍历就好了！！！ 完美
 
-func getPivotMask1(bsList [][]byte) (ms []Mask) {
+func getPivotMask1(bsList []string) (ms []Mask) {
 	lMax := len(bsList[0])
 	for _, bs := range bsList {
 		if lMax < len(bs) {
@@ -485,7 +484,7 @@ outfor:
 /*
 先计算出所有 BlockNew.list 然后存为 bitmap，之后再利用递归对边区分度
 */
-func getPivotMask(bsList [][]byte) (ms []Mask) {
+func getPivotMask(bsList []string) (ms []Mask) {
 	lMax := len(bsList[0])
 	for _, bs := range bsList {
 		if lMax < len(bs) {
@@ -641,7 +640,7 @@ func getHashParam(idxN []iN) (idxNTable []int16) {
 	return
 }
 
-func hash(key []byte, idxN []iN) (idx int) {
+func hash(key string, idxN []iN) (idx int) {
 	for _, x := range idxN {
 		if x.iByte >= len(key) {
 			break
@@ -653,7 +652,7 @@ func hash(key []byte, idxN []iN) (idx int) {
 	return
 }
 
-func hash2(key []byte, idxNTable []int16, idxN []iN) (idx int) {
+func hash2(key string, idxNTable []int16, idxN []iN) (idx int) {
 	n := idxNTable[len(key)]
 	for _, x := range idxN[:n] {
 		if (x.mask & key[x.iByte]) == x.mask {
@@ -671,7 +670,7 @@ func hash2(key []byte, idxNTable []int16, idxN []iN) (idx int) {
 	return
 }
 
-func hash3(key []byte, idxNTable []int16, idxN []iN2) (idx int16) {
+func hash3(key string, idxNTable []int16, idxN []iN2) (idx int16) {
 	n := idxNTable[len(key)]
 	for _, x := range idxN[:n] {
 		if (x.mask & key[x.iByte]) == x.mask {
@@ -690,7 +689,7 @@ func hash3(key []byte, idxNTable []int16, idxN []iN2) (idx int16) {
 }
 
 // 参考 /usr/local/go/src/runtime/hash64.go: memhashFallback 函数
-func hash4(key []byte, idxNTable []int16, idxN []iN2) (idx int) {
+func hash4(key string, idxNTable []int16, idxN []iN2) (idx int) {
 	n := idxNTable[len(key)]
 	for _, x := range idxN[:n] {
 		// zero := (x.mask & key[x.iByte]) ^ x.mask
@@ -718,7 +717,7 @@ func byte2bit(b, mask byte) (one byte) {
 }
 
 //*
-func hash5(key []byte, idxNTable []int16, idxN []iN2) (idx int) {
+func hash5(key string, idxNTable []int16, idxN []iN2) (idx int) {
 	n := idxNTable[len(key)]
 	switch {
 	case n == 16:

@@ -32,6 +32,10 @@ func reflectValueToValue(v *reflect.Value) *Value {
 func bytesString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
+
+func stringBytes(str string) []byte {
+	return (*(*[]byte)(unsafe.Pointer(&str)))[:len(str):len(str)]
+}
 func bytesCopyToString(b []byte, str *string) {
 	*str = *(*string)(unsafe.Pointer(&b))
 }

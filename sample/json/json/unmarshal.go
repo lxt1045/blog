@@ -1,11 +1,11 @@
 package json
 
 import (
-	"bytes"
 	"errors"
 	"math"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -14,7 +14,7 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
-func ErrStream(stream []byte) string {
+func ErrStream(stream string) string {
 	if len(stream[:]) > 128 {
 		stream = stream[:128]
 	}
@@ -26,14 +26,14 @@ var spaceTable = [256]bool{
 	'\t': true, '\n': true, '\v': true, '\f': true, '\r': true, ' ': true, 0x85: true, 0xA0: true,
 }
 
-func trimSpace(stream []byte) (i int) {
+func trimSpace(stream string) (i int) {
 	for ; spaceTable[stream[i]]; i++ {
 	}
 	return
 }
 
 // 为了 inline 部门共用逻辑让调用者完成; 逻辑 解析：冒号 和 逗号 等单字符
-func parseByte(stream []byte, b byte) (i, n int) {
+func parseByte(stream string, b byte) (i, n int) {
 	for ; ; i++ {
 		if stream[i] == b {
 			n++
@@ -44,7 +44,7 @@ func parseByte(stream []byte, b byte) (i, n int) {
 		}
 	}
 }
-func parseByte0(stream []byte, b byte) (i, n int) {
+func parseByte0(stream string, b byte) (i, n int) {
 loop:
 	if stream[i] == b {
 		n++
@@ -58,20 +58,20 @@ loop:
 	goto loop
 }
 
-func parseObjToSlice(stream []byte, s []interface{}) (i int) {
+func parseObjToSlice(stream string, s []interface{}) (i int) {
 	return 0
 }
 
-func bsToStr(bs []byte) string {
+func bsToStr(bs string) string {
 	return *(*string)(unsafe.Pointer(&bs))
 }
 
 // 解析 {}
-// func parseObj(sts status, stream []byte, store PoolStore,  tag *TagInfo) (i int) {
-func parseObj(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
+// func parseObj(sts status, stream string, store PoolStore,  tag *TagInfo) (i int) {
+func parseObj(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
 	n, nB := 0, 0
-	key := []byte{}
+	key := ""
 	i += trimSpace(stream[i:])
 	if stream[i] == '}' {
 		i++
@@ -82,7 +82,7 @@ func parseObj(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 		{
 			// 手动内联
 			start := i
-			n = bytes.IndexByte(stream[i+1:], '"')
+			n = strings.IndexByte(stream[i+1:], '"')
 			if n >= 0 {
 				i += n + 2
 				key = stream[start:i]
@@ -137,7 +137,7 @@ func parseObj(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 }
 
 type pair struct {
-	k []byte
+	k string
 	v interface{}
 }
 
@@ -149,10 +149,10 @@ var pairPool = sync.Pool{
 }
 
 // TODO: ti 中存下 map 的 len，方便下次 make，通过 key 来存？
-func parseMapInterface(idxSlash int, stream []byte) (m map[string]interface{}, i, iSlash int) {
+func parseMapInterface(idxSlash int, stream string) (m map[string]interface{}, i, iSlash int) {
 	iSlash = idxSlash
 	n, nB := 0, 0
-	key := []byte{}
+	key := ""
 	// m = *mapCache.Get() //map 和 interface 一起获取，合并两次损耗为一次
 	// m = make(map[string]interface{})
 	// value := interfaceCache.Get()
@@ -165,7 +165,7 @@ func parseMapInterface(idxSlash int, stream []byte) (m map[string]interface{}, i
 		i += trimSpace(stream[i:])
 		{
 			i++
-			n = bytes.IndexByte(stream[i:], '"')
+			n = strings.IndexByte(stream[i:], '"')
 			if n >= 0 {
 				n += i
 				key = stream[i:n]
@@ -210,7 +210,7 @@ var poolSliceInterface = sync.Pool{New: func() any {
 	return make([]interface{}, 1024)
 }}
 
-func parseSliceInterface(idxSlash int, stream []byte) (s []interface{}, i, iSlash int) {
+func parseSliceInterface(idxSlash int, stream string) (s []interface{}, i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
 	var value interface{}
@@ -236,7 +236,7 @@ func parseSliceInterface(idxSlash int, stream []byte) (s []interface{}, i, iSlas
 		}
 	}
 }
-func parseSlice(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
+func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
 	store.obj = pointerOffset(store.obj, store.tag.Offset)
@@ -314,7 +314,7 @@ func parseSlice(idxSlash int, stream []byte, store PoolStore) (i, iSlash int) {
 }
 
 // key 后面的单元: Num, str, bool, slice, obj, null
-func parseInterface(idxSlash int, stream []byte, p *interface{}) (i, iSlash int) {
+func parseInterface(idxSlash int, stream string, p *interface{}) (i, iSlash int) {
 	iSlash = idxSlash
 	// i = trimSpace(stream)
 	switch stream[0] {
@@ -370,7 +370,7 @@ func parseInterface(idxSlash int, stream []byte, p *interface{}) (i, iSlash int)
 		*p = false
 		return
 	case '"':
-		var raw []byte
+		var raw string
 		//
 		raw, i, iSlash = parseStr(stream, iSlash)
 		// *p = bytesString(raw)
@@ -414,10 +414,10 @@ var stringPool = sync.Pool{
 	},
 }
 
-func parseEmptyObjSlice(stream []byte, bLeft, bRight byte) (i int) {
-	indexQuote := func(stream []byte, i int) int {
+func parseEmptyObjSlice(stream string, bLeft, bRight byte) (i int) {
+	indexQuote := func(stream string, i int) int {
 		for {
-			iDQuote := bytes.IndexByte(stream[i:], '"')
+			iDQuote := strings.IndexByte(stream[i:], '"')
 			if iDQuote < 0 {
 				return math.MaxInt32
 			}
@@ -436,9 +436,9 @@ func parseEmptyObjSlice(stream []byte, bLeft, bRight byte) (i int) {
 		}
 	}
 	i++
-	nBrace := 0                                   // " 和 {
-	iBraceL := bytes.IndexByte(stream[i:], bLeft) //通过 ’“‘ 的 idx 来确定'{' '}' 是否在字符串中
-	iBraceR := bytes.IndexByte(stream[i:], bRight)
+	nBrace := 0                                     // " 和 {
+	iBraceL := strings.IndexByte(stream[i:], bLeft) //通过 ’“‘ 的 idx 来确定'{' '}' 是否在字符串中
+	iBraceR := strings.IndexByte(stream[i:], bRight)
 	if iBraceL < 0 {
 		iBraceL = math.MaxInt32 // 保证 +i 后不会溢出
 	}
@@ -466,7 +466,7 @@ func parseEmptyObjSlice(stream []byte, bLeft, bRight byte) (i int) {
 				}
 				nBrace--
 				iBraceR++
-				iBraceRNew := bytes.IndexByte(stream[iBraceR:], bRight)
+				iBraceRNew := strings.IndexByte(stream[iBraceR:], bRight)
 				if iBraceRNew < 0 {
 					iBraceRNew = math.MaxInt32
 				}
@@ -474,7 +474,7 @@ func parseEmptyObjSlice(stream []byte, bLeft, bRight byte) (i int) {
 				continue
 			} else {
 				// ']'在中间区间
-				iBraceR = bytes.IndexByte(stream[iDQuoteR:], bRight)
+				iBraceR = strings.IndexByte(stream[iDQuoteR:], bRight)
 				if iBraceR < 0 {
 					iBraceR = math.MaxInt32
 				}
@@ -494,7 +494,7 @@ func parseEmptyObjSlice(stream []byte, bLeft, bRight byte) (i int) {
 				// ']'在左区间
 				nBrace++
 				iBraceL++
-				iBraceLNew := bytes.IndexByte(stream[iBraceL:], bLeft) //通过 ’“‘ 的 idx 来确定'{' '}' 是否在字符串中
+				iBraceLNew := strings.IndexByte(stream[iBraceL:], bLeft) //通过 ’“‘ 的 idx 来确定'{' '}' 是否在字符串中
 				if iBraceLNew < 0 {
 					iBraceLNew = math.MaxInt32 // 保证 +i 后不会溢出
 				}
@@ -502,7 +502,7 @@ func parseEmptyObjSlice(stream []byte, bLeft, bRight byte) (i int) {
 				continue
 			} else {
 				// ']'在中间区间
-				iBraceL = bytes.IndexByte(stream[iDQuoteR:], bLeft)
+				iBraceL = strings.IndexByte(stream[iDQuoteR:], bLeft)
 				if iBraceL < 0 {
 					iBraceL = math.MaxInt32
 				}
@@ -515,7 +515,7 @@ func parseEmptyObjSlice(stream []byte, bLeft, bRight byte) (i int) {
 }
 
 // key 后面的单元: Num, str, bool, slice, obj, null
-func parseEmpty(stream []byte) (i int) {
+func parseEmpty(stream string) (i int) {
 	//TODO 通过 IndexByte 的方式快速跳过； 在下一层处理，这里 设为 nil
 	// 如果是 其他： 找 ','
 	// 如果是obj: 1. 找 ’}‘; 2. 找'{'； 3. 如果 2 比 1 小则循环 1 2
@@ -564,7 +564,7 @@ func parseEmpty(stream []byte) (i int) {
 	case '"':
 		i++
 		for {
-			iDQuote := bytes.IndexByte(stream[i:], '"')
+			iDQuote := strings.IndexByte(stream[i:], '"')
 			i += iDQuote // 指向 '"'
 			if stream[i-1] == '\\' {
 				j := i - 2
@@ -587,8 +587,8 @@ type status struct {
 }
 
 //解析 obj: {}, 或 []
-func parseRoot(stream []byte, store PoolStore) (err error) {
-	idxSlash := bytes.IndexByte(stream[1:], '\\')
+func parseRoot(stream string, store PoolStore) (err error) {
+	idxSlash := strings.IndexByte(stream[1:], '\\')
 	if idxSlash < 0 {
 		idxSlash = math.MaxInt
 	}
@@ -603,9 +603,9 @@ func parseRoot(stream []byte, store PoolStore) (err error) {
 	return
 }
 
-func parseStr(stream []byte, nextSlashIdx int) (raw []byte, i, nextSlashIdxOut int) {
+func parseStr(stream string, nextSlashIdx int) (raw string, i, nextSlashIdxOut int) {
 	// TODO: 专业抄，把 '"' 提前准备好，少了个几步，也能快很多了
-	i = bytes.IndexByte(stream[1:], '"')
+	i = strings.IndexByte(stream[1:], '"')
 	if i >= 0 && nextSlashIdx > i+1 {
 		i++
 		raw = stream[1:i]
@@ -617,10 +617,10 @@ func parseStr(stream []byte, nextSlashIdx int) (raw []byte, i, nextSlashIdxOut i
 	return parseUnescapeStr(stream, i, nextSlashIdx)
 }
 
-func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdxIn int) (raw []byte, i, nextSlashIdx int) {
+func parseUnescapeStr(stream string, nextQuotesIdx, nextSlashIdxIn int) (raw string, i, nextSlashIdx int) {
 	nextSlashIdx = nextSlashIdxIn
 	if nextSlashIdx < 0 {
-		nextSlashIdx = bytes.IndexByte(stream[1:], '\\')
+		nextSlashIdx = strings.IndexByte(stream[1:], '\\')
 		if nextSlashIdx < 0 {
 			nextSlashIdx = math.MaxInt
 			i += nextQuotesIdx
@@ -639,7 +639,7 @@ func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdxIn int) (raw []b
 				}
 				if (i-j)%2 == 0 {
 					i++
-					nextQuotesIdx = bytes.IndexByte(stream[i:], '"')
+					nextQuotesIdx = strings.IndexByte(stream[i:], '"')
 					continue
 				}
 			}
@@ -656,27 +656,28 @@ func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdxIn int) (raw []b
 		return
 	}
 	lastIdx := 0
+	var bs []byte
 	for {
 		i = nextSlashIdx
 		word, wordSize := unescapeStr(stream[i:])
-		if len(raw) == 0 {
-			raw = make([]byte, 0, nextQuotesIdx)
-			raw = append(raw[:0], stream[1:i]...) //新建 []byte 避免修改员 stream
+		if len(bs) == 0 {
+			bs = make([]byte, 0, nextQuotesIdx)
+			bs = append(bs[:0], stream[1:i]...) //新建 string 避免修改员 stream
 		} else if lastIdx < i {
-			raw = append(raw, stream[lastIdx:i]...)
+			bs = append(bs, stream[lastIdx:i]...)
 		}
-		raw = append(raw, word...)
+		bs = append(bs, word...)
 		i += wordSize
 		lastIdx = i
 		if word[0] == '"' {
-			nextQuotesIdx = bytes.IndexByte(stream[i:], '"')
+			nextQuotesIdx = strings.IndexByte(stream[i:], '"')
 			if nextQuotesIdx < 0 {
 				panic(string(stream[i:]))
 			}
 			nextQuotesIdx += i
 		}
 
-		nextSlashIdx = bytes.IndexByte(stream[i:], '\\')
+		nextSlashIdx = strings.IndexByte(stream[i:], '\\')
 		if nextSlashIdx < 0 {
 			nextSlashIdx = math.MaxInt
 			break
@@ -686,14 +687,14 @@ func parseUnescapeStr(stream []byte, nextQuotesIdx, nextSlashIdxIn int) (raw []b
 			break
 		}
 	}
-	raw = append(raw, stream[lastIdx:nextQuotesIdx]...)
-	return raw, nextQuotesIdx + 1, nextSlashIdx
+	bs = append(bs, stream[lastIdx:nextQuotesIdx]...)
+	return bytesString(bs), nextQuotesIdx + 1, nextSlashIdx
 }
 
 // unescape unescapes a string
 //“\\”、“\"”、“\/”、“\b”、“\f”、“\n”、“\r”、“\t”
 // \u后面跟随4位16进制数字: "\uD83D\uDE02"
-func unescapeStr(raw []byte) (word []byte, size int) {
+func unescapeStr(raw string) (word []byte, size int) {
 	// i==0是 '\\', 所以从1开始
 	switch raw[1] {
 	case '\\':
@@ -744,7 +745,7 @@ func unescapeStr(raw []byte) (word []byte, size int) {
 }
 
 // runeit returns the rune from the the \uXXXX
-func unescapeToRune(raw []byte) rune {
+func unescapeToRune(raw string) rune {
 	n, err := strconv.ParseUint(string(raw), 16, 64)
 	if err != nil {
 		panic(errors.New("err:" + err.Error() + ",ncorrect format: " + string(raw)))
