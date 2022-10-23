@@ -32,7 +32,8 @@ func trimSpace(stream string) (i int) {
 	return
 }
 
-// 为了 inline 部门共用逻辑让调用者完成; 逻辑 解析：冒号 和 逗号 等单字符
+// 为了 inline 部分共用逻辑让调用者完成; 逻辑 解析：冒号 和 逗号 等单字符
+// n 表示在空字符串中找到多少个 b
 func parseByte(stream string, b byte) (i, n int) {
 	for ; ; i++ {
 		if stream[i] == b {
@@ -62,27 +63,22 @@ func parseObjToSlice(stream string, s []interface{}) (i int) {
 	return 0
 }
 
-func bsToStr(bs string) string {
-	return *(*string)(unsafe.Pointer(&bs))
-}
-
 // 解析 {}
 // func parseObj(sts status, stream string, store PoolStore,  tag *TagInfo) (i int) {
 func parseObj(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
-	n, nB := 0, 0
-	key := ""
 	i += trimSpace(stream[i:])
 	if stream[i] == '}' {
 		i++
 		return
 	}
+	n, nB := 0, 0
+	key := ""
 	for {
-		// 解析 key: key不需要转义，因为在解析 struct 的时候会提供转义和不转义两种形式
+		// 手动内联
 		{
-			// 手动内联
 			start := i
-			n = strings.IndexByte(stream[i+1:], '"')
+			n = strings.IndexByte(stream[i+1:], '"') // 默认 stream[i] == '"'， 不做检查
 			if n >= 0 {
 				i += n + 2
 				key = stream[start:i]
@@ -94,9 +90,7 @@ func parseObj(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 		if nB != 1 {
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
-		// 解析 value
-		// son := store.tag.GetChild(key)
-		// son := GetTagChild(store.tag, key)
+		// 解析 value ； 手动内联
 		var son *TagInfo
 		if store.tag.MChildrenEnable {
 			son = TagMapGetV(&store.tag.MChildren, key)
@@ -113,13 +107,6 @@ func parseObj(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 			n, iSlash = son.fUnm(iSlash-i, storeSon, stream[i:])
 			iSlash += i
 		} else {
-			//TODO 通过 IndexByte 的方式快速跳过； 在下一层处理，这里 设为 nil
-			// 如果是 其他： 找 ','
-			// 如果是obj: 1. 找 ’}‘; 2. 找'{'； 3. 如果 2 比 1 小则循环 1 2
-			// 如果是 slice : 1. 找 ’]‘; 2. 找'['； 3. 如果 2 比 1 小则循环 1 2
-			// var iface interface{}
-			// n, iSlash = parseInterface(iSlash-i, stream[i:], &iface)
-			// iSlash += i
 			n = parseEmpty(stream[i:])
 		}
 		i += n
@@ -148,21 +135,68 @@ var pairPool = sync.Pool{
 	},
 }
 
-// TODO: ti 中存下 map 的 len，方便下次 make，通过 key 来存？
 func parseMapInterface(idxSlash int, stream string) (m map[string]interface{}, i, iSlash int) {
 	iSlash = idxSlash
 	n, nB := 0, 0
 	key := ""
-	// m = *mapCache.Get() //map 和 interface 一起获取，合并两次损耗为一次
-	// m = make(map[string]interface{})
-	// value := interfaceCache.Get()
-	// var v interface{}
-	// value := &v
-	// pairs := make([]pair, 0, 8)
 	ppairs := pairPool.Get().(*[]pair)
 	pairs := *ppairs
 	for {
 		i += trimSpace(stream[i:])
+		// 手动内联
+		{
+			i++
+			n = strings.IndexByte(stream[i:], '"')
+			if n >= 0 {
+				n += i
+				key = stream[i:n]
+				i = n + 1
+			}
+		}
+		n, nB = parseByte(stream[i:], ':')
+		if nB != 1 {
+			panic(lxterrs.New(ErrStream(stream[i:])))
+		}
+		i += n
+		pairs = append(pairs, pair{
+			k: key,
+		})
+		n, iSlash = parseInterface(iSlash-i, stream[i:], &pairs[len(pairs)-1].v)
+		iSlash += i
+		i += n
+		// m[string(key)] = *value
+		n, nB = parseByte(stream[i:], ',')
+		i += n
+		if nB != 1 {
+			if nB == 0 && '}' == stream[i] {
+				i++
+
+				// map
+				// m = make(map[string]interface{}, len(pairs))
+				m = makeMapEface(len(pairs))
+
+				for i := range pairs {
+					m[*(*string)(unsafe.Pointer(&pairs[i].k))] = pairs[i].v
+				}
+				*ppairs = pairs[:0]
+				pairPool.Put(ppairs)
+				return
+			}
+			panic(lxterrs.New(ErrStream(stream[i:])))
+		}
+	}
+}
+
+// map[string]T
+func parseMapValue(idxSlash int, stream string) (m map[string]interface{}, i, iSlash int) {
+	iSlash = idxSlash
+	n, nB := 0, 0
+	key := ""
+	ppairs := pairPool.Get().(*[]pair)
+	pairs := *ppairs
+	for {
+		i += trimSpace(stream[i:])
+		// 手动内联
 		{
 			i++
 			n = strings.IndexByte(stream[i:], '"')
@@ -239,19 +273,17 @@ func parseSliceInterface(idxSlash int, stream string) (s []interface{}, i, iSlas
 func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
-	store.obj = pointerOffset(store.obj, store.tag.Offset)
-	pBase := store.tag.fSet(store, stream[i:])
 	if stream[i] == ']' {
 		i++
-		pHeader := (*SliceHeader)(pBase)
+		pHeader := (*SliceHeader)(store.obj)
 		pHeader.Data = store.obj
 		return
 	}
 	son := store.tag.ChildList[0]
 	size := son.TypeSize
 	uint8s := store.tag.SPool.Get().(*[]uint8)
-	pHeader := (*SliceHeader)(pBase)
-	bases := (*[]uint8)(pBase)
+	pHeader := (*SliceHeader)(store.obj)
+	bases := (*[]uint8)(store.obj)
 	for n, nB := 0, 0; ; {
 		if len(*uint8s)+size > cap(*uint8s) {
 			l := cap(*uint8s) / size
@@ -322,16 +354,13 @@ func parseInterface(idxSlash int, stream string, p *interface{}) (i, iSlash int)
 		var f float64
 		f, i = float64UnmFuncs(stream)
 		*p = f
-		return
 	case '{': // obj
-		var m map[string]interface{}
+		var m map[string]interface{} // TODO： m 逃逸了
 		m, i, iSlash = parseMapInterface(iSlash-1, stream[1:])
 		iSlash++
 		i++
 		*p = m
-		return
 	case '}':
-		return
 	case '[': // slice
 		var s []interface{}
 		s, i, iSlash = parseSliceInterface(iSlash-1, stream[1:])
@@ -343,16 +372,13 @@ func parseInterface(idxSlash int, stream string, p *interface{}) (i, iSlash int)
 		pEface := (*GoEface)(unsafe.Pointer(p))
 		pEface.Type = isliceEface.Type
 		pEface.Value = unsafe.Pointer(ps)
-		return
 	case ']':
-		return
 	case 'n':
 		if stream[i+1] != 'u' || stream[i+2] != 'l' || stream[i+3] != 'l' {
 			err := lxterrs.New("should be \"null\", not [%s]", ErrStream(stream))
 			panic(err)
 		}
 		i = 4
-		return
 	case 't':
 		if stream[i+1] != 'r' || stream[i+2] != 'u' || stream[i+3] != 'e' {
 			err := lxterrs.New("should be \"true\", not [%s]", ErrStream(stream))
@@ -360,7 +386,6 @@ func parseInterface(idxSlash int, stream string, p *interface{}) (i, iSlash int)
 		}
 		i = 4
 		*p = true
-		return
 	case 'f':
 		if stream[i+1] != 'a' || stream[i+2] != 'l' || stream[i+3] != 's' || stream[i+4] != 'e' {
 			err := lxterrs.New("should be \"false\", not [%s]", ErrStream(stream))
@@ -368,7 +393,6 @@ func parseInterface(idxSlash int, stream string, p *interface{}) (i, iSlash int)
 		}
 		i = 5
 		*p = false
-		return
 	case '"':
 		var raw string
 		//
@@ -383,20 +407,6 @@ func parseInterface(idxSlash int, stream string, p *interface{}) (i, iSlash int)
 		pEface := (*GoEface)(unsafe.Pointer(p))
 		pEface.Type = strEface.Type
 		pEface.Value = unsafe.Pointer(pstr)
-
-		// // TODO 探索无GC 分配方式
-		// strs := stringPool.Get().(*[]string)
-		// str := &(*strs)[0]
-		// if len(*strs) >= 2 {
-		// 	*strs = (*strs)[1:]
-		// 	stringPool.Put(strs)
-		// }
-		// bytesCopyToString(raw, str)
-		// pEface := (*GoEface)(unsafe.Pointer(p))
-		// pEface.Type = strEface.Type
-		// pEface.Value = unsafe.Pointer(str)
-
-		return
 	}
 	return
 }
@@ -514,13 +524,14 @@ func parseEmptyObjSlice(stream string, bLeft, bRight byte) (i int) {
 	return
 }
 
-// key 后面的单元: Num, str, bool, slice, obj, null
+//TODO 通过 IndexByte 的方式快速跳过； 在下一层处理，这里 设为 nil
+// 如果是 其他： 找 ','
+// 如果是obj: 1. 找 ’}‘; 2. 找'{'； 3. 如果 2 比 1 小则循环 1 2
+// 如果是 slice : 1. 找 ’]‘; 2. 找'['； 3. 如果 2 比 1 小则循环 1 2
+// var iface interface{}
+// n, iSlash = parseInterface(iSlash-i, stream[i:], &iface)
+// iSlash += i
 func parseEmpty(stream string) (i int) {
-	//TODO 通过 IndexByte 的方式快速跳过； 在下一层处理，这里 设为 nil
-	// 如果是 其他： 找 ','
-	// 如果是obj: 1. 找 ’}‘; 2. 找'{'； 3. 如果 2 比 1 小则循环 1 2
-	// 如果是 slice : 1. 找 ’]‘; 2. 找'['； 3. 如果 2 比 1 小则循环 1 2
-
 	switch stream[0] {
 	default: // num
 		for ; i < len(stream); i++ {
@@ -529,43 +540,38 @@ func parseEmpty(stream string) (i int) {
 				break
 			}
 		}
-		return
 	case '{': // obj
 		n := parseEmptyObjSlice(stream[i:], '{', '}')
 		i += n
-		return
 	case '[': // slice
 		n := parseEmptyObjSlice(stream[i:], '[', ']')
 		i += n
-		return
 	case ']', '}':
-		return
 	case 'n':
 		if stream[i+1] != 'u' || stream[i+2] != 'l' || stream[i+3] != 'l' {
 			err := lxterrs.New("should be \"null\", not [%s]", ErrStream(stream))
 			panic(err)
 		}
 		i = 4
-		return
 	case 't':
 		if stream[i+1] != 'r' || stream[i+2] != 'u' || stream[i+3] != 'e' {
 			err := lxterrs.New("should be \"true\", not [%s]", ErrStream(stream))
 			panic(err)
 		}
 		i = 4
-		return
 	case 'f':
 		if stream[i+1] != 'a' || stream[i+2] != 'l' || stream[i+3] != 's' || stream[i+4] != 'e' {
 			err := lxterrs.New("should be \"false\", not [%s]", ErrStream(stream))
 			panic(err)
 		}
 		i = 5
-		return
 	case '"':
 		i++
 		for {
 			iDQuote := strings.IndexByte(stream[i:], '"')
 			i += iDQuote // 指向 '"'
+
+			// 处理转义字符串
 			if stream[i-1] == '\\' {
 				j := i - 2
 				for ; stream[j] == '\\'; j-- {
@@ -582,10 +588,6 @@ func parseEmpty(stream string) (i int) {
 	return
 }
 
-type status struct {
-	idxUnescape int
-}
-
 //解析 obj: {}, 或 []
 func parseRoot(stream string, store PoolStore) (err error) {
 	idxSlash := strings.IndexByte(stream[1:], '\\')
@@ -596,15 +598,10 @@ func parseRoot(stream string, store PoolStore) (err error) {
 		parseObj(idxSlash, stream[1:], store)
 		return
 	}
-	if stream[0] == '[' {
-		parseSlice(idxSlash, stream[1:], store)
-		return
-	}
 	return
 }
 
 func parseStr(stream string, nextSlashIdx int) (raw string, i, nextSlashIdxOut int) {
-	// TODO: 专业抄，把 '"' 提前准备好，少了个几步，也能快很多了
 	i = strings.IndexByte(stream[1:], '"')
 	if i >= 0 && nextSlashIdx > i+1 {
 		i++
@@ -626,10 +623,9 @@ func parseUnescapeStr(stream string, nextQuotesIdx, nextSlashIdxIn int) (raw str
 			i += nextQuotesIdx
 			i++
 			return
-		} else {
-			nextSlashIdx++
 		}
 
+		nextSlashIdx++
 		// 处理 '\"'
 		for {
 			i += nextQuotesIdx // 指向 '"'

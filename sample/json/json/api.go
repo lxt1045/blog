@@ -166,6 +166,6 @@ func Marshal(in interface{}) (bs []byte, err error) {
 		bsPool.Put(pbs)
 	}()
 
-	bs = marshalObj(bs[:0], store)
+	bs = marshalStruct(bs[:0], store)
 	return
 }

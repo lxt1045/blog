@@ -165,6 +165,7 @@ var poolMapArrayInterface = func() sync.Pool {
 	}}
 }()
 
+// 通过 pool 集中分配大内存，再切分给 map 使用，边多次神池 map 内存
 func makeMapEface(hint int) (m map[string]interface{}) {
 	if hint > 18 {
 		m = make(map[string]interface{}, hint)

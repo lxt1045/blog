@@ -257,7 +257,7 @@ func TestStructMarshal(t *testing.T) {
 		_, file = filepath.Split(file)
 		return file + ":" + strconv.Itoa(line)
 	}
-	idx := -6
+	idx := -9
 
 	datas := []struct {
 		name    string
@@ -266,6 +266,15 @@ func TestStructMarshal(t *testing.T) {
 		target2 string
 		data    interface{}
 	}{
+		{
+			name:   "struct:" + fLine(),
+			bs:     `{"out": 11 , "struct_0": { "count":8}}`,
+			target: `{"out":11,"struct_0":{"count":8}}`,
+			data: &struct {
+				Out    int                    `json:"out"`
+				Struct map[string]interface{} `json:"struct_0"`
+			}{},
+		},
 		{
 			name:    "interface:" + fLine(),
 			bs:      `{"out":88,"struct_0":{"a":"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"}}`,

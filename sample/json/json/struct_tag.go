@@ -217,11 +217,12 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 		ti.fUnm, ti.fM = interfaceMFuncs()
 	case reflect.Map:
 		ti.fSet, ti.fGet = mapFuncs(pidx)
+		ti.fUnm, ti.fM = mapMFuncs()
 		valueType := baseType.Elem()
 		son := &TagInfo{
 			TagName:  `"son"`,
 			Builder:  ti.Builder,
-			TypeSize: int(valueType.Size()),
+			TypeSize: int(valueType.Size()), // TODO
 		}
 		err = ti.AddChild(son)
 		if err != nil {
@@ -246,9 +247,9 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 			store.obj = p
 			return fSet(store, bs)
 		}
-		ti.fGet = func(pObj unsafe.Pointer, in []byte) (pBase unsafe.Pointer, out []byte) {
-			p := *(*unsafe.Pointer)(pObj)
-			return fGet(p, in)
+		ti.fGet = func(store Store, in []byte) (out []byte) {
+			store.obj = *(*unsafe.Pointer)(store.obj)
+			return fGet(store, in)
 		}
 	}
 	return

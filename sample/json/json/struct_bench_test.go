@@ -315,7 +315,7 @@ go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalPoniter$ github.com/lxt104
 go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalPoniter$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
 go tool pprof ./json.test cpu.prof
 */
-func BenchmarkMyUnmarshalPoniter(b *testing.B) {
+func BenchmarkMyUnmarshalMarshalPoniter(b *testing.B) {
 	type Name struct {
 		ZHCN  *string `json:"ZH_CN"`
 		ZHCN1 *string `json:"ZH_CN1"`
@@ -548,12 +548,7 @@ BenchmarkUnMarshalStruct/sonic-st-12            10000000               155.8 ns/
 BenchmarkUnMarshalStruct/lxt-st#01-12           10000000               127.5 ns/op      78409245.03 MB/s               0 B/op          0 allocs/op
 BenchmarkUnMarshalStruct/sonic-st#01-12         10000000               148.5 ns/op      67361422.86 MB/s               0 B/op          0 allocs/op
 */
-func BenchmarkUnMarshalStruct(b *testing.B) {
-	type Name1 struct {
-		ZHCN  *string `json:"ZH_CN"`
-		ENUS  *string `json:"EN_US"`
-		Count *int    `json:"count"`
-	}
+func BenchmarkUnMarshalMarshalStruct(b *testing.B) {
 	type Name struct {
 		ZHCN  string `json:"ZH_CN"`
 		ENUS  string `json:"EN_US"`

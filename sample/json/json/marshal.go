@@ -20,43 +20,51 @@ var bsPool = sync.Pool{New: func() any {
 	return (*[]byte)(&s)
 }}
 
-func marshalObj(in []byte, store Store) (out []byte) {
+// 排列一个 fGet list，优化掉多个 for 循环
+func marshalStruct(in []byte, store Store) (out []byte) {
 	out = append(in, '{')
 	for _, tag := range store.tag.ChildList {
 		out = append(out, tag.TagName...)
 		out = append(out, ':')
 
-		out = marshalType(out, Store{
-			obj: pointerOffset(store.obj, tag.Offset),
-			tag: tag,
-		})
+		pObj := pointerOffset(store.obj, tag.Offset)
+		if tag.fGet != nil {
+			out = tag.fGet(Store{obj: pObj, tag: tag}, out)
+		} else {
+			out = marshalT(out, Store{
+				obj: pObj,
+				tag: tag,
+			})
+			// out= marshalValue(out,)
+		}
 		out = append(out, ',')
 	}
 	out[len(out)-1] = '}'
 	return
 }
 
-func marshalType(in []byte, store Store) (out []byte) {
-	tag := store.tag
+//marshalT 序列化明确的类型
+func marshalT(in []byte, store Store) (out []byte) {
 	out = in
-	if tag.fGet != nil {
-		_, out = store.tag.fGet(store.obj, out)
-	} else {
-		switch tag.BaseKind {
-		case reflect.Interface:
-			iface := *(*interface{})(store.obj)
-			out = marshalInterface(out, iface)
-		case reflect.Struct:
-			out = marshalObj(out, Store{
-				obj: store.obj,
-				tag: tag,
-			})
-		// case reflect.Array:
-		case reflect.Slice:
-			pHeader := (*SliceHeader)(store.obj)
-			son := store.tag.ChildList[0]
-			out = marshalSlice(out, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
-		}
+
+	switch store.tag.BaseKind {
+	case reflect.Map:
+		// TODO: reflect.ValueOf
+		m := *(*map[string]interface{})(store.obj)
+		out = marshalMapInterface(out, m)
+	case reflect.Interface:
+		iface := *(*interface{})(store.obj)
+		out = marshalInterface(out, iface)
+	case reflect.Struct:
+		out = marshalStruct(out, Store{
+			obj: store.obj,
+			tag: store.tag,
+		})
+	// case reflect.Array:
+	case reflect.Slice:
+		pHeader := (*SliceHeader)(store.obj)
+		son := store.tag.ChildList[0]
+		out = marshalSlice(out, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
 	}
 	return
 }
@@ -70,10 +78,14 @@ func marshalSlice(bs []byte, store Store, l int) (out []byte) {
 	size := son.TypeSize
 	for i := 0; i < l; i++ {
 		pSon := pointerOffset(store.obj, uintptr(i*size))
-		out = marshalType(out, Store{
-			obj: pSon,
-			tag: son,
-		})
+		if son.fGet != nil {
+			out = son.fGet(Store{obj: pSon, tag: son}, out)
+		} else {
+			out = marshalT(out, Store{
+				obj: pSon,
+				tag: son,
+			})
+		}
 		out = append(out, ',')
 	}
 	out[len(out)-1] = ']'
@@ -89,9 +101,25 @@ func marshalInterface(bs []byte, iface interface{}) (out []byte) {
 	return
 }
 
+func marshalMapInterface(bs []byte, m map[string]interface{}) (out []byte) {
+	out = bs
+	out = append(out, '{')
+	for k, v := range m {
+		out = append(out, '"')
+		out = append(out, k...)
+		out = append(out, '"')
+		out = append(out, ':')
+		out = marshalInterface(out, v)
+		out = append(out, ',')
+	}
+	out[len(out)-1] = '}'
+	return
+}
+
 func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 	out = bs
 
+	// 针对指针
 	for value.Kind() == reflect.Ptr {
 		if value.IsNil() {
 			out = append(out, "null"...)
@@ -107,7 +135,9 @@ func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 			return
 		}
 		// UnpackEface(&value)
-		out = marshalValue(out, value)
+		// 从 iterface{} 里取出原始类型
+		value := reflect.ValueOf(value.Interface())
+		out = marshalValue(bs, value)
 		return
 	case reflect.Map:
 		if value.IsNil() {
@@ -123,7 +153,7 @@ func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 		for iter.Next() {
 			out = marshalKey(out, iter.Key())
 			out = append(out, ':')
-			out = marshalInterface(out, iter.Value().Interface())
+			out = marshalValue(out, iter.Value())
 			out = append(out, ',')
 		}
 		if l < len(out) {
@@ -138,7 +168,7 @@ func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 		}
 		for i := 0; i < value.Len(); i++ {
 			v := value.Index(i)
-			out = marshalInterface(out, v)
+			out = marshalValue(out, v)
 		}
 		return
 	case reflect.Struct:
@@ -154,7 +184,7 @@ func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 			tag: tag,
 			obj: prv.ptr, // eface.Value,
 		}
-		out = marshalObj(out, store)
+		out = marshalStruct(out, store)
 		return
 	case reflect.Bool:
 		if value.Bool() {

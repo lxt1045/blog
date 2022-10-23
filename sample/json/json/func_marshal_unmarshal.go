@@ -30,8 +30,8 @@ func boolMFuncs() (fUnm unmFunc, fM mFunc) {
 		return
 	}
 	fM = func(store Store, in []byte) (out []byte) {
-		p := pointerOffset(store.obj, store.tag.Offset)
-		_, out = store.tag.fGet(p, in)
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		out = store.tag.fGet(store, in)
 		return
 	}
 	return
@@ -66,8 +66,8 @@ func numMFuncs() (fUnm unmFunc, fM mFunc) {
 		return
 	}
 	fM = func(store Store, in []byte) (out []byte) {
-		p := pointerOffset(store.obj, store.tag.Offset)
-		_, out = store.tag.fGet(p, in)
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		out = store.tag.fGet(store, in)
 		return
 	}
 	return
@@ -102,7 +102,7 @@ func structMFuncs() (fUnm unmFunc, fM mFunc) {
 	}
 	fM = func(store Store, in []byte) (out []byte) {
 		store.obj = pointerOffset(store.obj, store.tag.Offset)
-		_, out = store.tag.fGet(store.obj, in)
+		out = store.tag.fGet(store, in)
 		return
 	}
 	return
@@ -121,6 +121,9 @@ func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
 			pHeader.Data = store.obj
 			return
 		}
+		store.obj = pointerOffset(store.obj, store.tag.Offset) //
+		store.obj = store.tag.fSet(store, stream[i:])          // 会处理指针分配
+
 		n, iSlash := parseSlice(idxSlash-1, stream[1:], store)
 		iSlash++
 		i += n + 1
@@ -128,7 +131,7 @@ func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
 	}
 	fM = func(store Store, in []byte) (out []byte) {
 		store.obj = pointerOffset(store.obj, store.tag.Offset)
-		_, out = store.tag.fGet(store.obj, in)
+		out = store.tag.fGet(store, in)
 		return
 	}
 	return
@@ -158,7 +161,8 @@ func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 		return
 	}
 	fM = func(store Store, in []byte) (out []byte) {
-		_, out = store.tag.fGet(pointerOffset(store.obj, store.tag.Offset), in)
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		out = store.tag.fGet(store, in)
 		return
 	}
 	return
@@ -182,7 +186,34 @@ func interfaceMFuncs() (fUnm unmFunc, fM mFunc) {
 		return
 	}
 	fM = func(store Store, in []byte) (out []byte) {
-		_, out = store.tag.fGet(pointerOffset(store.obj, store.tag.Offset), in)
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		out = store.tag.fGet(store, in)
+		return
+	}
+	return
+}
+
+func mapMFuncs() (fUnm unmFunc, fM mFunc) {
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			return
+		}
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		if store.tag.fSet != nil {
+			store.obj = store.tag.fSet(store, stream[1:])
+		}
+		m, i, iSlash := parseMapInterface(idxSlash-1, stream[1:])
+		iSlash++
+		i++
+		p := (*map[string]interface{})(store.obj)
+		*p = m
+		return
+	}
+	fM = func(store Store, in []byte) (out []byte) {
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		out = store.tag.fGet(store, in)
 		return
 	}
 	return
