@@ -3,6 +3,7 @@ package json
 import (
 	"fmt"
 	"reflect"
+	"sync/atomic"
 
 	lxterrs "github.com/lxt1045/errors"
 )
@@ -129,8 +130,19 @@ func Marshal(in interface{}) (bs []byte, err error) {
 		}
 	}()
 
+	pbs := bsPool.Get().(*[]byte)
+	bs = *pbs
+	var lLeft int32 = 1024
+	defer func() {
+		if cap(bs)-len(bs) >= int(lLeft) {
+			*pbs = bs[len(bs):]
+			bs = bs[:len(bs):len(bs)]
+			bsPool.Put(pbs)
+		}
+	}()
+
 	if mIn, ok := in.(*map[string]interface{}); ok {
-		_ = mIn
+		bs = marshalMapInterface(bs[:0], *mIn)
 		return
 	}
 	if _, ok := in.(*[]interface{}); ok {
@@ -155,17 +167,21 @@ func Marshal(in interface{}) (bs []byte, err error) {
 		obj: prv.ptr, // eface.Value,
 	}
 
-	pbs := bsPool.Get().(*[]byte)
-	if cap(*pbs) < 128 {
-		pbs = bsPool.New().(*[]byte)
-	}
-	bs = *pbs
-	defer func() {
-		*pbs = bs[len(bs):]
-		bs = bs[:len(bs):len(bs)]
-		bsPool.Put(pbs)
-	}()
-
 	bs = marshalStruct(bs[:0], store)
+
+	l := int32(len(bs))
+	lLeft = atomic.LoadInt32(&tag.bsMarshalLen)
+	if lLeft > l*2 {
+		bsHaftCount := atomic.AddInt32(&tag.bsHaftCount, -1)
+		if bsHaftCount < 1000 {
+			atomic.StoreInt32(&tag.bsMarshalLen, l)
+			lLeft = l
+		}
+	} else if lLeft < l {
+		atomic.StoreInt32(&tag.bsMarshalLen, l)
+		lLeft = l
+	} else {
+		atomic.AddInt32(&tag.bsHaftCount, 1)
+	}
 	return
 }

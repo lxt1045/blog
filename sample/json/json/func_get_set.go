@@ -65,8 +65,7 @@ func uint64Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 func uint64Get(store Store, in []byte) (out []byte) {
 	pObj := store.obj
 	num := *(*uint64)(pObj)
-	str := strconv.FormatUint(num, 10)
-	out = append(in, str...)
+	out = strconv.AppendUint(in, num, 10)
 	return
 }
 func uint64Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
@@ -101,8 +100,7 @@ func int64Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 func int64Get(store Store, in []byte) (out []byte) {
 	pObj := store.obj
 	num := *(*int64)(pObj)
-	str := strconv.FormatInt(num, 10)
-	out = append(in, str...)
+	out = strconv.AppendInt(in, num, 10)
 	return
 }
 func int64Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
@@ -137,8 +135,7 @@ func uint32Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 func uint32Get(store Store, in []byte) (out []byte) {
 	pObj := store.obj
 	num := *(*uint32)(pObj)
-	str := strconv.FormatUint(uint64(num), 10)
-	out = append(in, str...)
+	out = strconv.AppendUint(in, uint64(num), 10)
 	return
 }
 func uint32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
@@ -172,9 +169,8 @@ func int32Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 }
 func int32Get(store Store, in []byte) (out []byte) {
 	pObj := store.obj
-	num := *(*int64)(pObj)
-	str := strconv.FormatInt(num, 10)
-	out = append(in, str...)
+	num := *(*int32)(pObj)
+	out = strconv.AppendInt(in, int64(num), 10)
 	return
 }
 func int32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
@@ -209,8 +205,7 @@ func uint16Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 func uint16Get(store Store, in []byte) (out []byte) {
 	pObj := store.obj
 	num := *(*uint16)(pObj)
-	str := strconv.FormatUint(uint64(num), 10)
-	out = append(in, str...)
+	out = strconv.AppendUint(in, uint64(num), 10)
 	return
 }
 func uint16Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
@@ -244,9 +239,8 @@ func int16Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 }
 func int16Get(store Store, in []byte) (out []byte) {
 	pObj := store.obj
-	num := *(*int64)(pObj)
-	str := strconv.FormatInt(num, 10)
-	out = append(in, str...)
+	num := *(*int16)(pObj)
+	out = strconv.AppendInt(in, int64(num), 10)
 	return
 }
 func int16Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
@@ -281,8 +275,7 @@ func uint8Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 func uint8Get(store Store, in []byte) (out []byte) {
 	pObj := store.obj
 	num := *(*uint8)(pObj)
-	str := strconv.FormatUint(uint64(num), 10)
-	out = append(in, str...)
+	out = strconv.AppendUint(in, uint64(num), 10)
 	return
 }
 func uint8Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
@@ -316,9 +309,8 @@ func int8Set(store PoolStore, bs string) (pBase unsafe.Pointer) {
 }
 func int8Get(store Store, in []byte) (out []byte) {
 	pObj := store.obj
-	num := *(*int64)(pObj)
-	str := strconv.FormatInt(num, 10)
-	out = append(in, str...)
+	num := *(*int8)(pObj)
+	out = strconv.AppendInt(in, int64(num), 10)
 	return
 }
 func int8Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
@@ -412,12 +404,11 @@ func float32Funcs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 
 func stringSet(store PoolStore, bs string) (pBase unsafe.Pointer) {
 	pBase = store.obj
-	*(*string)(store.obj) = *(*string)(unsafe.Pointer(&bs))
+	*(*string)(store.obj) = bs
 	return
 }
 func stringGet(store Store, in []byte) (out []byte) {
-	pObj := store.obj
-	str := *(*string)(pObj)
+	str := *(*string)(store.obj)
 	out = append(in, '"')
 	out = append(out, str...)
 	out = append(out, '"')
@@ -493,6 +484,12 @@ func sliceFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 			pBase = store.obj
 			return
 		}
+		fGet = func(store Store, in []byte) (out []byte) {
+			pHeader := (*SliceHeader)(store.obj)
+			son := store.tag.ChildList[0]
+			out = marshalSlice(in, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
+			return
+		}
 		return
 	}
 	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
@@ -500,22 +497,40 @@ func sliceFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
 		pBase = store.obj
 		return
 	}
+	fGet = func(store Store, in []byte) (out []byte) {
+		store.obj = *(*unsafe.Pointer)(store.obj)
+		if store.obj == nil {
+			out = append(in, "null"...)
+			return
+		}
+		pHeader := (*SliceHeader)(store.obj)
+		son := store.tag.ChildList[0]
+		out = marshalSlice(in, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
+		return
+	}
 	return
 }
 
 func structChildFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
-	if pidx != nil {
-		fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
-			p := *(*unsafe.Pointer)(store.obj)
-			if p == nil {
-				store.obj = store.Idx(*pidx)
-			}
-			return p
-		}
+	if pidx == nil {
+
 		fGet = func(store Store, in []byte) (out []byte) {
-			return in
+			out = marshalStruct(in, store)
+			return
 		}
+		return
 	}
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
+		p := *(*unsafe.Pointer)(store.obj)
+		if p == nil {
+			store.obj = store.Idx(*pidx)
+		}
+		return p
+	}
+	fGet = func(store Store, in []byte) (out []byte) {
+		return in
+	}
+
 	return
 }
 
@@ -551,59 +566,69 @@ func anonymousStructFuncs(pidx *uintptr, offset uintptr, fSet0 setFunc, fGet0 ge
 }
 
 func iterfaceFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
-	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
-		return store.obj
-	}
-	fGet = func(store Store, in []byte) (out []byte) {
-		pObj := store.obj
-		iface := *(*interface{})(pObj)
-		out = marshalInterface(in, iface)
-		return
-	}
-	if pidx != nil {
+	if pidx == nil {
 		fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
-			store.obj = store.Idx(*pidx)
 			return store.obj
 		}
 		fGet = func(store Store, in []byte) (out []byte) {
-			store.obj = *(*unsafe.Pointer)(store.obj)
-			if store.obj == nil {
-				out = append(in, "null"...)
-				return
-			}
-			pObj := store.obj
-			iface := *(*interface{})(pObj)
+			iface := *(*interface{})(store.obj)
 			out = marshalInterface(in, iface)
 			return
 		}
+		return
+	}
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
+		store.obj = store.Idx(*pidx)
+		return store.obj
+	}
+	fGet = func(store Store, in []byte) (out []byte) {
+		store.obj = *(*unsafe.Pointer)(store.obj)
+		if store.obj == nil {
+			out = append(in, "null"...)
+			return
+		}
+		iface := *(*interface{})(store.obj)
+		out = marshalInterface(in, iface)
+		return
 	}
 	return
 }
 
+/*
+	map[string]interface{}
+	这里有点问题，有可能是其他 map 类型
+*/
 func mapFuncs(pidx *uintptr) (fSet setFunc, fGet getFunc) {
-	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
-		// p := (*map[string]interface{})(store.obj)
-		// *p = make(map[string]interface{})
-		return store.obj
-	}
-
-	if pidx != nil {
+	if pidx == nil {
 		fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
-			store.obj = store.Idx(*pidx)
 			// p := (*map[string]interface{})(store.obj)
 			// *p = make(map[string]interface{})
 			return store.obj
 		}
 
 		fGet = func(store Store, in []byte) (out []byte) {
-			store.obj = *(*unsafe.Pointer)(store.obj)
-			if store.obj == nil {
-				out = append(in, "null"...)
-				return
-			}
-			store.obj = pointerOffset(store.obj, store.tag.Offset)
+			m := *(*map[string]interface{})(store.obj)
+			out = marshalMapInterface(in, m)
 			return
 		}
+		return
+	}
+	fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
+		store.obj = store.Idx(*pidx)
+		// p := (*map[string]interface{})(store.obj)
+		// *p = make(map[string]interface{})
+		return store.obj
+	}
+
+	fGet = func(store Store, in []byte) (out []byte) {
+		store.obj = *(*unsafe.Pointer)(store.obj)
+		if store.obj == nil {
+			out = append(in, "null"...)
+			return
+		}
+		m := *(*map[string]interface{})(store.obj)
+		out = marshalMapInterface(in, m)
+		return
 	}
 	return
 }

@@ -123,18 +123,6 @@ func parseObj(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	}
 }
 
-type pair struct {
-	k string
-	v interface{}
-}
-
-var pairPool = sync.Pool{
-	New: func() any {
-		s := make([]pair, 0, 64)
-		return &s
-	},
-}
-
 func parseMapInterface(idxSlash int, stream string) (m map[string]interface{}, i, iSlash int) {
 	iSlash = idxSlash
 	n, nB := 0, 0
@@ -240,10 +228,6 @@ func parseMapValue(idxSlash int, stream string) (m map[string]interface{}, i, iS
 	}
 }
 
-var poolSliceInterface = sync.Pool{New: func() any {
-	return make([]interface{}, 1024)
-}}
-
 func parseSliceInterface(idxSlash int, stream string) (s []interface{}, i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
@@ -270,9 +254,11 @@ func parseSliceInterface(idxSlash int, stream string) (s []interface{}, i, iSlas
 		}
 	}
 }
+
+//parseSlice 可以细化一下，每个类型来一个，速度可以加快
 func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
-	i = trimSpace(stream[i:])
+	i = trimSpace(stream)
 	if stream[i] == ']' {
 		i++
 		pHeader := (*SliceHeader)(store.obj)
@@ -281,45 +267,39 @@ func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	}
 	son := store.tag.ChildList[0]
 	size := son.TypeSize
-	uint8s := store.tag.SPool.Get().(*[]uint8)
+	uint8s := store.tag.SPool.Get().(*[]uint8) // cpu %12; parseSlice, cpu 20%
 	pHeader := (*SliceHeader)(store.obj)
 	bases := (*[]uint8)(store.obj)
 	for n, nB := 0, 0; ; {
 		if len(*uint8s)+size > cap(*uint8s) {
 			l := cap(*uint8s) / size
 			c := l * 2
-			if c < 1024 {
-				c = 1024
+			if c < int(store.tag.SPoolN) {
+				c = int(store.tag.SPoolN)
 			}
 			v := reflect.MakeSlice(store.tag.BaseType, 0, c)
 			p := reflectValueToPointer(&v)
-			pH := (*SliceHeader)(p)
-			pH.Cap = pH.Cap * size
 			news := (*[]uint8)(p)
 
-			copy(*news, *uint8s)
-			// _ = append((*(*[]uint8)(p))[:0], *(*[]uint8)(unsafe.Pointer(pHeader))...)
-			*uint8s = *news
+			pH := (*SliceHeader)(p)
+			pH.Cap = pH.Cap * size
+			// copy(*news, *uint8s)
+			// *uint8s = *news
+			*uint8s = append((*news)[:0], *uint8s...)
 		}
 		l := len(*uint8s)
 		*uint8s = (*uint8s)[:l+size]
 
 		p := unsafe.Pointer(&(*uint8s)[l])
-		if son != nil && son.fUnm != nil {
-			n, iSlash = son.fUnm(iSlash-i, PoolStore{
-				obj:  p,
-				tag:  son,
-				pool: store.pool,
-			}, stream[i:])
-			iSlash += i
-			if n == 0 {
-				pHeader.Len -= size
-			}
-		} else {
-			var iface interface{}
-			n, iSlash = parseInterface(iSlash-i, stream[i:], &iface)
-			iSlash += i
-		}
+		n, iSlash = son.fUnm(iSlash-i, PoolStore{
+			obj:  p,
+			tag:  son,
+			pool: store.pool,
+		}, stream[i:])
+		iSlash += i
+		// if n == 0 {
+		// 	pHeader.Len -= size
+		// }
 		i += n
 		n, nB = parseByte(stream[i:], ',')
 		i += n
@@ -333,7 +313,7 @@ func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	}
 
 	*bases = (*uint8s)[:len(*uint8s):len(*uint8s)]
-	if cap(*uint8s)-len(*uint8s) > 4*size {
+	if cap(*uint8s)-len(*uint8s) > 16*size {
 		*uint8s = (*uint8s)[len(*uint8s):]
 		store.tag.SPool.Put(uint8s)
 	}
@@ -342,6 +322,129 @@ func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	pHeader.Len = pHeader.Len / size
 	pHeader.Cap = pHeader.Cap / size
 
+	return
+}
+
+//quadwords 4word: 64bit; d：doubleword，双字，32位; w：word，双字节，字，16位; b：byte，字节，8位
+// tag 实际上已经可以提前知道了，这里无需再取一次，重复了
+func parseSliceString2(idxSlash int, stream string, store PoolStore, SPoolN int, strsPool *sync.Pool) (i, iSlash int) {
+	iSlash = idxSlash
+	i = trimSpace(stream[i:])
+	if stream[i] == ']' {
+		i++
+		pHeader := (*SliceHeader)(store.obj)
+		pHeader.Data = store.obj
+		return
+	}
+	// son := store.tag.ChildList[0]
+	pstrs := strsPool.Get().(*[]string)
+	pObj := (*[]string)(store.obj)
+	for n, nB := 0, 0; ; {
+		if len(*pstrs)+1 > cap(*pstrs) {
+			c := len(*pstrs) * 2
+			if c < SPoolN {
+				c = SPoolN
+			}
+			news := make([]string, 0, SPoolN)
+
+			*pstrs = append(news, *pstrs...)
+		}
+		*pstrs = (*pstrs)[:len(*pstrs)+1]
+		// n, iSlash = son.fUnm(iSlash-i, PoolStore{
+		// 	obj:  unsafe.Pointer(&(*pstrs)[len(*pstrs)-1]),
+		// 	tag:  son,
+		// 	pool: store.pool,
+		// }, stream[i:])
+		{
+			// 全部内联
+			i++
+			n := strings.IndexByte(stream[i:], '"')
+			n += i
+			if iSlash > n {
+				(*pstrs)[len(*pstrs)-1] = stream[i:n]
+				i = n + 1
+			} else {
+				(*pstrs)[len(*pstrs)-1], n, iSlash = parseUnescapeStr(stream[i:], n-i, iSlash)
+				iSlash += i
+				i = i + n
+			}
+		}
+		n, nB = parseByte(stream[i:], ',')
+		i += n
+		if nB != 1 {
+			if nB == 0 && ']' == stream[i] {
+				i++
+				break
+			}
+			panic(lxterrs.New(ErrStream(stream[i:])))
+		}
+	}
+	*pObj = (*pstrs)[:len(*pstrs):len(*pstrs)]
+	*pstrs = (*pstrs)[len(*pstrs):]
+	if cap(*pstrs)-len(*pstrs) > 4 {
+		strsPool.Put(pstrs)
+	}
+	return
+}
+
+var strs = make([]string, 64)
+
+func parseSliceString(idxSlash int, stream string, store PoolStore, SPoolN int, strsPool *sync.Pool) (i, iSlash int) {
+	iSlash = idxSlash
+	i = trimSpace(stream[i:])
+	if stream[i] == ']' {
+		i++
+		pHeader := (*SliceHeader)(store.obj)
+		pHeader.Data = store.obj
+		return
+	}
+	// TODO 使用 IndexByte 先计算slice 的长度，在分配内存
+	// pstrs := strsPool.Get().(*[]string)
+	// strs = strs[:0:cap(strs)]
+	strs := (*[4]string)(unsafe.Pointer(strPool.GetN(4)))[:0:4] //make([]string, 0, 4)
+	pstrs := &strs
+	pObj := (*[]string)(store.obj)
+	for n, nB := 0, 0; ; {
+		if len(*pstrs)+1 > cap(*pstrs) {
+			c := len(*pstrs) * 2
+			news := (*[4]string)(unsafe.Pointer(strPool.GetN(c)))[:0:c]
+			*pstrs = append(news, *pstrs...)
+		}
+		*pstrs = (*pstrs)[:len(*pstrs)+1]
+		// n, iSlash = son.fUnm(iSlash-i, PoolStore{
+		// 	obj:  unsafe.Pointer(&(*pstrs)[len(*pstrs)-1]),
+		// 	tag:  son,
+		// 	pool: store.pool,
+		// }, stream[i:])
+		{
+			// 全部内联
+			i++
+			n := strings.IndexByte(stream[i:], '"')
+			n += i
+			if iSlash > n {
+				(*pstrs)[len(*pstrs)-1] = stream[i:n]
+				i = n + 1
+			} else {
+				(*pstrs)[len(*pstrs)-1], n, iSlash = parseUnescapeStr(stream[i:], n-i, iSlash)
+				iSlash += i
+				i = i + n
+			}
+		}
+		n, nB = parseByte(stream[i:], ',')
+		i += n
+		if nB != 1 {
+			if nB == 0 && ']' == stream[i] {
+				i++
+				break
+			}
+			panic(lxterrs.New(ErrStream(stream[i:])))
+		}
+	}
+	*pObj = (*pstrs)[:len(*pstrs):len(*pstrs)]
+	// *pstrs = (*pstrs)[len(*pstrs):]
+	// if cap(*pstrs)-len(*pstrs) > 4 {
+	// 	strsPool.Put(pstrs)
+	// }
 	return
 }
 
@@ -401,7 +504,7 @@ func parseInterface(idxSlash int, stream string, p *interface{}) (i, iSlash int)
 		// return
 
 		// pstr := strPool.Get() //
-		pstr := GetStr(strPool) //
+		pstr := BatchGet(strPool) //
 		// bytesCopyToString(raw, pstr)
 		*pstr = *(*string)(unsafe.Pointer(&raw))
 		pEface := (*GoEface)(unsafe.Pointer(p))
@@ -409,19 +512,6 @@ func parseInterface(idxSlash int, stream string, p *interface{}) (i, iSlash int)
 		pEface.Value = unsafe.Pointer(pstr)
 	}
 	return
-}
-
-var strPool = NewBatch[string]()
-var islicePool = NewBatch[[]interface{}]()
-
-var strEface = UnpackEface("")
-var isliceEface = UnpackEface([]interface{}{})
-
-var stringPool = sync.Pool{
-	New: func() any {
-		s := make([]string, 512, 512) //8*1024/16
-		return &s
-	},
 }
 
 func parseEmptyObjSlice(stream string, bLeft, bRight byte) (i int) {
@@ -640,7 +730,7 @@ func parseUnescapeStr(stream string, nextQuotesIdx, nextSlashIdxIn int) (raw str
 				}
 			}
 			i++
-			return
+			break
 		}
 	}
 	if nextQuotesIdx < 0 {

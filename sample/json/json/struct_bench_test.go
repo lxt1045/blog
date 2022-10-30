@@ -2,7 +2,6 @@ package json
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -16,223 +15,7 @@ import (
 	"github.com/lxt1045/blog/sample/json/json/testdata"
 )
 
-var j = `{
-	"ItemID": 1442408958374608801,
-	"BizName": {
-		"ZH_CN": "职级",
-		"EN_US": "职级"
-	},
-	"BizCode": "JOB_LEVEL",
-	"Description": {
-		"ZH_CN": "",
-		"EN_US": ""
-	},
-	"Type": 1,
-	"ItemManagerURL": "",
-	"ItemEnumURL": ""
-}`
-
-type DataSt struct {
-	ItemID         int64       `json:"ItemID"`
-	BizName        BizName     `json:"BizName"`
-	BizCode        string      `json:"BizCode"`
-	Description    Description `json:"Description"`
-	Type           int         `json:"Type"`
-	ItemManagerURL string      `json:"ItemManagerURL"`
-	ItemEnumURL    string      `json:"ItemEnumURL"`
-}
-type BizName struct {
-	ZHCN string `json:"ZH_CN"`
-	ENUS string `json:"EN_US"`
-}
-type Description struct {
-	ZHCN string `json:"ZH_CN"`
-	ENUS string `json:"EN_US"`
-}
-
-func Test_Marshal(t *testing.T) {
-	type Name struct {
-		ZHCN  string `json:"ZH_CN"`
-		ENUS  string `json:"EN_US"`
-		ZHCN1 string
-		ZHCN2 string
-		ZHCN3 string
-		ZHCN4 string
-		ZHCN5 string
-		ZHCN6 string
-		Count int `json:"count"`
-	}
-	bs := []byte(`{
-		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN2":"chinesechinesechinesechines",
-		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
-		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZH_CN":"chinesechinesec",
-		"EN_US":"English",
-		"count":8
-	}`)
-
-	t.Run("Marshal", func(t *testing.T) {
-		d := Name{}
-		err := json.Unmarshal(bs, &d)
-		if err != nil {
-			t.Fatal(err)
-		}
-		bs, err = Marshal(&d)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Logf("to:%s", string(bs))
-	})
-}
-
-func BenchmarkMarshal(b *testing.B) {
-	type Name struct {
-		ZHCN  string `json:"ZH_CN"`
-		ENUS  string `json:"EN_US"`
-		ZHCN1 string
-		ZHCN2 string
-		ZHCN3 string
-		ZHCN4 string
-		ZHCN5 string
-		ZHCN6 string
-		Count int `json:"count"`
-	}
-	bs := []byte(`{
-		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN2":"chinesechinesechinesechines",
-		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
-		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZH_CN":"chinesechinesec",
-		"EN_US":"English",
-		"count":8
-	}`)
-
-	d := Name{}
-	err := Unmarshal(bs, &d)
-	if err != nil {
-		b.Fatal(err)
-	}
-	err = sonic.Unmarshal(bs, &d)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	name := "Marshal"
-	b.Run(name, func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := Marshal(&d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
-	b.Run("sonic", func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := sonic.Marshal(&d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
-	b.Run(name, func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := Marshal(&d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
-	b.Run("sonic", func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := sonic.Marshal(&d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
-}
-
-func Test_Unmarshal_0(t *testing.T) {
-	type Name struct {
-		ZHCN  string `json:"ZH_CN"`
-		ENUS  string `json:"EN_US"`
-		ZHCN1 string
-		ZHCN2 string
-		ZHCN3 string
-		ZHCN4 string
-		ZHCN5 string
-		ZHCN6 string
-		Count int `json:"count"`
-	}
-	bs := []byte(`{
-		"ZHCN1":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN2":"chinesechinesechinesechines",
-		"ZHCN3":"chinesechinesechinesechinesechinesechinesechinesec",
-		"ZHCN4":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN5":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZHCN6":"chinesechinesechinesechinesechinesechinesechinesechinese",
-		"ZH_CN":"chinesechinesec",
-		"EN_US":"English",
-		"count":8
-	}`)
-
-	t.Run("map", func(t *testing.T) {
-		d := Name{}
-		err := Unmarshal(bs, &d)
-		if err != nil {
-			t.Fatal(err)
-		}
-		bs, err = json.Marshal(&d)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Logf("to:%s", string(bs))
-	})
-}
-
-func TestState(t *testing.T) {
-	//https://okr.feishu-pre.cn/onboarding/api/entrance?redirect_uri=https%3A%2F%2Fokr.feishu-pre.cn%2Fonboarding%2Ffront%2Frouter&channel_id=ch_92b4875ca574a0d6&state=eyJhcHAiOiI2NzAzMDYxNjI3MjE1ODI0Mzg3IiwiaXNfaW5zdGFsbGluZyI6dHJ1ZSwicmVkaXJlY3RfdXJsIjoiaHR0cHM6Ly9va3IuZmVpc2h1LXByZS5jbi9va3IvP29uYm9hcmRpbmc9cmVnaXN0ZXIiLCJjaGFuZWxJZCI6ImNoXzkyYjQ4NzVjYTU3NGEwZDYifQ%3D%3D&entrance=okr_officialwebsite_clickexperience&lang=zh
-	stateEncoded := `eyJhcHAiOiI2NzAzMDYxNjI3MjE1ODI0Mzg3IiwiaXNfaW5zdGFsbGluZyI6dHJ1ZSwicmVkaXJlY3RfdXJsIjoiaHR0cHM6Ly9va3IuZmVpc2h1LXByZS5jbi9va3IvP29uYm9hcmRpbmc9cmVnaXN0ZXIiLCJjaGFuZWxJZCI6ImNoXzkyYjQ4NzVjYTU3NGEwZDYifQ==`
-	stateDecoded, err := base64.URLEncoding.DecodeString(stateEncoded)
-	if err != nil {
-		t.Fatal(err)
-	}
-	state := map[string]interface{}{}
-
-	err = json.Unmarshal(stateDecoded, &state)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Logf("%+v", state)
-}
-
-func Test_Unmarshal_1(t *testing.T) {
+func Test_parseStr(t *testing.T) {
 	t.Run("map", func(t *testing.T) {
 		src := `"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"`
 		raw, i, n := parseStr(src, -1)
@@ -240,75 +23,10 @@ func Test_Unmarshal_1(t *testing.T) {
 	})
 }
 
-/*
-go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshal$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
-go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshal$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
-go tool pprof ./json.test cpu.prof
-web
-go build -gcflags=-m ./     2> ./gc.log
-//   */
 // TODO:
 //    1. SIMD 加速
-//    2. reflect.Type 的 PC来缓存 Type
-//    3. 异或 8 字节，（得比较 n 次一次，然后 用 或运算 检查是否 n 次是否有一次结果为 0），压缩成 8bit 后打表？
-//        可以参考 rust 的 hashmap 实现; 参考 strings.Index()（优化过的），获取 next " \ \n \t ... 的位置
-//    4. 用bytes.IndexString 来替代 map
 //	  5. 全部 key 找出来之后，再排序，再从 bytes 中找出对应的 key?
-//	  6. 用 bin-tree（字典树），先构造，在优化聚合，实现快速查找？ 找一行 self 状态，最终只是用区分度最大的字母，让状态行大幅减少
-// 	  7.  指针分配消除术：在 tagInfo 中添加 chan 用于分配 struct 和 子struct 中的所有指针，struct 上下层级有分界线便于兼容内层 struct
-//    8. stream[i:] 的下标越界问题，需要 recover 时处理一下，err panic 处理性能可能会好点
-//    9. []byte -> string
-//    10. parseStr 手动内联
 //    11. bytes.IndexByte 和 map 文章
-//    12: tagMap有个 bug，前缀是另一个key 时 idxRet为空
-func BenchmarkMyUnmarshal1(b *testing.B) {
-	type Name struct {
-		ZHCN  string `json:"ZH_CN"`
-		ENUS  string `json:"EN_US"`
-		Count int    `json:"count"`
-	}
-	bs := []byte(`{
-		"ZH_CN":"chinesechinesec",
-		"EN_US":"English",
-		"count":8
-	}`)
-	str := string(bs)
-	{
-		d := Name{}
-		err := Unmarshal(bs, &d)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-
-	name := "Unmarshal"
-	b.Run(name, func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			err := Unmarshal(bs, &d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
-	b.Run("sonic", func(b *testing.B) {
-		d := Name{}
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			err := sonic.UnmarshalString(str, &d)
-			if err != nil {
-				b.Fatalf("[%d]:%v", i, err)
-			}
-		}
-		b.StopTimer()
-		b.SetBytes(int64(b.N))
-	})
-}
 
 /*
 go test -benchmem -run=^$ -bench ^BenchmarkMyUnmarshalPoniter$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
@@ -353,16 +71,15 @@ func BenchmarkMyUnmarshalMarshalPoniter(b *testing.B) {
 		"EN_US":"English"
 	}`)
 	str := string(bs)
-	{
-		d := Name{}
-		err := Unmarshal(bs, &d)
-		if err != nil {
-			b.Fatal(err)
-		}
-		runtime.GC()
-		sonic.UnmarshalString(str, &d)
-		Unmarshal(bs, &d)
+
+	d := Name{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
 	}
+	runtime.GC()
+	sonic.UnmarshalString(str, &d)
+	Unmarshal(bs, &d)
 
 	//
 
@@ -421,7 +138,6 @@ func BenchmarkMyUnmarshalMarshalPoniter(b *testing.B) {
 		b.SetBytes(int64(b.N))
 	})
 	b.Run("Marshal-p", func(b *testing.B) {
-		d := Name{}
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -434,7 +150,6 @@ func BenchmarkMyUnmarshalMarshalPoniter(b *testing.B) {
 		b.SetBytes(int64(b.N))
 	})
 	b.Run("sonic.Marshal-p", func(b *testing.B) {
-		d := Name{}
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -447,7 +162,6 @@ func BenchmarkMyUnmarshalMarshalPoniter(b *testing.B) {
 		b.SetBytes(int64(b.N))
 	})
 	b.Run("sonic.Marshal-p-string", func(b *testing.B) {
-		d := Name{}
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -459,15 +173,6 @@ func BenchmarkMyUnmarshalMarshalPoniter(b *testing.B) {
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
-}
-
-func init1() {
-	bs := []byte(j0)
-	d := J0{}
-	err := Unmarshal(bs, &d)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func BenchmarkMyUnmarshal(b *testing.B) {
@@ -976,7 +681,6 @@ func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 		{
 			"sonic.marshal-st",
 			func() {
-				m := testdata.Book{}
 				_, err := sonic.Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -986,7 +690,6 @@ func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 		{
 			"lxt.marshal-st",
 			func() {
-				m := testdata.Book{}
 				_, err := Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -995,7 +698,6 @@ func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 		},
 		{"std.marshal-st",
 			func() {
-				m := testdata.Book{}
 				_, err := json.Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -1096,7 +798,6 @@ func BenchmarkUnmarshalStruct1x_middle(b *testing.B) {
 		{
 			"sonic.marshal-st",
 			func() {
-				m := testdata.TwitterStruct{}
 				_, err := sonic.Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -1106,7 +807,6 @@ func BenchmarkUnmarshalStruct1x_middle(b *testing.B) {
 		{
 			"lxt.marshal-st",
 			func() {
-				m := testdata.TwitterStruct{}
 				_, err := Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -1115,7 +815,6 @@ func BenchmarkUnmarshalStruct1x_middle(b *testing.B) {
 		},
 		{"std.marshal-st",
 			func() {
-				m := testdata.TwitterStruct{}
 				_, err := json.Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -1195,25 +894,6 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 				}
 			},
 		},
-		{"lxt-st",
-			func() {
-				m := testdata.TwitterStruct{}
-				err := Unmarshal(bs, &m)
-				if err != nil {
-					panic(err)
-				}
-			},
-		},
-		{
-			"sonic-st",
-			func() {
-				m := testdata.TwitterStruct{}
-				err := sonic.UnmarshalString(data, &m)
-				if err != nil {
-					panic(err)
-				}
-			},
-		},
 		{"std-st",
 			func() {
 				m := testdata.TwitterStruct{}
@@ -1226,7 +906,6 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 		{
 			"sonic.marshal-st",
 			func() {
-				m := testdata.TwitterStruct{}
 				_, err := sonic.Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -1236,7 +915,6 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 		{
 			"lxt.marshal-st",
 			func() {
-				m := testdata.TwitterStruct{}
 				_, err := Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -1245,7 +923,6 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 		},
 		{"std.marshal-st",
 			func() {
-				m := testdata.TwitterStruct{}
 				_, err := json.Marshal(&m)
 				if err != nil {
 					panic(err)
@@ -1261,16 +938,6 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 			}
 		})
 	}
-}
-
-func init2() {
-	bs := []byte(testdata.TwitterJsonLarge)
-	d := testdata.TwitterStruct{}
-	err := Unmarshal(bs, &d)
-	if err != nil {
-		panic(err)
-	}
-	runtime.GC()
 }
 
 /*
@@ -1337,6 +1004,65 @@ func BenchmarkMyUnmarshalSmall(b *testing.B) {
 			err := Unmarshal(bs, &m)
 			if err != nil {
 				panic(err)
+			}
+		}
+	})
+}
+
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkMarshalMiddle$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkMarshalLarge$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+//   */
+func BenchmarkMarshalLarge(b *testing.B) {
+	bs := []byte(testdata.TwitterJsonLarge)
+	d := testdata.TwitterStruct{}
+	err := json.Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	runtime.GC()
+	b.Run("Large", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := Marshal(&d)
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+}
+func BenchmarkMarshalMiddle(b *testing.B) {
+	bs := []byte(testdata.TwitterJson)
+	d := testdata.TwitterStruct{}
+	err := Unmarshal(bs, &d)
+	if err != nil {
+		b.Fatal(err)
+	}
+	runtime.GC()
+	b.Run("Middle", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := Marshal(&d)
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+}
+func BenchmarkMarshalSmall(b *testing.B) {
+	var vBook = func() testdata.Book {
+		bs := []byte(testdata.BookData)
+		m := testdata.Book{}
+		err := Unmarshal(bs, &m)
+		if err != nil {
+			panic(err)
+		}
+		return m
+	}()
+	b.Run("small", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := Marshal(&vBook)
+			if err != nil {
+				b.Fatal(err)
 			}
 		}
 	})
@@ -1429,6 +1155,10 @@ func BenchmarkUnmarshalStruct20(b *testing.B) {
 
 func Test_tagParse(t *testing.T) {
 	t.Run("map", func(t *testing.T) {
+		type BizName struct {
+			ZHCN string `json:"ZH_CN"`
+			ENUS string `json:"EN_US"`
+		}
 		type DataSt struct {
 			ItemID   []int64   `json:"ItemID,string"`
 			BizName  []BizName `json:"BizName"`
@@ -1448,19 +1178,6 @@ func Test_tagParse(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Logf("to:%s", string(bs))
-	})
-}
-
-func BenchmarkStruct(b *testing.B) {
-	name := "NewStructTagInfo"
-	d := DataSt{}
-	typ := reflect.TypeOf(&d)
-	typ = typ.Elem()
-
-	b.Run(name, func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			NewStructTagInfo(typ, false, nil)
-		}
 	})
 }
 

@@ -1,8 +1,6 @@
 package json
 
 import (
-	"reflect"
-	"sync"
 	"unsafe"
 )
 
@@ -134,36 +132,6 @@ type mapextra struct {
 	// nextOverflow holds a pointer to a free overflow bucket.
 	nextOverflow *bmap
 }
-
-var hmapimp = func() *hmap {
-	m := make(map[string]interface{})
-	return *(**hmap)(unsafe.Pointer(&m))
-}()
-var mapGoType = func() *maptype {
-	m := make(map[string]interface{})
-	typ := reflect.TypeOf(m)
-	return (*maptype)(unsafe.Pointer(UnpackType(typ)))
-}()
-var imapPool = NewBatch[hmap]()
-
-var poolMapArrayInterface = func() sync.Pool {
-	ch := make(chan *[]byte, 4) // runtime.GOMAXPROCS(0))
-	go func() {
-		for {
-			N := 1 << 20
-			p := unsafe_NewArray(mapGoType.bucket, N)
-			s := &SliceHeader{
-				Data: p,
-				Len:  N * int(mapGoType.bucket.Size),
-				Cap:  N * int(mapGoType.bucket.Size),
-			}
-			ch <- (*[]byte)(unsafe.Pointer(s))
-		}
-	}()
-	return sync.Pool{New: func() any {
-		return <-ch
-	}}
-}()
 
 // 通过 pool 集中分配大内存，再切分给 map 使用，边多次神池 map 内存
 func makeMapEface(hint int) (m map[string]interface{}) {

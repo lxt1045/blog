@@ -5,7 +5,6 @@ import (
 	stdjson "encoding/json"
 	"reflect"
 	"strconv"
-	"sync"
 
 	lxterrs "github.com/lxt1045/errors"
 )
@@ -15,10 +14,16 @@ import (
     golang不支持尾递归，可能嵌套调用性能没有fget list 方式好
 */
 
-var bsPool = sync.Pool{New: func() any {
-	s := make([]byte, 0, 1<<20)
-	return (*[]byte)(&s)
-}}
+//bsGrow 在 slice marshal 的时候可以根据第一个的序列化结果计算出还需要的长度，如果 bs 不足则提前分配是比较好的选择
+func bsGrow(in []byte, lNeed int) (out []byte) {
+	lNew := bsPoolN
+	if lNew < lNeed+len(in) {
+		lNew += lNeed + len(in)
+	}
+	bsNew := make([]byte, 0, lNew)
+	out = append(bsNew, in...)
+	return
+}
 
 // 排列一个 fGet list，优化掉多个 for 循环
 func marshalStruct(in []byte, store Store) (out []byte) {
@@ -28,15 +33,8 @@ func marshalStruct(in []byte, store Store) (out []byte) {
 		out = append(out, ':')
 
 		pObj := pointerOffset(store.obj, tag.Offset)
-		if tag.fGet != nil {
-			out = tag.fGet(Store{obj: pObj, tag: tag}, out)
-		} else {
-			out = marshalT(out, Store{
-				obj: pObj,
-				tag: tag,
-			})
-			// out= marshalValue(out,)
-		}
+		out = tag.fGet(Store{obj: pObj, tag: tag}, out)
+
 		out = append(out, ',')
 	}
 	out[len(out)-1] = '}'
@@ -46,28 +44,12 @@ func marshalStruct(in []byte, store Store) (out []byte) {
 //marshalT 序列化明确的类型
 func marshalT(in []byte, store Store) (out []byte) {
 	out = in
+	panic(lxterrs.Errorf("error tag, fGet is nil:%+v", store.tag))
 
-	switch store.tag.BaseKind {
-	case reflect.Map:
-		// TODO: reflect.ValueOf
-		m := *(*map[string]interface{})(store.obj)
-		out = marshalMapInterface(out, m)
-	case reflect.Interface:
-		iface := *(*interface{})(store.obj)
-		out = marshalInterface(out, iface)
-	case reflect.Struct:
-		out = marshalStruct(out, Store{
-			obj: store.obj,
-			tag: store.tag,
-		})
-	// case reflect.Array:
-	case reflect.Slice:
-		pHeader := (*SliceHeader)(store.obj)
-		son := store.tag.ChildList[0]
-		out = marshalSlice(out, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
-	}
 	return
 }
+
+// TODO: 根据一个 marshal 的 len 乘以 len(m) ，达到还需要的空间，如果不足则 New？
 func marshalSlice(bs []byte, store Store, l int) (out []byte) {
 	out = append(bs, '[')
 	if l <= 0 {
@@ -76,19 +58,21 @@ func marshalSlice(bs []byte, store Store, l int) (out []byte) {
 	}
 	son := store.tag
 	size := son.TypeSize
-	for i := 0; i < l; i++ {
-		pSon := pointerOffset(store.obj, uintptr(i*size))
-		if son.fGet != nil {
-			out = son.fGet(Store{obj: pSon, tag: son}, out)
-		} else {
-			out = marshalT(out, Store{
-				obj: pSon,
-				tag: son,
-			})
-		}
-		out = append(out, ',')
+
+	lBefore := len(out)
+	out = son.fGet(Store{obj: store.obj, tag: son}, out)
+	lObj := len(out) - lBefore + 1 + 16 // 16 随意取的值
+	// 解析还需要的空间
+	if lNeed := lObj * (l - 1); cap(out)-len(out) < lNeed {
+		out = bsGrow(out, lNeed)
 	}
-	out[len(out)-1] = ']'
+
+	for i := 1; i < l; i++ {
+		out = append(out, ',')
+		pSon := pointerOffset(store.obj, uintptr(i*size))
+		out = son.fGet(Store{obj: pSon, tag: son}, out)
+	}
+	out = append(out, ']')
 	return
 }
 func marshalInterface(bs []byte, iface interface{}) (out []byte) {
@@ -96,23 +80,82 @@ func marshalInterface(bs []byte, iface interface{}) (out []byte) {
 		out = append(bs, "null"...)
 		return
 	}
-	value := reflect.ValueOf(iface)
-	out = marshalValue(bs, value)
+	out = bs
+	switch v := iface.(type) {
+	case int8:
+		out = strconv.AppendInt(out, int64(v), 10)
+	case int16:
+		out = strconv.AppendInt(out, int64(v), 10)
+	case int32:
+		out = strconv.AppendInt(out, int64(v), 10)
+	case int64:
+		out = strconv.AppendInt(out, int64(v), 10)
+	case int:
+		out = strconv.AppendInt(out, int64(v), 10)
+	case uint8:
+		out = strconv.AppendUint(out, uint64(v), 10)
+	case uint16:
+		out = strconv.AppendUint(out, uint64(v), 10)
+	case uint32:
+		out = strconv.AppendUint(out, uint64(v), 10)
+	case uint64:
+		out = strconv.AppendUint(out, uint64(v), 10)
+	case uint:
+		out = strconv.AppendUint(out, uint64(v), 10)
+	case float32:
+		out = strconv.AppendFloat(out, float64(v), 'f', -1, 32)
+	case float64:
+		out = strconv.AppendFloat(out, v, 'f', -1, 64)
+	case string:
+		out = append(out, '"')
+		out = append(out, v...)
+		out = append(out, '"')
+	case stdjson.Number:
+		// TODO: 检查 numStr 的有效性？
+		out = append(out, v.String()...)
+	case map[string]interface{}:
+		out = marshalMapInterface(out, v)
+	case []interface{}:
+		// TODO
+	case []byte:
+		panic("TODO: []byte...")
+	default:
+		value := reflect.ValueOf(iface)
+		out = marshalValue(out, value)
+	}
 	return
 }
 
+// TODO: 根据一个 marshal 的 len 乘以 len(m) ，达到还需要的空间，如果不足则 New？
 func marshalMapInterface(bs []byte, m map[string]interface{}) (out []byte) {
 	out = bs
 	out = append(out, '{')
-	for k, v := range m {
-		out = append(out, '"')
-		out = append(out, k...)
-		out = append(out, '"')
-		out = append(out, ':')
-		out = marshalInterface(out, v)
-		out = append(out, ',')
+	if len(m) == 0 {
+		out = append(out, '}')
+		return
 	}
-	out[len(out)-1] = '}'
+
+	first := true
+	for k, v := range m {
+		if first {
+			first = false
+			lBefore := len(out)
+			out = append(out, '"')
+			out = append(out, k...)
+			out = append(out, `":`...)
+			out = marshalInterface(out, v)
+			lObj := len(out) - lBefore + 1 + 16 // 16 随意取的值
+			if lNeed := lObj * (len(m) - 1); cap(out)-len(out) < lNeed {
+				out = bsGrow(out, lNeed)
+			}
+			continue
+		}
+		out = append(out, `,"`...)
+		out = append(out, k...)
+		out = append(out, `":`...)
+		out = marshalInterface(out, v)
+	}
+	out = append(out, '}')
 	return
 }
 
@@ -163,13 +206,24 @@ func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 		return
 	case reflect.Slice:
 		if value.IsNil() {
-			out = append(out, "null"...)
+			out = append(out, "[]"...)
 			return
 		}
-		for i := 0; i < value.Len(); i++ {
+		out = append(out, '[')
+		lBefore := len(out)
+		v := value.Index(0)
+		out = marshalValue(out, v)
+		lObj := len(out) - lBefore + 1 + 16 // 16 随意取的值
+		// 解析还需要的空间
+		if lNeed := lObj * (value.Len() - 1); cap(out)-len(out) < lNeed {
+			out = bsGrow(out, lNeed)
+		}
+		for i := 1; i < value.Len(); i++ {
+			out = append(out, ',')
 			v := value.Index(i)
 			out = marshalValue(out, v)
 		}
+		out = append(out, ']')
 		return
 	case reflect.Struct:
 		prv := reflectValueToValue(&value)

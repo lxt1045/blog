@@ -45,17 +45,20 @@ type TagInfo struct {
 	Children        map[string]*TagInfo
 	ChildList       []*TagInfo // 遍历的顺序和速度
 	MChildren       tagMap
+	Builder         *TypeBuilder
 
 	fSet setFunc
 	fGet getFunc
-
 	fUnm unmFunc
 	fM   mFunc
 
-	SPool sync.Pool
-
-	Builder *TypeBuilder
+	SPool        sync.Pool
+	SPoolN       int32
+	bsMarshalLen int32 // 缓存上次 生成的 bs 的大小，如果 cache 小于这个值，则丢弃
+	bsHaftCount  int32 // 记录上次低于 bsMarshalLen/2 的次数
 }
+
+const SPoolN = 1024 // * 1024
 
 func (t *TagInfo) buildChildMap() {
 	if len(t.ChildList) == 0 {
@@ -71,7 +74,7 @@ func (t *TagInfo) buildChildMap() {
 			V: child,
 		})
 	}
-	if len(t.ChildList) <= 128 {
+	if len(t.ChildList) <= 64 {
 		t.MChildrenEnable = true
 		mc := buildTagMap(nodes)
 		t.MChildren = mc
@@ -99,7 +102,11 @@ func (t *TagInfo) AddChild(c *TagInfo) (err error) {
 // []byte 是一种特殊的底层数据类型，需要 base64 编码
 func isBytes(typ reflect.Type) bool {
 	bsType := reflect.TypeOf(&[]byte{})
-	return typ.PkgPath() == bsType.PkgPath() && typ.String() == bsType.String()
+	return UnpackType(bsType).Hash == UnpackType(typ).Hash
+}
+func isStrings(typ reflect.Type) bool {
+	bsType := reflect.TypeOf([]string{})
+	return UnpackType(bsType).Hash == UnpackType(typ).Hash
 }
 
 func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
@@ -161,6 +168,9 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 		if isBytes(baseType) {
 			ti.fSet, ti.fGet = bytesFuncs(pidx)
 		} else {
+			if isStrings(baseType) {
+				ti.fUnm, ti.fM = sliceStringsMFuncs()
+			}
 			ti.BaseType = baseType
 			sliceType := baseType.Elem()
 			son := &TagInfo{
@@ -178,8 +188,23 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 			}
 			ti.fSet, ti.fGet = sliceFuncs(pidx)
 
+			// ch := func() (ch chan *[]byte) {
+			// 	ch = make(chan *[]uint8, 4)
+			// 	go func() {
+			// 		for {
+			// 			v := reflect.MakeSlice(ti.BaseType, 0, SPoolN)
+			// 			p := reflectValueToPointer(&v)
+			// 			pH := (*SliceHeader)(p)
+			// 			pH.Cap = pH.Cap * int(sliceType.Size())
+			// 			ch <- (*[]uint8)(p)
+			// 		}
+			// 	}()
+			// 	return
+			// }()
+			ti.SPoolN = (1 << 20) / int32(ti.BaseType.Size())
 			ti.SPool.New = func() any {
-				v := reflect.MakeSlice(ti.BaseType, 0, 1024)
+				// return <-ch
+				v := reflect.MakeSlice(ti.BaseType, 0, int(ti.SPoolN)) // SPoolN)
 				p := reflectValueToPointer(&v)
 				pH := (*SliceHeader)(p)
 				pH.Cap = pH.Cap * int(sliceType.Size())

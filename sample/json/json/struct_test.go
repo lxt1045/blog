@@ -493,6 +493,7 @@ func TestStructMarshal(t *testing.T) {
 		})
 	}
 }
+
 func BenchmarkTestLoop(b *testing.B) {
 	loop := 10000000000
 	b.Run("loop1", func(b *testing.B) {

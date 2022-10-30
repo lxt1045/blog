@@ -3,6 +3,8 @@ package json
 import (
 	"strconv"
 	"strings"
+	"sync"
+	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
 )
@@ -115,8 +117,6 @@ func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
 			iSlash = idxSlash
 			store.obj = pointerOffset(store.obj, store.tag.Offset)
 			pBase := store.tag.fSet(store, stream[i:])
-			// pSlice := (*[]uint8)(pBase)
-			// *pSlice = make([]uint8, 0)
 			pHeader := (*SliceHeader)(pBase)
 			pHeader.Data = store.obj
 			return
@@ -136,6 +136,68 @@ func sliceMFuncs() (fUnm unmFunc, fM mFunc) {
 	}
 	return
 }
+func slicePointerMFuncs() (fUnm unmFunc, fM mFunc) {
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			store.obj = pointerOffset(store.obj, store.tag.Offset)
+			pBase := store.tag.fSet(store, stream[i:])
+			pHeader := (*SliceHeader)(pBase)
+			pHeader.Data = store.obj
+			return
+		}
+		store.obj = pointerOffset(store.obj, store.tag.Offset) //
+		store.obj = store.tag.fSet(store, stream[i:])          // 会处理指针分配
+
+		n, iSlash := parseSlice(idxSlash-1, stream[1:], store)
+		iSlash++
+		i += n + 1
+		return
+	}
+	fM = func(store Store, in []byte) (out []byte) {
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		out = store.tag.fGet(store, in)
+		return
+	}
+	return
+}
+func sliceStringsMFuncs() (fUnm unmFunc, fM mFunc) {
+	size := int(unsafe.Sizeof(""))
+	SPoolN := (1 << 20) / size
+	strsPool := sync.Pool{
+		New: func() any {
+			strs := make([]string, 0, SPoolN)
+			return &strs
+		},
+	}
+
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			store.obj = pointerOffset(store.obj, store.tag.Offset)
+			pBase := store.tag.fSet(store, stream[i:])
+			pHeader := (*SliceHeader)(pBase)
+			pHeader.Data = store.obj
+			return
+		}
+		store.obj = pointerOffset(store.obj, store.tag.Offset) //
+		store.obj = store.tag.fSet(store, stream[i:])          // 会处理指针分配
+
+		n, iSlash := parseSliceString(idxSlash-1, stream[1:], store, SPoolN, &strsPool)
+		iSlash++
+		i += n + 1
+		return
+	}
+	fM = func(store Store, in []byte) (out []byte) {
+		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		out = store.tag.fGet(store, in)
+		return
+	}
+	return
+}
+
 func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
@@ -146,7 +208,7 @@ func stringMFuncs() (fUnm unmFunc, fM mFunc) {
 		var raw string
 		{
 			i = strings.IndexByte(stream[1:], '"')
-			if i >= 0 && idxSlash > i+1 {
+			if idxSlash > i+1 {
 				i++
 				raw = stream[1:i]
 				i++

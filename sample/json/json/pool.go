@@ -24,13 +24,104 @@ package json
 
 import (
 	"reflect"
+	"sync"
 	"sync/atomic"
 	"unsafe"
 )
 
 var (
-	cacheStructTagInfo = newCache[uint32, *TagInfo]()
+	strEface    = UnpackEface("")
+	isliceEface = UnpackEface([]interface{}{})
+	hmapimp     = func() *hmap {
+		m := make(map[string]interface{})
+		return *(**hmap)(unsafe.Pointer(&m))
+	}()
+	mapGoType = func() *maptype {
+		m := make(map[string]interface{})
+		typ := reflect.TypeOf(m)
+		return (*maptype)(unsafe.Pointer(UnpackType(typ)))
+	}()
+
+	chbsPool = func() (ch chan *[]byte) {
+		ch = make(chan *[]byte, 4)
+		go newBytes(ch)
+		return
+	}()
 )
+
+func newBytes(ch chan *[]byte) {
+	for {
+		s := make([]byte, 0, bsPoolN)
+		ch <- &s
+	}
+}
+func newMapArray(ch chan *[]byte) {
+	N := 1 << 20
+	size := int(mapGoType.bucket.Size)
+	N = N / size
+	cap := N * size
+	for {
+		p := unsafe_NewArray(mapGoType.bucket, N)
+		s := &SliceHeader{
+			Data: p,
+			Len:  cap,
+			Cap:  cap,
+		}
+		ch <- (*[]byte)(unsafe.Pointer(s))
+	}
+}
+
+var (
+	poolSliceInterface = sync.Pool{New: func() any {
+		return make([]interface{}, 1024)
+	}}
+
+	pairPool = sync.Pool{
+		New: func() any {
+			s := make([]pair, 0, 128)
+			return &s
+		},
+	}
+	bsPool = sync.Pool{New: func() any {
+		return <-chbsPool
+		// s := make([]byte, 0, bsPoolN)
+		// return &s
+	}}
+	poolMapArrayInterface = func() sync.Pool {
+		ch := make(chan *[]byte, 4) // runtime.GOMAXPROCS(0))
+		// go func() {
+		// 	for {
+		// 		N := 1 << 20
+		// 		p := unsafe_NewArray(mapGoType.bucket, N)
+		// 		s := &SliceHeader{
+		// 			Data: p,
+		// 			Len:  N * int(mapGoType.bucket.Size),
+		// 			Cap:  N * int(mapGoType.bucket.Size),
+		// 		}
+		// 		ch <- (*[]byte)(unsafe.Pointer(s))
+		// 	}
+		// }()
+		go newMapArray(ch)
+		return sync.Pool{New: func() any {
+			return <-ch
+		}}
+	}()
+
+	cacheStructTagInfo = NewRCU[uint32, *TagInfo]()
+	strPool            = NewBatch[string]()
+	islicePool         = NewBatch[[]interface{}]()
+	imapPool           = NewBatch[hmap]()
+)
+
+const (
+	bsPoolN = 1 << 20
+	batchN  = 1 << 12
+)
+
+type pair struct {
+	k string
+	v interface{}
+}
 
 // 获取 string 的起始地址
 func strToUintptr(p string) uintptr {
@@ -55,24 +146,24 @@ func LoadTagNodeSlow(v reflect.Value, hash uint32) (*TagInfo, error) {
 	return ti, nil
 }
 
-//cache 依据 RCU(Read Copy Update) 原理实现
-type cache[T uintptr | uint32 | string | int, V any] struct {
+//RCU 依据 Read Copy Update 原理实现
+type RCU[T uintptr | uint32 | string | int, V any] struct {
 	m unsafe.Pointer
 }
 
-func newCache[T uintptr | uint32 | string | int, V any]() (c cache[T, V]) {
+func NewRCU[T uintptr | uint32 | string | int, V any]() (c RCU[T, V]) {
 	m := make(map[T]V, 1)
 	c.m = unsafe.Pointer(&m)
 	return
 }
 
-func (c *cache[T, V]) Get(key T) (v V, ok bool) {
+func (c *RCU[T, V]) Get(key T) (v V, ok bool) {
 	m := *(*map[T]V)(atomic.LoadPointer(&c.m))
 	v, ok = m[key]
 	return
 }
 
-func (c *cache[T, V]) Set(key T, v V) {
+func (c *RCU[T, V]) Set(key T, v V) {
 	m := *(*map[T]V)(atomic.LoadPointer(&c.m))
 	if _, ok := m[key]; ok {
 		return
@@ -95,7 +186,7 @@ func (c *cache[T, V]) Set(key T, v V) {
 	}
 }
 
-func (c *cache[T, V]) GetOrSet(key T, load func() (v V)) (v V) {
+func (c *RCU[T, V]) GetOrSet(key T, load func() (v V)) (v V) {
 	m := *(*map[T]V)(atomic.LoadPointer(&c.m))
 	v, ok := m[key]
 	if !ok {
@@ -117,31 +208,18 @@ func (c *cache[T, V]) GetOrSet(key T, load func() (v V)) (v V) {
 	return
 }
 
-/*
- 先试试这个；
- 然后试试 &map[string]interface{} 的时候, 先 sync.pool 获取一个：
- type pool struct{
-	strs []string
-	efaces []interface{}
-	maps []map[string]interface{} 的底层 array 的列表
-	floats []float64
-	...
- }
- 执行过程中直接 make，不需要加锁；
- 完成后再 put 回去
-//*/
-
 type sliceNode[T any] struct {
 	s   []T
 	idx uint32 // atomic
 }
 type Batch[T any] struct {
 	pool unsafe.Pointer // *sliceNode[T]
+	sync.Mutex
 }
 
 func NewBatch[T any]() *Batch[T] {
 	sn := &sliceNode[T]{
-		s:   make([]T, 1024*1024),
+		s:   nil, // make([]T, batchN),
 		idx: 0,
 	}
 	return &Batch[T]{
@@ -149,35 +227,64 @@ func NewBatch[T any]() *Batch[T] {
 	}
 }
 
-func GetStr(b *Batch[string]) (p *string) {
-	sn := (*sliceNode[string])(atomic.LoadPointer(&b.pool))
+func BatchGet[T any](b *Batch[T]) *T {
+	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
 	idx := atomic.AddUint32(&sn.idx, 1)
-	if int(idx) >= len(sn.s) {
-		return b.Make()
+	if int(idx) <= len(sn.s) {
+		return &sn.s[idx-1]
 	}
-	p = &sn.s[idx-1]
+	return b.Make()
+}
+
+func (b *Batch[T]) Get() *T {
+	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
+	idx := atomic.AddUint32(&sn.idx, 1)
+	if int(idx) <= len(sn.s) {
+		return &sn.s[idx-1]
+	}
+	return b.Make()
+}
+
+func (b *Batch[T]) GetN(n int) *T {
+	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
+	idx := atomic.AddUint32(&sn.idx, uint32(n))
+	if int(idx) <= len(sn.s) {
+		return &sn.s[int(idx)-n]
+	}
+	return b.MakeN(n)
+
+}
+
+func (b *Batch[T]) Make() (p *T) {
+	b.Lock()
+	defer b.Unlock()
+	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
+	idx := atomic.AddUint32(&sn.idx, 1)
+	if int(idx) <= len(sn.s) {
+		p = &sn.s[idx-1]
+		return
+	}
+	sn = &sliceNode[T]{
+		s:   make([]T, batchN),
+		idx: 1,
+	}
+	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
+	p = &sn.s[0]
 	return
 }
 
-func (b *Batch[T]) Get() (p *T) {
+func (b *Batch[T]) MakeN(n int) (p *T) {
+	b.Lock()
+	defer b.Unlock()
 	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
 	idx := atomic.AddUint32(&sn.idx, 1)
-	if int(idx) > len(sn.s) {
-		sn = &sliceNode[T]{
-			s:   make([]T, 1024*1024),
-			idx: 1,
-		}
-		atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
-		p = &sn.s[0]
+	if int(idx) <= len(sn.s) {
+		p = &sn.s[idx-1]
 		return
 	}
-	p = &sn.s[idx-1]
-	return
-}
-func (b *Batch[T]) Make() (p *T) {
-	sn := &sliceNode[T]{
-		s:   make([]T, 1024*1024),
-		idx: 1,
+	sn = &sliceNode[T]{
+		s:   make([]T, batchN),
+		idx: uint32(n),
 	}
 	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
 	p = &sn.s[0]
