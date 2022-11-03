@@ -212,7 +212,20 @@ func BenchmarkMyUnmarshal2(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			err := Unmarshal(bs, &d)
+			err := UnmarshalString(j0, &d)
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run(name, func(b *testing.B) {
+		d := map[string]interface{}{}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			err := sonic.UnmarshalString(j0, &d)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -235,6 +248,17 @@ func BenchmarkMyUnmarshal3(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			err := sonic.UnmarshalString(j0, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	b.Run(name, func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			err := UnmarshalString(j0, &d)
 			if err != nil {
 				b.Fatalf("[%d]:%v", i, err)
 			}
@@ -875,6 +899,25 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 		name string
 		f    func()
 	}{
+		{"lxt-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := Unmarshal(bs, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			"sonic-st",
+			func() {
+				m := testdata.TwitterStruct{}
+				err := sonic.UnmarshalString(data, &m)
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
 		{"lxt-st",
 			func() {
 				m := testdata.TwitterStruct{}

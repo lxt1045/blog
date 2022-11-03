@@ -8,6 +8,11 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
+/*
+来一个更狠的、可以用于炫技的，自己 mask pointer 的 bitmap，
+这样就可以不需要建那么多的 pool，只要一个 nopointer 一个 pointer 的 pool 就可以了
+*/
+
 //Unmarshal 转成struct
 func Unmarshal(bsIn []byte, in interface{}) (err error) {
 	defer func() {
@@ -167,7 +172,7 @@ func Marshal(in interface{}) (bs []byte, err error) {
 		obj: prv.ptr, // eface.Value,
 	}
 
-	bs = marshalStruct(bs[:0], store)
+	bs = marshalStruct(store, bs[:0])
 
 	l := int32(len(bs))
 	lLeft = atomic.LoadInt32(&tag.bsMarshalLen)

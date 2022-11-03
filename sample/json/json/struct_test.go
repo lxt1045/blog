@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"strconv"
 	"testing"
-	"time"
 
 	asrt "github.com/stretchr/testify/assert"
 )
@@ -257,7 +256,7 @@ func TestStructMarshal(t *testing.T) {
 		_, file = filepath.Split(file)
 		return file + ":" + strconv.Itoa(line)
 	}
-	idx := -9
+	idx := -5
 
 	datas := []struct {
 		name    string
@@ -515,26 +514,5 @@ func BenchmarkTestLoop(b *testing.B) {
 			for j := 0; j < loop; j++ {
 			}
 		}
-	})
-}
-
-func TestLoop(t *testing.T) {
-	loop := 10000000000
-	t.Run("loop1", func(t *testing.T) {
-		s := time.Now()
-		for j := 0; j < loop; j++ {
-		}
-		t.Log(time.Since(s).Seconds())
-
-		s = time.Now()
-		for j := 0; j < loop; j++ {
-		}
-		t.Log(time.Since(s).Seconds())
-
-		s = time.Now()
-		for j := 0; j < loop; j++ {
-		}
-		t.Log(time.Since(s).Seconds())
-
 	})
 }

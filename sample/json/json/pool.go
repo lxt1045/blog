@@ -208,12 +208,18 @@ func (c *RCU[T, V]) GetOrSet(key T, load func() (v V)) (v V) {
 	return
 }
 
+/*
+  Pool 和 store.Pool 一起，一次 Unmashal 调用，补充一次 pool 填满，此次执行期间，不会其他进程争抢；
+  结束后再归还，剩下的下次还可以继续使用
+*/
 type sliceNode[T any] struct {
 	s   []T
 	idx uint32 // atomic
 }
 type Batch[T any] struct {
-	pool unsafe.Pointer // *sliceNode[T]
+	pool  unsafe.Pointer // *sliceNode[T]
+	gStrs [][]T
+	cond  *sync.Cond // 唤醒通知
 	sync.Mutex
 }
 
@@ -222,9 +228,32 @@ func NewBatch[T any]() *Batch[T] {
 		s:   nil, // make([]T, batchN),
 		idx: 0,
 	}
-	return &Batch[T]{
-		pool: unsafe.Pointer(sn),
+	ret := &Batch[T]{
+		pool:  unsafe.Pointer(sn),
+		gStrs: make([][]T, 4),
 	}
+	ret.cond = sync.NewCond(&ret.Mutex)
+	go func() {
+		count := 0
+		for {
+			count = 0
+			for i := range ret.gStrs {
+				ret.cond.L.Lock()
+				if len(ret.gStrs[i]) == 0 {
+					count++
+					ret.gStrs[i] = make([]T, batchN)
+				}
+				ret.cond.L.Unlock()
+			}
+			if count == 0 {
+				ret.cond.L.Lock()
+				ret.cond.Wait()
+				ret.cond.L.Unlock()
+			}
+		}
+	}()
+
+	return ret
 }
 
 func BatchGet[T any](b *Batch[T]) *T {
@@ -233,7 +262,7 @@ func BatchGet[T any](b *Batch[T]) *T {
 	if int(idx) <= len(sn.s) {
 		return &sn.s[idx-1]
 	}
-	return b.Make()
+	return b.Make1()
 }
 
 func (b *Batch[T]) Get() *T {
@@ -256,8 +285,9 @@ func (b *Batch[T]) GetN(n int) *T {
 }
 
 func (b *Batch[T]) Make() (p *T) {
-	b.Lock()
-	defer b.Unlock()
+	b.cond.L.Lock()
+	defer b.cond.L.Unlock()
+
 	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
 	idx := atomic.AddUint32(&sn.idx, 1)
 	if int(idx) <= len(sn.s) {
@@ -272,18 +302,67 @@ func (b *Batch[T]) Make() (p *T) {
 	p = &sn.s[0]
 	return
 }
-
-func (b *Batch[T]) MakeN(n int) (p *T) {
-	b.Lock()
-	defer b.Unlock()
+func (b *Batch[T]) Make1() (p *T) {
+	b.cond.L.Lock()
+	defer func() {
+		b.cond.L.Unlock()
+		b.cond.Broadcast()
+	}()
 	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
 	idx := atomic.AddUint32(&sn.idx, 1)
 	if int(idx) <= len(sn.s) {
 		p = &sn.s[idx-1]
 		return
 	}
+	strs := []T{}
+	for i := range b.gStrs {
+		if len(b.gStrs) != 0 {
+			strs = b.gStrs[i]
+			b.gStrs[i] = nil
+			break
+		}
+	}
+	if len(strs) == 0 {
+		strs = make([]T, batchN)
+	}
 	sn = &sliceNode[T]{
-		s:   make([]T, batchN),
+		s:   strs,
+		idx: 1,
+	}
+	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
+	p = &sn.s[0]
+	return
+}
+
+func (b *Batch[T]) MakeN(n int) (p *T) {
+	b.cond.L.Lock()
+	defer func() {
+		b.cond.L.Unlock()
+		b.cond.Broadcast()
+	}()
+	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
+	idx := atomic.AddUint32(&sn.idx, 1)
+	if int(idx) <= len(sn.s) {
+		p = &sn.s[idx-1]
+		return
+	}
+	if n > batchN {
+		strs := make([]T, n)
+		return &strs[0]
+	}
+	strs := []T{}
+	for i := range b.gStrs {
+		if len(b.gStrs) != 0 {
+			strs = b.gStrs[i]
+			b.gStrs[i] = nil
+			break
+		}
+	}
+	if len(strs) == 0 {
+		strs = make([]T, batchN)
+	}
+	sn = &sliceNode[T]{
+		s:   make([]T, batchN), // <-b.ch, // make([]T, batchN),
 		idx: uint32(n),
 	}
 	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))

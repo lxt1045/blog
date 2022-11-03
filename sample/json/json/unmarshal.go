@@ -387,8 +387,6 @@ func parseSliceString2(idxSlash int, stream string, store PoolStore, SPoolN int,
 	return
 }
 
-var strs = make([]string, 64)
-
 func parseSliceString(idxSlash int, stream string, store PoolStore, SPoolN int, strsPool *sync.Pool) (i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
@@ -401,21 +399,24 @@ func parseSliceString(idxSlash int, stream string, store PoolStore, SPoolN int, 
 	// TODO 使用 IndexByte 先计算slice 的长度，在分配内存
 	// pstrs := strsPool.Get().(*[]string)
 	// strs = strs[:0:cap(strs)]
-	strs := (*[4]string)(unsafe.Pointer(strPool.GetN(4)))[:0:4] //make([]string, 0, 4)
-	pstrs := &strs
-	pObj := (*[]string)(store.obj)
+	strs := (*[1 << 20]string)(unsafe.Pointer(strPool.GetN(4)))[:0:4] //make([]string, 0, 4)
+	pstrs := (*[]string)(store.obj)
+	*pstrs = strs
 	for n, nB := 0, 0; ; {
 		if len(*pstrs)+1 > cap(*pstrs) {
 			c := len(*pstrs) * 2
-			news := (*[4]string)(unsafe.Pointer(strPool.GetN(c)))[:0:c]
+			news := (*[1 << 20]string)(unsafe.Pointer(strPool.GetN(c)))[:0:c]
 			*pstrs = append(news, *pstrs...)
 		}
 		*pstrs = (*pstrs)[:len(*pstrs)+1]
+		// son := store.tag.ChildList[0]
 		// n, iSlash = son.fUnm(iSlash-i, PoolStore{
 		// 	obj:  unsafe.Pointer(&(*pstrs)[len(*pstrs)-1]),
 		// 	tag:  son,
 		// 	pool: store.pool,
 		// }, stream[i:])
+		// iSlash += i
+		// i += n
 		{
 			// 全部内联
 			i++
@@ -440,11 +441,6 @@ func parseSliceString(idxSlash int, stream string, store PoolStore, SPoolN int, 
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
 	}
-	*pObj = (*pstrs)[:len(*pstrs):len(*pstrs)]
-	// *pstrs = (*pstrs)[len(*pstrs):]
-	// if cap(*pstrs)-len(*pstrs) > 4 {
-	// 	strsPool.Put(pstrs)
-	// }
 	return
 }
 
@@ -711,6 +707,7 @@ func parseUnescapeStr(stream string, nextQuotesIdx, nextSlashIdxIn int) (raw str
 		if nextSlashIdx < 0 {
 			nextSlashIdx = math.MaxInt
 			i += nextQuotesIdx
+			raw = stream[1:i]
 			i++
 			return
 		}

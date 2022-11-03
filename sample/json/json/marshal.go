@@ -25,15 +25,15 @@ func bsGrow(in []byte, lNeed int) (out []byte) {
 	return
 }
 
-// 排列一个 fGet list，优化掉多个 for 循环
-func marshalStruct(in []byte, store Store) (out []byte) {
+// 排列一个 fM list，优化掉多个 for 循环
+func marshalStruct(store Store, in []byte) (out []byte) {
 	out = append(in, '{')
 	for _, tag := range store.tag.ChildList {
 		out = append(out, tag.TagName...)
 		out = append(out, ':')
 
 		pObj := pointerOffset(store.obj, tag.Offset)
-		out = tag.fGet(Store{obj: pObj, tag: tag}, out)
+		out = tag.fM(Store{obj: pObj, tag: tag}, out)
 
 		out = append(out, ',')
 	}
@@ -44,7 +44,7 @@ func marshalStruct(in []byte, store Store) (out []byte) {
 //marshalT 序列化明确的类型
 func marshalT(in []byte, store Store) (out []byte) {
 	out = in
-	panic(lxterrs.Errorf("error tag, fGet is nil:%+v", store.tag))
+	panic(lxterrs.Errorf("error tag, fM is nil:%+v", store.tag))
 
 	return
 }
@@ -60,7 +60,7 @@ func marshalSlice(bs []byte, store Store, l int) (out []byte) {
 	size := son.TypeSize
 
 	lBefore := len(out)
-	out = son.fGet(Store{obj: store.obj, tag: son}, out)
+	out = son.fM(Store{obj: store.obj, tag: son}, out)
 	lObj := len(out) - lBefore + 1 + 16 // 16 随意取的值
 	// 解析还需要的空间
 	if lNeed := lObj * (l - 1); cap(out)-len(out) < lNeed {
@@ -70,7 +70,7 @@ func marshalSlice(bs []byte, store Store, l int) (out []byte) {
 	for i := 1; i < l; i++ {
 		out = append(out, ',')
 		pSon := pointerOffset(store.obj, uintptr(i*size))
-		out = son.fGet(Store{obj: pSon, tag: son}, out)
+		out = son.fM(Store{obj: pSon, tag: son}, out)
 	}
 	out = append(out, ']')
 	return
@@ -238,7 +238,7 @@ func marshalValue(bs []byte, value reflect.Value) (out []byte) {
 			tag: tag,
 			obj: prv.ptr, // eface.Value,
 		}
-		out = marshalStruct(out, store)
+		out = marshalStruct(store, out)
 		return
 	case reflect.Bool:
 		if value.Bool() {

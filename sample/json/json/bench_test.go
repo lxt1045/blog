@@ -166,11 +166,32 @@ func StringToBytes(s string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&p))
 }
 
+/*
+
+BenchmarkUnmarshalType/uint-10-lxt-12         	 2709748	       434.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkUnmarshalType/uint-10-sonic
+BenchmarkUnmarshalType/uint-10-sonic-12       	 2577014	       459.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkUnmarshalType/Marshal-uint-10-lxt
+BenchmarkUnmarshalType/Marshal-uint-10-lxt-12 	 4664451	       285.0 ns/op	     174 B/op	       0 allocs/op
+BenchmarkUnmarshalType/Marshal-uint-10-sonic
+BenchmarkUnmarshalType/Marshal-uint-10-sonic-12         	 2238636	       446.9 ns/op	     265 B/op	       4 allocs/op
+BenchmarkUnmarshalType/*uint-10-lxt
+BenchmarkUnmarshalType/*uint-10-lxt-12                  	 2471928	       484.3 ns/op	      92 B/op	       0 allocs/op
+BenchmarkUnmarshalType/*uint-10-sonic
+BenchmarkUnmarshalType/*uint-10-sonic-12                	 2519889	       489.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkUnmarshalType/Marshal-*uint-10-lxt
+BenchmarkUnmarshalType/Marshal-*uint-10-lxt-12          	 4683285	       257.0 ns/op	     174 B/op	       0 allocs/op
+BenchmarkUnmarshalType/Marshal-*uint-10-sonic
+BenchmarkUnmarshalType/Marshal-*uint-10-sonic-12        	 3675110	       319.6 ns/op	     260 B/op	       4 allocs/op
+
+*/
 func BenchmarkUnmarshalType(b *testing.B) {
 	all := []struct {
 		V     interface{}
 		JsonV string
 	}{
+		{uint(0), `888888`},
+		{(*uint)(nil), `888888`},
 		{int8(0), `88`},
 		{int(0), `888888`},
 		{true, `true`},
@@ -182,7 +203,8 @@ func BenchmarkUnmarshalType(b *testing.B) {
 		{(*string)(nil), `"asdfghjkl"`},
 	}
 	N := 10
-	idxs := []int{4, 5}
+	idxs := []int{}
+	// idxs = []int{1}
 	if len(idxs) > 0 {
 		get := all[:0]
 		for _, i := range idxs {
@@ -229,15 +251,15 @@ func BenchmarkUnmarshalType(b *testing.B) {
 			}
 		})
 		runtime.GC()
-		b.Run(fmt.Sprintf("%s-%d-std", fieldType, N), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				err := json.Unmarshal(bs, value)
-				if err != nil {
-					b.Fatal(err)
-				}
-			}
-		})
-		runtime.GC()
+		// b.Run(fmt.Sprintf("%s-%d-std", fieldType, N), func(b *testing.B) {
+		// 	for i := 0; i < b.N; i++ {
+		// 		err := json.Unmarshal(bs, value)
+		// 		if err != nil {
+		// 			b.Fatal(err)
+		// 		}
+		// 	}
+		// })
+		// runtime.GC()
 
 		var err error
 		b.Run(fmt.Sprintf("Marshal-%s-%d-lxt", fieldType, N), func(b *testing.B) {
@@ -257,15 +279,15 @@ func BenchmarkUnmarshalType(b *testing.B) {
 				}
 			}
 		})
-		runtime.GC()
-		b.Run(fmt.Sprintf("Marshal-%s-%d-std", fieldType, N), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				bs, err = json.Marshal(value)
-				if err != nil {
-					b.Fatal(err)
-				}
-			}
-		})
+		// runtime.GC()
+		// b.Run(fmt.Sprintf("Marshal-%s-%d-std", fieldType, N), func(b *testing.B) {
+		// 	for i := 0; i < b.N; i++ {
+		// 		bs, err = json.Marshal(value)
+		// 		if err != nil {
+		// 			b.Fatal(err)
+		// 		}
+		// 	}
+		// })
 	}
 }
 
@@ -447,7 +469,8 @@ func BenchmarkUnmarshalSlice(b *testing.B) {
 	// str := `{"X0":["1","2","3"]}`
 	// str := `{"X0":["1","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3"],"X1":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X2":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X3":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X4":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X5":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X6":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X7":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X8":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X9":["1","2","3","2","3","2","3","2","3","2","3","2","3"]}`
 	str := `{"X0":["1","2","3"],"X1":["1","2","3"],"X2":["1","2","3"],"X3":["1","2","3"],"X4":["1","2","3"],"X5":["1","2","3"],"X6":["1","2","3"],"X7":["1","2","3"],"X8":["1","2","3"],"X9":["1","2","3"]}`
-	// str := `{"X0":["1","2","3"]}`
+	// str := `{"X0":["1","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3"]}`
+	// str := `{"X0":["1","2","3","2","3","1","2","3","2","3"]}`
 	d := struct {
 		X0 []string
 		X1 []string

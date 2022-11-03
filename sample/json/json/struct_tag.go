@@ -47,12 +47,10 @@ type TagInfo struct {
 	MChildren       tagMap
 	Builder         *TypeBuilder
 
-	fSet setFunc
-	fGet getFunc
 	fUnm unmFunc
 	fM   mFunc
 
-	SPool        sync.Pool
+	SPool        sync.Pool // TODO：slice pool 和 store.pool 放在一起吧，通过 id 来获取获取 pool，并把剩余的”垃圾“放回 sync.Pool 中共下次复用
 	SPoolN       int32
 	bsMarshalLen int32 // 缓存上次 生成的 bs 的大小，如果 cache 小于这个值，则丢弃
 	bsHaftCount  int32 // 记录上次低于 bsMarshalLen/2 的次数
@@ -128,48 +126,37 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 	// 先从最后一个基础类型开始处理
 	switch baseType.Kind() {
 	case reflect.Bool:
-		ti.fSet, ti.fGet = boolFuncs(pidx)
-		ti.fUnm, ti.fM = boolMFuncs()
+		ti.fUnm, ti.fM = boolMFuncs2(pidx)
 	case reflect.Uint, reflect.Uint64, reflect.Uintptr:
-		ti.fSet, ti.fGet = uint64Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = uint64MFuncs(pidx)
 	case reflect.Int, reflect.Int64:
-		ti.fSet, ti.fGet = int64Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = int64MFuncs(pidx)
 	case reflect.Uint32:
-		ti.fSet, ti.fGet = uint32Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = uint32MFuncs(pidx)
 	case reflect.Int32:
-		ti.fSet, ti.fGet = int32Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = int32MFuncs(pidx)
 	case reflect.Uint16:
-		ti.fSet, ti.fGet = uint16Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = uint16MFuncs(pidx)
 	case reflect.Int16:
-		ti.fSet, ti.fGet = int16Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = int16MFuncs(pidx)
 	case reflect.Uint8:
-		ti.fSet, ti.fGet = uint8Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = uint8MFuncs(pidx)
 	case reflect.Int8:
-		ti.fSet, ti.fGet = int8Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = int8MFuncs(pidx)
 	case reflect.Float64:
-		ti.fSet, ti.fGet = float64Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = float64MFuncs(pidx)
 	case reflect.Float32:
-		ti.fSet, ti.fGet = float32Funcs(pidx)
-		ti.fUnm, ti.fM = numMFuncs()
+		ti.fUnm, ti.fM = float32MFuncs(pidx)
 	case reflect.String:
-		ti.fSet, ti.fGet = stringFuncs(pidx)
-		ti.fUnm, ti.fM = stringMFuncs()
+		ti.fUnm, ti.fM = stringMFuncs2(pidx)
 	case reflect.Slice: // &[]byte; Array
-		ti.fUnm, ti.fM = sliceMFuncs()
 		if isBytes(baseType) {
-			ti.fSet, ti.fGet = bytesFuncs(pidx)
+			ti.fUnm, ti.fM = bytesMFuncs(pidx)
 		} else {
 			if isStrings(baseType) {
 				ti.fUnm, ti.fM = sliceStringsMFuncs()
+			} else {
+				ti.fUnm, ti.fM = sliceMFuncs2(pidx)
 			}
 			ti.BaseType = baseType
 			sliceType := baseType.Elem()
@@ -186,7 +173,6 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 			if err != nil {
 				return lxterrs.Wrap(err, "Struct")
 			}
-			ti.fSet, ti.fGet = sliceFuncs(pidx)
 
 			// ch := func() (ch chan *[]byte) {
 			// 	ch = make(chan *[]uint8, 4)
@@ -212,7 +198,8 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 			}
 		}
 	case reflect.Struct:
-		ti.fUnm, ti.fM = structMFuncs()
+		ti.fUnm, ti.fM = structMFuncs2(pidx)
+
 		son, e := NewStructTagInfo(baseType, false, ti.Builder)
 		if err = e; err != nil {
 			return lxterrs.Wrap(err, "Struct")
@@ -226,10 +213,28 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 				}
 			}
 			ti.buildChildMap()
-			ti.fSet, ti.fGet = structChildFuncs(pidx)
 		} else {
 			for _, c := range son.ChildList {
-				c.fSet, c.fGet = anonymousStructFuncs(pidx, ti.Offset, c.fSet, c.fGet)
+				if ptrDeep == 0 {
+					c.Offset += ti.Offset
+				} else {
+					fUnm, fM := c.fUnm, c.fM
+					c.fM = func(store Store, in []byte) (out []byte) {
+						store.obj = *(*unsafe.Pointer)(store.obj)
+						if store.obj != nil {
+							return fM(store, in)
+						}
+						out = append(in, "null"...)
+						return
+					}
+					c.fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+						store.obj = *(*unsafe.Pointer)(store.obj)
+						if store.obj == nil {
+							store.obj = store.Idx(*pidx)
+						}
+						return fUnm(idxSlash, store, stream)
+					}
+				}
 				err = ti.AddChild(c)
 				if err != nil {
 					return lxterrs.Wrap(err, "AddChild")
@@ -238,11 +243,10 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 		}
 	case reflect.Interface:
 		// Interface 需要根据实际类型创建
-		ti.fSet, ti.fGet = iterfaceFuncs(pidx)
-		ti.fUnm, ti.fM = interfaceMFuncs()
+		ti.fUnm, ti.fM = interfaceMFuncs(pidx)
+
 	case reflect.Map:
-		ti.fSet, ti.fGet = mapFuncs(pidx)
-		ti.fUnm, ti.fM = mapMFuncs()
+		ti.fUnm, ti.fM = mapMFuncs(pidx)
 		valueType := baseType.Elem()
 		son := &TagInfo{
 			TagName:  `"son"`,
@@ -265,23 +269,25 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 	for i := 1; i < ptrDeep; i++ {
 		var idxP *uintptr = &[]uintptr{0}[0]
 		ti.Builder.AppendPointer(fmt.Sprintf("%s_%d", ti.TagName, i), idxP)
-		fSet, fGet := ti.fSet, ti.fGet
-		ti.fSet = func(store PoolStore, bs string) (pBase unsafe.Pointer) {
+		fUnm, fM := ti.fUnm, ti.fM
+		ti.fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 			p := pointerOffset(store.pool, *idxP)
 			*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
 			store.obj = p
-			return fSet(store, bs)
+			return fUnm(idxSlash, store, stream)
 		}
-		ti.fGet = func(store Store, in []byte) (out []byte) {
+		ti.fM = func(store Store, in []byte) (out []byte) {
 			store.obj = *(*unsafe.Pointer)(store.obj)
-			return fGet(store, in)
+			return fM(store, in)
 		}
 	}
+
 	return
 }
 
 //NewStructTagInfo 解析struct的tag字段，并返回解析的结果
 //只需要type, 不需要 interface 也可以? 不着急,分步来
+// 非指针型的匿名嵌入，需要一个偏移量
 func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder) (ti *TagInfo, err error) {
 	if typIn.Kind() != reflect.Struct {
 		err = lxterrs.New("NewStructTagInfo only accepts structs; got %v", typIn.Kind())

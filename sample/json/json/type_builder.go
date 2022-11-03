@@ -84,6 +84,7 @@ func (b *TypeBuilder) Init() {
 	}
 }
 
+// TODO: 此处也可以使用  NewBatch  来提高性能？ 提升 10ns ？
 func (b *TypeBuilder) NewFromPool() unsafe.Pointer {
 	if len(b.fields) == 0 {
 		return nil
