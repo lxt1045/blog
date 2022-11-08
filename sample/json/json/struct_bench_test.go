@@ -166,6 +166,7 @@ func BenchmarkMyUnmarshalMarshalPoniter(b *testing.B) {
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
+	return
 	b.Run("Unmarshal", func(b *testing.B) {
 		d := NameA{}
 		b.ReportAllocs()
@@ -1267,7 +1268,7 @@ func Test_tagParse(t *testing.T) {
 		d := DataSt{}
 		typ := reflect.TypeOf(&d)
 		typ = typ.Elem()
-		to, err := NewStructTagInfo(typ, nil, nil, nil)
+		to, err := NewStructTagInfo(typ, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -137,7 +137,7 @@ func LoadTagNode(v reflect.Value, hash uint32) (*TagInfo, error) {
 }
 func LoadTagNodeSlow(v reflect.Value, hash uint32) (*TagInfo, error) {
 	typ := v.Type()
-	ti, err := NewStructTagInfo(typ, nil /*stackBuilder*/, nil, nil /* ancestors*/)
+	ti, err := NewStructTagInfo(typ, nil /* ancestors*/)
 	if err != nil {
 		return nil, err
 	}

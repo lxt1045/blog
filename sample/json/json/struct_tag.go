@@ -30,6 +30,7 @@ type TagInfo struct {
 	ChildList       []*TagInfo // 遍历的顺序和速度
 	MChildren       tagMap
 	Builder         *TypeBuilder
+	idxBuilder      uintptr // 在 store.pool 的 index 文字
 
 	fUnm unmFunc
 	fM   mFunc
@@ -106,7 +107,7 @@ type ancestor struct {
 	tag  *TagInfo
 }
 
-func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool, ancestors []ancestor) (err error) {
+func (ti *TagInfo) setFuncs(builder *TypeBuilder, typ reflect.Type, anonymous bool, ancestors []ancestor) (err error) {
 	ptrDeep, baseType := 0, typ
 	var pidx *uintptr
 	for ; ; typ = typ.Elem() {
@@ -119,7 +120,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool, ancestors []ancest
 	}
 	if ptrDeep > 0 {
 		pidx = &[]uintptr{0}[0]
-		ti.Builder.AppendTagField(ti.TagName, baseType, pidx)
+		builder.AppendTagField(ti.TagName, baseType, pidx)
 	}
 
 	// 先从最后一个基础类型开始处理
@@ -172,7 +173,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool, ancestors []ancest
 				Builder:  ti.Builder,
 			}
 
-			err = son.setFuncs(sliceType, false /*anonymous*/, ancestors)
+			err = son.setFuncs(builder, sliceType, false /*anonymous*/, ancestors)
 			if err != nil {
 				return lxterrs.Wrap(err, "Struct")
 			}
@@ -207,7 +208,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool, ancestors []ancest
 	case reflect.Struct:
 		ti.fUnm, ti.fM = structMFuncs2(pidx)
 
-		son, e := NewStructTagInfo(baseType, ti.stackBuilder, ti.Builder, ancestors)
+		son, e := NewStructTagInfo(baseType, ancestors)
 		if err = e; err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
@@ -262,14 +263,14 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool, ancestors []ancest
 		valueType := baseType.Elem()
 		son := &TagInfo{
 			TagName:  `"son"`,
-			Builder:  ti.Builder,
 			TypeSize: int(valueType.Size()), // TODO
+			// Builder:  ti.Builder,
 		}
 		err = ti.AddChild(son)
 		if err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
-		err = son.setFuncs(valueType, false /*anonymous*/, ancestors)
+		err = son.setFuncs(builder, valueType, false /*anonymous*/, ancestors)
 		if err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
@@ -280,7 +281,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool, ancestors []ancest
 	// 处理一下指针
 	for i := 1; i < ptrDeep; i++ {
 		var idxP *uintptr = &[]uintptr{0}[0]
-		ti.Builder.AppendPointer(fmt.Sprintf("%s_%d", ti.TagName, i), idxP)
+		builder.AppendPointer(fmt.Sprintf("%s_%d", ti.TagName, i), idxP)
 		fUnm, fM := ti.fUnm, ti.fM
 		ti.fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 			store.obj = store.Idx(*idxP)
@@ -301,23 +302,18 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool, ancestors []ancest
    二者不会同一时刻出现，是不是可以合并为同一个值？
 
 */
-func NewStructTagInfo(typIn reflect.Type, stackBuilder, builder *TypeBuilder, ancestors []ancestor) (ti *TagInfo, err error) {
+func NewStructTagInfo(typIn reflect.Type, ancestors []ancestor) (ti *TagInfo, err error) {
 	if typIn.Kind() != reflect.Struct {
 		err = lxterrs.New("NewStructTagInfo only accepts structs; got %v", typIn.Kind())
 		return
 	}
-	if builder == nil {
-		builder = NewTypeBuilder()
-	}
-	if stackBuilder == nil {
-		stackBuilder = NewTypeBuilder()
-	}
 
 	ti = &TagInfo{
-		TagName:  typIn.String(),
-		BaseKind: typIn.Kind(), // 解析出最内层类型
-		Builder:  builder,
-		TypeSize: int(typIn.Size()),
+		TagName:      typIn.String(),
+		BaseKind:     typIn.Kind(), // 解析出最内层类型
+		Builder:      NewTypeBuilder(),
+		stackBuilder: NewTypeBuilder(),
+		TypeSize:     int(typIn.Size()),
 	}
 
 	goType := UnpackType(typIn)
@@ -327,10 +323,6 @@ func NewStructTagInfo(typIn reflect.Type, stackBuilder, builder *TypeBuilder, an
 		}
 	}
 	ancestors = append(ancestors, ancestor{goType.Hash, ti})
-	if builder == nil {
-		builder = NewTypeBuilder()
-	}
-
 	for i := 0; i < typIn.NumField(); i++ {
 		field := typIn.Field(i)
 		son := &TagInfo{
@@ -338,8 +330,9 @@ func NewStructTagInfo(typIn reflect.Type, stackBuilder, builder *TypeBuilder, an
 			TagName:  `"` + field.Name + `"`,
 			Offset:   field.Offset,
 			BaseKind: field.Type.Kind(),
-			Builder:  builder,
 			TypeSize: int(field.Type.Size()),
+			// Builder:      builder,
+			// stackBuilder: builder,
 		}
 
 		if !field.IsExported() {
@@ -371,7 +364,7 @@ func NewStructTagInfo(typIn reflect.Type, stackBuilder, builder *TypeBuilder, an
 			}
 		}
 
-		err = son.setFuncs(field.Type, field.Anonymous, ancestors)
+		err = son.setFuncs(ti.Builder, field.Type, field.Anonymous, ancestors)
 		if err != nil {
 			err = lxterrs.Wrap(err, "son.setFuncs")
 			return
