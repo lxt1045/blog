@@ -325,50 +325,30 @@ func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	return
 }
 
-//quadwords 4word: 64bit; d：doubleword，双字，32位; w：word，双字节，字，16位; b：byte，字节，8位
-// tag 实际上已经可以提前知道了，这里无需再取一次，重复了
-func parseSliceString2(idxSlash int, stream string, store PoolStore, SPoolN int, strsPool *sync.Pool) (i, iSlash int) {
+//parseNoscanSlice 解析没有 pointer 的 slice，分配内存是不需要标注指针
+func parseNoscanSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	iSlash = idxSlash
-	i = trimSpace(stream[i:])
+	i = trimSpace(stream)
 	if stream[i] == ']' {
 		i++
 		pHeader := (*SliceHeader)(store.obj)
 		pHeader.Data = store.obj
 		return
 	}
-	// son := store.tag.ChildList[0]
-	pstrs := strsPool.Get().(*[]string)
-	pObj := (*[]string)(store.obj)
+	son := store.tag.ChildList[0]
+	size := son.TypeSize
+	bytes := store.GetNoscan()
 	for n, nB := 0, 0; ; {
-		if len(*pstrs)+1 > cap(*pstrs) {
-			c := len(*pstrs) * 2
-			if c < SPoolN {
-				c = SPoolN
-			}
-			news := make([]string, 0, SPoolN)
-
-			*pstrs = append(news, *pstrs...)
-		}
-		*pstrs = (*pstrs)[:len(*pstrs)+1]
-		// n, iSlash = son.fUnm(iSlash-i, PoolStore{
-		// 	obj:  unsafe.Pointer(&(*pstrs)[len(*pstrs)-1]),
-		// 	tag:  son,
-		// 	pool: store.pool,
-		// }, stream[i:])
-		{
-			// 全部内联
-			i++
-			n := strings.IndexByte(stream[i:], '"')
-			n += i
-			if iSlash > n {
-				(*pstrs)[len(*pstrs)-1] = stream[i:n]
-				i = n + 1
-			} else {
-				(*pstrs)[len(*pstrs)-1], n, iSlash = parseUnescapeStr(stream[i:], n-i, iSlash)
-				iSlash += i
-				i = i + n
-			}
-		}
+		l := len(bytes)
+		bytes = GrowBytes(bytes, size)
+		p := unsafe.Pointer(&bytes[l])
+		n, iSlash = son.fUnm(iSlash-i, PoolStore{
+			obj:  p,
+			tag:  son,
+			pool: store.pool,
+		}, stream[i:])
+		iSlash += i
+		i += n
 		n, nB = parseByte(stream[i:], ',')
 		i += n
 		if nB != 1 {
@@ -379,15 +359,67 @@ func parseSliceString2(idxSlash int, stream string, store PoolStore, SPoolN int,
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
 	}
-	*pObj = (*pstrs)[:len(*pstrs):len(*pstrs)]
-	*pstrs = (*pstrs)[len(*pstrs):]
-	if cap(*pstrs)-len(*pstrs) > 4 {
-		strsPool.Put(pstrs)
+
+	store.SetNoscan(bytes[len(bytes):])
+	l := len(bytes) / size
+	*(*SliceHeader)(store.obj) = SliceHeader{
+		Len:  l,
+		Cap:  l,
+		Data: unsafe.Pointer(&bytes[0]),
 	}
 	return
 }
 
-func parseSliceString(idxSlash int, stream string, store PoolStore, SPoolN int, strsPool *sync.Pool) (i, iSlash int) {
+//parseNoscanSlice 解析没有 pointer 的 slice，分配内存是不需要标注指针
+func parseIntSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
+	iSlash = idxSlash
+	i = trimSpace(stream)
+	if stream[i] == ']' {
+		i++
+		pHeader := (*SliceHeader)(store.obj)
+		pHeader.Data = store.obj
+		return
+	}
+	ints := store.GetInts()
+	for n, nB := 0, 0; ; {
+		l := len(ints)
+		ints = GrowInts(ints)
+		p := unsafe.Pointer(&ints[l])
+		{
+			bs := stream[i:]
+			for n = 0; n < len(bs); n++ {
+				c := bs[n]
+				if spaceTable[c] || c == ']' || c == '}' || c == ',' {
+					break
+				}
+			}
+			num, err := strconv.ParseInt(bs[:n], 10, 64)
+			if err != nil {
+				err = lxterrs.Wrap(err, ErrStream(bs[:n]))
+				panic(err)
+			}
+			*(*int64)(p) = num
+		}
+		i += n
+		n, nB = parseByte(stream[i:], ',')
+		i += n
+		if nB != 1 {
+			if nB == 0 && ']' == stream[i] {
+				i++
+				break
+			}
+			panic(lxterrs.New(ErrStream(stream[i:])))
+		}
+	}
+
+	store.SetInts(ints[len(ints):])
+	*(*[]int)(store.obj) = ints[:len(ints):len(ints)]
+	return
+}
+
+//quadwords 4word: 64bit; d：doubleword，双字，32位; w：word，双字节，字，16位; b：byte，字节，8位
+// tag 实际上已经可以提前知道了，这里无需再取一次，重复了
+func parseSliceString1(idxSlash int, stream string, store PoolStore, SPoolN int, strsPool *sync.Pool) (i, iSlash int) {
 	iSlash = idxSlash
 	i = trimSpace(stream[i:])
 	if stream[i] == ']' {
@@ -441,6 +473,46 @@ func parseSliceString(idxSlash int, stream string, store PoolStore, SPoolN int, 
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
 	}
+	return
+}
+func parseSliceString(idxSlash int, stream string, store PoolStore, SPoolN int, strsPool *sync.Pool) (i, iSlash int) {
+	iSlash = idxSlash
+	i = trimSpace(stream[i:])
+	if stream[i] == ']' {
+		i++
+		pHeader := (*SliceHeader)(store.obj)
+		pHeader.Data = store.obj
+		return
+	}
+	strs := store.GetStrings()
+	for n, nB := 0, 0; ; {
+		strs = GrowStrings(strs, 1)
+		{
+			// 全部内联
+			i++
+			n := strings.IndexByte(stream[i:], '"')
+			n += i
+			if iSlash > n {
+				(strs)[len(strs)-1] = stream[i:n]
+				i = n + 1
+			} else {
+				(strs)[len(strs)-1], n, iSlash = parseUnescapeStr(stream[i:], n-i, iSlash)
+				iSlash += i
+				i = i + n
+			}
+		}
+		n, nB = parseByte(stream[i:], ',')
+		i += n
+		if nB != 1 {
+			if nB == 0 && ']' == stream[i] {
+				i++
+				break
+			}
+			panic(lxterrs.New(ErrStream(stream[i:])))
+		}
+	}
+	store.SetStrings(strs[len(strs):])
+	*(*[]string)(store.obj) = strs[:len(strs):len(strs)]
 	return
 }
 

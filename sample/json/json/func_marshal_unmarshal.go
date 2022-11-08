@@ -762,7 +762,128 @@ func structMFuncs2(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 	return
 }
 
-func sliceMFuncs2(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
+func sliceIntsMFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
+	if pidx == nil {
+		fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+			if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+				i = 4
+				iSlash = idxSlash
+				store.obj = pointerOffset(store.obj, store.tag.Offset)
+				pHeader := (*SliceHeader)(store.obj)
+				pHeader.Data = store.obj
+				return
+			}
+			store.obj = pointerOffset(store.obj, store.tag.Offset) //
+			n, iSlash := parseIntSlice(idxSlash-1, stream[1:], store)
+			iSlash++
+			i += n + 1
+			return
+		}
+		fM = func(store Store, in []byte) (out []byte) {
+			// store.obj = pointerOffset(store.obj, store.tag.Offset)
+			pHeader := (*SliceHeader)(store.obj)
+			son := store.tag.ChildList[0]
+			out = marshalSlice(in, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
+			return
+		}
+		return
+	}
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			store.obj = pointerOffset(store.obj, store.tag.Offset)
+			store.obj = store.Idx(*pidx)
+			pHeader := (*SliceHeader)(store.obj)
+			pHeader.Data = store.obj
+			return
+		}
+		store.obj = pointerOffset(store.obj, store.tag.Offset) //
+		p := *(*unsafe.Pointer)(store.obj)
+		if p == nil {
+			store.obj = store.Idx(*pidx)
+		}
+		n, iSlash := parseIntSlice(idxSlash-1, stream[1:], store)
+		iSlash++
+		i += n + 1
+		return
+	}
+	fM = func(store Store, in []byte) (out []byte) {
+		// store.obj = pointerOffset(store.obj, store.tag.Offset)
+		store.obj = *(*unsafe.Pointer)(store.obj)
+		if store.obj == nil {
+			out = append(in, "null"...)
+			return
+		}
+		pHeader := (*SliceHeader)(store.obj)
+		son := store.tag.ChildList[0]
+		out = marshalSlice(in, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
+		return
+	}
+	return
+}
+func sliceNoscanMFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
+	if pidx == nil {
+		fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+			if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+				i = 4
+				iSlash = idxSlash
+				store.obj = pointerOffset(store.obj, store.tag.Offset)
+				pHeader := (*SliceHeader)(store.obj)
+				pHeader.Data = store.obj
+				return
+			}
+			store.obj = pointerOffset(store.obj, store.tag.Offset) //
+			n, iSlash := parseNoscanSlice(idxSlash-1, stream[1:], store)
+			iSlash++
+			i += n + 1
+			return
+		}
+		fM = func(store Store, in []byte) (out []byte) {
+			// store.obj = pointerOffset(store.obj, store.tag.Offset)
+			pHeader := (*SliceHeader)(store.obj)
+			son := store.tag.ChildList[0]
+			out = marshalSlice(in, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
+			return
+		}
+		return
+	}
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			store.obj = pointerOffset(store.obj, store.tag.Offset)
+			store.obj = store.Idx(*pidx)
+			pHeader := (*SliceHeader)(store.obj)
+			pHeader.Data = store.obj
+			return
+		}
+		store.obj = pointerOffset(store.obj, store.tag.Offset) //
+		p := *(*unsafe.Pointer)(store.obj)
+		if p == nil {
+			store.obj = store.Idx(*pidx)
+		}
+		n, iSlash := parseNoscanSlice(idxSlash-1, stream[1:], store)
+		iSlash++
+		i += n + 1
+		return
+	}
+	fM = func(store Store, in []byte) (out []byte) {
+		// store.obj = pointerOffset(store.obj, store.tag.Offset)
+		store.obj = *(*unsafe.Pointer)(store.obj)
+		if store.obj == nil {
+			out = append(in, "null"...)
+			return
+		}
+		pHeader := (*SliceHeader)(store.obj)
+		son := store.tag.ChildList[0]
+		out = marshalSlice(in, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
+		return
+	}
+	return
+}
+
+func sliceMFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 	if pidx == nil {
 		fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 			if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {

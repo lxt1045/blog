@@ -59,12 +59,16 @@ func Unmarshal(bsIn []byte, in interface{}) (err error) {
 		return
 	}
 
+	pool := tag.stack.Get().(*dynamicPool)
+	pool.structPool = tag.Builder.NewFromPool()
 	store := PoolStore{
 		tag:  tag,
 		obj:  prv.ptr, // eface.Value,
-		pool: tag.Builder.NewFromPool(),
+		pool: pool,
 	}
 	err = parseRoot(bs[i:], store)
+	pool.structPool = nil
+	tag.stack.Put(pool)
 	return
 }
 
@@ -112,13 +116,16 @@ func UnmarshalString(bs string, in interface{}) (err error) {
 	if err != nil {
 		return
 	}
-
+	pool := tag.stack.Get().(*dynamicPool)
+	pool.structPool = tag.Builder.NewFromPool()
 	store := PoolStore{
 		tag:  tag,
 		obj:  prv.ptr, // eface.Value,
-		pool: tag.Builder.NewFromPool(),
+		pool: pool,
 	}
 	err = parseRoot(bs[i:], store)
+	pool.structPool = nil
+	tag.stack.Put(pool)
 	return
 }
 

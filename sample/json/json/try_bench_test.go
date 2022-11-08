@@ -88,3 +88,39 @@ func BenchmarkBatch(b *testing.B) {
 	})
 	runtime.GC()
 }
+
+func BenchmarkNewGC(b *testing.B) {
+	const N = 100
+	type StringGC struct {
+		Data *byte
+		Len  int
+	}
+	type String struct {
+		Data int
+		Len  int
+	}
+	batch := NewBatch[string]()
+	for i := 0; i < 5; i++ {
+		runtime.GC()
+		b.Run("batch-BatchGet", func(b *testing.B) {
+			for i := 0; i < b.N*N; i++ {
+				pgStr = BatchGet(batch)
+			}
+		})
+		runtime.GC()
+		b.Run("reflect.String", func(b *testing.B) {
+			for i := 0; i < b.N*N; i++ {
+				h := String{}
+				pgStr = (*string)((unsafe.Pointer)(&h))
+			}
+		})
+		runtime.GC()
+		b.Run("lxt.StringGC", func(b *testing.B) {
+			for i := 0; i < b.N*N; i++ {
+				h := StringGC{}
+				pgStr = (*string)((unsafe.Pointer)(&h))
+			}
+		})
+		runtime.GC()
+	}
+}

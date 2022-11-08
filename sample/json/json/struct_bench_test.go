@@ -15,6 +15,62 @@ import (
 	"github.com/lxt1045/blog/sample/json/json/testdata"
 )
 
+func Tt(value reflect.Value) {
+	if value.Kind() != reflect.Ptr {
+		panic("ss")
+	}
+	value = value.Elem()
+	if value.Kind() != reflect.Struct {
+		panic("ss")
+	}
+	field := value.FieldByName("SS")
+	if !field.CanSet() {
+		return
+	}
+	// str := "888"
+	// field.Set(reflect.ValueOf(&str))
+	field = field.Elem()
+	if !field.CanSet() {
+		return
+	}
+	field.SetString("999")
+	// field.SetIterValue()
+
+	m := value.FieldByName("M")
+	if !m.CanSet() {
+		panic("m")
+	}
+	iter := m.MapRange()
+	if iter == nil {
+		return
+	}
+	for iter.Next() {
+		v := iter.Value().String()
+		v += "-xxx"
+		m.SetMapIndex(iter.Key(), reflect.ValueOf(v))
+	}
+}
+
+func Test_String(t *testing.T) {
+
+	runtime.GC()
+	s := struct {
+		SS *string
+		M  map[string]string
+	}{}
+	x := ""
+	s.SS = &x
+	s.M = map[string]string{
+		"a":  "b",
+		"a1": "b11",
+	}
+	t.Run("1", func(t *testing.T) {
+		Tt(reflect.ValueOf(&s))
+		t.Logf("%+v", s)
+		t.Logf("%+v", *s.SS)
+	})
+}
+
 func Test_parseStr(t *testing.T) {
 	t.Run("map", func(t *testing.T) {
 		src := `"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"`
@@ -1211,7 +1267,7 @@ func Test_tagParse(t *testing.T) {
 		d := DataSt{}
 		typ := reflect.TypeOf(&d)
 		typ = typ.Elem()
-		to, err := NewStructTagInfo(typ, false, nil)
+		to, err := NewStructTagInfo(typ, nil, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

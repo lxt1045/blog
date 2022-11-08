@@ -516,3 +516,54 @@ func BenchmarkTestLoop(b *testing.B) {
 		}
 	})
 }
+
+func TestStructST(t *testing.T) {
+	type ST struct {
+		Count int `json:"count"`
+		X     string
+		ST    *ST
+	}
+	st := ST{
+		Count: 22,
+		X:     "xxx",
+		ST: &ST{
+			Count: 22,
+			X:     "xxx",
+		},
+	}
+	bs, err := json.Marshal(&st)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf(string(bs))
+
+	t.Run("qq", func(t *testing.T) {
+		// err := Unmarshal([]byte(d.bs), d.data)
+		// if err != nil {
+		// 	t.Fatalf("[%d]%s, error:%v\n", i, d.name, err)
+		// }
+		st2 := ST{}
+		err := json.Unmarshal(bs, &st2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bs, err := json.Marshal(&st2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("%+v", string(bs))
+	})
+
+	t.Run("qq1", func(t *testing.T) {
+		st2 := ST{}
+		err := Unmarshal(bs, &st2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bs, err := json.Marshal(&st2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("%+v", string(bs))
+	})
+}

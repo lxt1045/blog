@@ -74,6 +74,7 @@ func (b *TypeBuilder) Init() {
 	N := (8 * 1024 / b.size) + 1
 	l := N * b.size
 	b.pool.New = func() any {
+		// reflect.MakeSlice()
 		ps := unsafe_NewArray(goType, N)
 		pH := &SliceHeader{
 			Data: ps,

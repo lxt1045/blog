@@ -10,22 +10,6 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
-type Store struct {
-	obj unsafe.Pointer
-	tag *TagInfo
-}
-type PoolStore struct {
-	obj  unsafe.Pointer
-	pool unsafe.Pointer
-	tag  *TagInfo
-}
-
-func (ps PoolStore) Idx(idx uintptr) (p unsafe.Pointer) {
-	p = pointerOffset(ps.pool, idx)
-	*(*unsafe.Pointer)(ps.obj) = p
-	return
-}
-
 //TagInfo 拥有tag的struct的成员的解析结果
 type TagInfo struct {
 	TagName      string       //
@@ -50,8 +34,15 @@ type TagInfo struct {
 	fUnm unmFunc
 	fM   mFunc
 
-	SPool        sync.Pool // TODO：slice pool 和 store.pool 放在一起吧，通过 id 来获取获取 pool，并把剩余的”垃圾“放回 sync.Pool 中共下次复用
-	SPoolN       int32
+	SPool  sync.Pool // TODO：slice pool 和 store.pool 放在一起吧，通过 id 来获取获取 pool，并把剩余的”垃圾“放回 sync.Pool 中共下次复用
+	SPoolN int32
+
+	stack        sync.Pool
+	stackBuilder *TypeBuilder // dynamicPool 的 builder 用于创建 dynamicPool 对象
+	idxCacheST   int32        // 在 store.pool 的 index 文字
+
+	sPooloffset  int32 // slice pool 在 PoolStore的偏移量； TODO
+	psPooloffset int32 // pointer slice pool  在 PoolStore的偏移量
 	bsMarshalLen int32 // 缓存上次 生成的 bs 的大小，如果 cache 小于这个值，则丢弃
 	bsHaftCount  int32 // 记录上次低于 bsMarshalLen/2 的次数
 }
@@ -77,6 +68,9 @@ func (t *TagInfo) buildChildMap() {
 		mc := buildTagMap(nodes)
 		t.MChildren = mc
 		t.Children = nil // 减少 gc 扫描指针
+	}
+	t.stack.New = func() any {
+		return &dynamicPool{}
 	}
 }
 
@@ -107,7 +101,12 @@ func isStrings(typ reflect.Type) bool {
 	return UnpackType(bsType).Hash == UnpackType(typ).Hash
 }
 
-func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
+type ancestor struct {
+	hash uint32
+	tag  *TagInfo
+}
+
+func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool, ancestors []ancestor) (err error) {
 	ptrDeep, baseType := 0, typ
 	var pidx *uintptr
 	for ; ; typ = typ.Elem() {
@@ -153,19 +152,27 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 		if isBytes(baseType) {
 			ti.fUnm, ti.fM = bytesMFuncs(pidx)
 		} else {
-			if isStrings(baseType) {
-				ti.fUnm, ti.fM = sliceStringsMFuncs()
-			} else {
-				ti.fUnm, ti.fM = sliceMFuncs2(pidx)
-			}
 			ti.BaseType = baseType
 			sliceType := baseType.Elem()
+			if isStrings(baseType) {
+				ti.fUnm, ti.fM = sliceStringsMFuncs()
+			} else if ptrDeep > 0 {
+				ti.fUnm, ti.fM = sliceNoscanMFuncs(pidx)
+			} else if UnpackType(sliceType).Hash == UnpackType(reflect.TypeOf(int(0))).Hash && ptrDeep == 0 {
+				// ti.fUnm, ti.fM = sliceIntsMFuncs(pidx)
+				ti.fUnm, ti.fM = sliceNoscanMFuncs(pidx)
+			} else if UnpackType(sliceType).PtrData == 0 && ptrDeep == 0 {
+				ti.fUnm, ti.fM = sliceNoscanMFuncs(pidx)
+			} else {
+				ti.fUnm, ti.fM = sliceMFuncs(pidx)
+			}
 			son := &TagInfo{
 				TagName:  `"son"`,
 				TypeSize: int(sliceType.Size()),
 				Builder:  ti.Builder,
 			}
-			err = son.setFuncs(sliceType, false /*anonymous*/)
+
+			err = son.setFuncs(sliceType, false /*anonymous*/, ancestors)
 			if err != nil {
 				return lxterrs.Wrap(err, "Struct")
 			}
@@ -200,9 +207,14 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 	case reflect.Struct:
 		ti.fUnm, ti.fM = structMFuncs2(pidx)
 
-		son, e := NewStructTagInfo(baseType, false, ti.Builder)
+		son, e := NewStructTagInfo(baseType, ti.stackBuilder, ti.Builder, ancestors)
 		if err = e; err != nil {
 			return lxterrs.Wrap(err, "Struct")
+		}
+		if son == nil {
+			// TODO: fUnm中需要重建 store.pool，并从
+			// tag, err := LoadTagNode(vi, goType.Hash) 获取 tag，需要延后处理？
+			ti.fUnm, ti.fM = structMFuncs2(pidx)
 		}
 		// 匿名成员的处理; 这里只能处理费指针嵌入，指针嵌入逻辑在上一层
 		if !anonymous {
@@ -257,7 +269,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 		if err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
-		err = son.setFuncs(valueType, false /*anonymous*/)
+		err = son.setFuncs(valueType, false /*anonymous*/, ancestors)
 		if err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
@@ -271,9 +283,7 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 		ti.Builder.AppendPointer(fmt.Sprintf("%s_%d", ti.TagName, i), idxP)
 		fUnm, fM := ti.fUnm, ti.fM
 		ti.fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
-			p := pointerOffset(store.pool, *idxP)
-			*(**unsafe.Pointer)(store.obj) = (*unsafe.Pointer)(p)
-			store.obj = p
+			store.obj = store.Idx(*idxP)
 			return fUnm(idxSlash, store, stream)
 		}
 		ti.fM = func(store Store, in []byte) (out []byte) {
@@ -286,9 +296,12 @@ func (ti *TagInfo) setFuncs(typ reflect.Type, anonymous bool) (err error) {
 }
 
 //NewStructTagInfo 解析struct的tag字段，并返回解析的结果
-//只需要type, 不需要 interface 也可以? 不着急,分步来
-// 非指针型的匿名嵌入，需要一个偏移量
-func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder) (ti *TagInfo, err error) {
+/*
+   每个 struct 都搞一个 pointerCacheType，在使用的时候直接获取； 再搞一个 slicePool 在是 slice 时使用；
+   二者不会同一时刻出现，是不是可以合并为同一个值？
+
+*/
+func NewStructTagInfo(typIn reflect.Type, stackBuilder, builder *TypeBuilder, ancestors []ancestor) (ti *TagInfo, err error) {
 	if typIn.Kind() != reflect.Struct {
 		err = lxterrs.New("NewStructTagInfo only accepts structs; got %v", typIn.Kind())
 		return
@@ -296,11 +309,26 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 	if builder == nil {
 		builder = NewTypeBuilder()
 	}
+	if stackBuilder == nil {
+		stackBuilder = NewTypeBuilder()
+	}
+
 	ti = &TagInfo{
 		TagName:  typIn.String(),
 		BaseKind: typIn.Kind(), // 解析出最内层类型
 		Builder:  builder,
 		TypeSize: int(typIn.Size()),
+	}
+
+	goType := UnpackType(typIn)
+	for _, a := range ancestors {
+		if a.hash == goType.Hash {
+			return // 避免嵌套循环
+		}
+	}
+	ancestors = append(ancestors, ancestor{goType.Hash, ti})
+	if builder == nil {
+		builder = NewTypeBuilder()
 	}
 
 	for i := 0; i < typIn.NumField(); i++ {
@@ -343,7 +371,7 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 			}
 		}
 
-		err = son.setFuncs(field.Type, field.Anonymous)
+		err = son.setFuncs(field.Type, field.Anonymous, ancestors)
 		if err != nil {
 			err = lxterrs.Wrap(err, "son.setFuncs")
 			return
@@ -363,9 +391,6 @@ func NewStructTagInfo(typIn reflect.Type, noBuildmap bool, builder *TypeBuilder)
 				}
 			}
 		}
-	}
-	if !noBuildmap {
-		ti.buildChildMap()
 	}
 	return
 }

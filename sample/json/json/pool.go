@@ -137,10 +137,13 @@ func LoadTagNode(v reflect.Value, hash uint32) (*TagInfo, error) {
 }
 func LoadTagNodeSlow(v reflect.Value, hash uint32) (*TagInfo, error) {
 	typ := v.Type()
-	ti, err := NewStructTagInfo(typ, false /*noBuildmap*/, nil)
+	ti, err := NewStructTagInfo(typ, nil /*stackBuilder*/, nil, nil /* ancestors*/)
 	if err != nil {
 		return nil, err
 	}
+
+	ti.buildChildMap()
+
 	ti.Builder.Init()
 	cacheStructTagInfo.Set(hash, ti)
 	return ti, nil
@@ -368,4 +371,129 @@ func (b *Batch[T]) MakeN(n int) (p *T) {
 	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
 	p = &sn.s[0]
 	return
+}
+
+type Store struct {
+	obj unsafe.Pointer
+	tag *TagInfo
+}
+type PoolStore struct {
+	obj  unsafe.Pointer
+	pool *dynamicPool
+	tag  *TagInfo
+}
+
+type dynamicPool struct {
+	structPool  unsafe.Pointer
+	noscanPool  []byte   // 不含指针的
+	intsPool    []int    // 不含指针的
+	stringPool  []string // 不含指针的
+	pointerPool []unsafe.Pointer
+	mapPool     *sync.Pool
+	// scanPool    []Struct{} // 含指针的，GC 需要标注、扫描
+	// 含指针的 struct 需要单独处理
+	/*
+		type X struct{
+			dynamicPool
+			structSlice []Struct // reflcet 动态生成对象
+		}
+	*/
+}
+
+func (ps PoolStore) Idx(idx uintptr) (p unsafe.Pointer) {
+	p = pointerOffset(ps.pool.structPool, idx)
+	*(*unsafe.Pointer)(ps.obj) = p
+	return
+}
+
+func (ps PoolStore) GetNoscan() []byte {
+	pool := ps.pool.noscanPool
+	ps.pool.noscanPool = nil
+	if cap(pool)-len(pool) > 0 {
+		return pool
+	}
+	l := 8 * 1024
+	return make([]byte, 0, l)
+}
+
+func (ps PoolStore) SetNoscan(pool []byte) {
+	ps.pool.noscanPool = pool
+	return
+}
+
+func GrowBytes(in []byte, need int) []byte {
+	l := need + len(in)
+	if l <= cap(in) {
+		return in[:l]
+	}
+	if l < 8*1024 {
+		l = 8 * 1024
+	} else {
+		l *= 2
+	}
+	out := make([]byte, 0, l)
+	out = append(out, in...)
+	return out[:l]
+}
+
+func (ps PoolStore) GetStrings() []string {
+	pool := ps.pool.stringPool
+	ps.pool.stringPool = nil
+	if cap(pool)-len(pool) > 0 {
+		return pool
+	}
+	l := 1024
+	return make([]string, 0, l)
+}
+
+func (ps PoolStore) SetStrings(strs []string) {
+	ps.pool.stringPool = strs
+	return
+}
+
+func GrowStrings(in []string, need int) []string {
+	l := need + len(in)
+	if l <= cap(in) {
+		return in[:l]
+	}
+	if l < 1024 {
+		l = 1024
+	} else {
+		l *= 2
+	}
+	out := make([]string, 0, l)
+	out = append(out, in...)
+	return out[:l]
+}
+
+func (ps PoolStore) GetInts() []int {
+	pool := ps.pool.intsPool
+	ps.pool.intsPool = nil
+	if cap(pool)-len(pool) > 0 {
+		return pool
+	}
+	l := 1024
+	return make([]int, 0, l)
+}
+
+func (ps PoolStore) SetInts(strs []int) {
+	if cap(strs)-len(strs) > 4 {
+		ps.pool.intsPool = strs
+		return
+	}
+}
+
+func GrowInts(in []int) []int {
+	l := 1 + len(in)
+	if l <= cap(in) {
+		return in[:l]
+	}
+	if l < 1024 {
+		l = 1024
+	} else {
+		l *= 2
+	}
+	out := make([]int, 0, l)
+	out = append(out, in...)
+	return out[:l]
 }

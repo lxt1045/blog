@@ -168,24 +168,20 @@ func StringToBytes(s string) []byte {
 
 /*
 
-BenchmarkUnmarshalType/uint-10-lxt-12         	 2709748	       434.7 ns/op	       0 B/op	       0 allocs/op
-BenchmarkUnmarshalType/uint-10-sonic
-BenchmarkUnmarshalType/uint-10-sonic-12       	 2577014	       459.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkUnmarshalType/Marshal-uint-10-lxt
-BenchmarkUnmarshalType/Marshal-uint-10-lxt-12 	 4664451	       285.0 ns/op	     174 B/op	       0 allocs/op
-BenchmarkUnmarshalType/Marshal-uint-10-sonic
-BenchmarkUnmarshalType/Marshal-uint-10-sonic-12         	 2238636	       446.9 ns/op	     265 B/op	       4 allocs/op
-BenchmarkUnmarshalType/*uint-10-lxt
-BenchmarkUnmarshalType/*uint-10-lxt-12                  	 2471928	       484.3 ns/op	      92 B/op	       0 allocs/op
-BenchmarkUnmarshalType/*uint-10-sonic
-BenchmarkUnmarshalType/*uint-10-sonic-12                	 2519889	       489.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkUnmarshalType/Marshal-*uint-10-lxt
-BenchmarkUnmarshalType/Marshal-*uint-10-lxt-12          	 4683285	       257.0 ns/op	     174 B/op	       0 allocs/op
-BenchmarkUnmarshalType/Marshal-*uint-10-sonic
-BenchmarkUnmarshalType/Marshal-*uint-10-sonic-12        	 3675110	       319.6 ns/op	     260 B/op	       4 allocs/op
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalType$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalType$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
 
 */
 func BenchmarkUnmarshalType(b *testing.B) {
+	type X struct {
+		A string
+		B string
+	}
+	type Y struct {
+		A bool
+		B bool
+	}
 	all := []struct {
 		V     interface{}
 		JsonV string
@@ -198,13 +194,15 @@ func BenchmarkUnmarshalType(b *testing.B) {
 		{"", `"asdfghjkl"`},
 		{[]int{}, `[1,2,3]`},
 		{[]string{}, `["1","2","3"]`},
+		{[]X{}, `[{"A":"aaaa","B":"bbbb"},{"A":"aaaa","B":"bbbb"},{"A":"aaaa","B":"bbbb"}]`},
+		{[]Y{}, `[{"A":true,"B":true},{"A":true,"B":true},{"A":true,"B":true}]`},
 		{(*int)(nil), `88`},
 		{(*bool)(nil), `true`},
 		{(*string)(nil), `"asdfghjkl"`},
 	}
 	N := 10
-	idxs := []int{}
-	// idxs = []int{1}
+	idxs := []int{3, 6, 7, 8}
+	idxs = []int{6}
 	if len(idxs) > 0 {
 		get := all[:0]
 		for _, i := range idxs {
@@ -241,6 +239,7 @@ func BenchmarkUnmarshalType(b *testing.B) {
 				}
 			}
 		})
+		return
 		runtime.GC()
 		b.Run(fmt.Sprintf("%s-%d-sonic", fieldType, N), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -494,7 +493,7 @@ func BenchmarkUnmarshalSlice(b *testing.B) {
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
-	return
+	// return
 	b.Run("sonic-strings", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
