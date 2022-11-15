@@ -47,6 +47,9 @@ func (b *TypeBuilder) PInterface() (unsafe.Pointer, interface{}) {
 
 // 根据预先添加的字段构建出结构体
 func (b *TypeBuilder) Build() reflect.Type {
+	if len(b.fields) == 0 {
+		return nil
+	}
 	typ := b.Type
 	if b.Type == nil {
 		typ = reflect.StructOf(b.fields)
@@ -102,30 +105,16 @@ func (b *TypeBuilder) NewFromPool() unsafe.Pointer {
 /*
 针对 slice，要添加一个 [4]type 的空间作为预分配的资源
 */
-func (b *TypeBuilder) AppendTagField(name string, typ reflect.Type, lazyOffset *uintptr) *TypeBuilder {
-	name = "X_" + name[1:len(name)-1]
+func (b *TypeBuilder) AppendTagField(tag, post string, offset uintptr, typ reflect.Type, lazyOffset *uintptr) *TypeBuilder {
+	name := fmt.Sprintf("F_%s_%s_%d", tag[1:len(tag)-1], post, offset)
 	b.fields = append(b.fields, reflect.StructField{Name: name, Type: typ})
 	b.lazyOffsets = append(b.lazyOffsets, lazyOffset)
-	if typ.Kind() != reflect.Slice {
-		return b
-	}
-
-	arrayType := reflect.ArrayOf(4, typ.Elem())
-	b.fields = append(b.fields, reflect.StructField{Name: "Array_" + name, Type: arrayType})
-	b.lazyOffsets = append(b.lazyOffsets, nil)
 	return b
 }
 
 func (b *TypeBuilder) AppendField(name string, typ reflect.Type, lazyOffset *uintptr) *TypeBuilder {
 	b.fields = append(b.fields, reflect.StructField{Name: name, Type: typ})
 	b.lazyOffsets = append(b.lazyOffsets, lazyOffset)
-	if typ.Kind() != reflect.Slice {
-		return b
-	}
-
-	arrayType := reflect.ArrayOf(4, typ.Elem())
-	b.fields = append(b.fields, reflect.StructField{Name: "Array_" + name, Type: arrayType})
-	b.lazyOffsets = append(b.lazyOffsets, nil)
 	return b
 }
 

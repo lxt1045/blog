@@ -144,7 +144,6 @@ func LoadTagNodeSlow(v reflect.Value, hash uint32) (*TagInfo, error) {
 
 	ti.buildChildMap()
 
-	ti.Builder.Init()
 	cacheStructTagInfo.Set(hash, ti)
 	return ti, nil
 }
@@ -220,9 +219,7 @@ type sliceNode[T any] struct {
 	idx uint32 // atomic
 }
 type Batch[T any] struct {
-	pool  unsafe.Pointer // *sliceNode[T]
-	gStrs [][]T
-	cond  *sync.Cond // 唤醒通知
+	pool unsafe.Pointer // *sliceNode[T]
 	sync.Mutex
 }
 
@@ -232,30 +229,8 @@ func NewBatch[T any]() *Batch[T] {
 		idx: 0,
 	}
 	ret := &Batch[T]{
-		pool:  unsafe.Pointer(sn),
-		gStrs: make([][]T, 4),
+		pool: unsafe.Pointer(sn),
 	}
-	ret.cond = sync.NewCond(&ret.Mutex)
-	go func() {
-		count := 0
-		for {
-			count = 0
-			for i := range ret.gStrs {
-				ret.cond.L.Lock()
-				if len(ret.gStrs[i]) == 0 {
-					count++
-					ret.gStrs[i] = make([]T, batchN)
-				}
-				ret.cond.L.Unlock()
-			}
-			if count == 0 {
-				ret.cond.L.Lock()
-				ret.cond.Wait()
-				ret.cond.L.Unlock()
-			}
-		}
-	}()
-
 	return ret
 }
 
@@ -265,7 +240,7 @@ func BatchGet[T any](b *Batch[T]) *T {
 	if int(idx) <= len(sn.s) {
 		return &sn.s[idx-1]
 	}
-	return b.Make1()
+	return b.Make()
 }
 
 func (b *Batch[T]) Get() *T {
@@ -288,8 +263,8 @@ func (b *Batch[T]) GetN(n int) *T {
 }
 
 func (b *Batch[T]) Make() (p *T) {
-	b.cond.L.Lock()
-	defer b.cond.L.Unlock()
+	b.Lock()
+	defer b.Unlock()
 
 	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
 	idx := atomic.AddUint32(&sn.idx, 1)
@@ -305,72 +280,116 @@ func (b *Batch[T]) Make() (p *T) {
 	p = &sn.s[0]
 	return
 }
-func (b *Batch[T]) Make1() (p *T) {
-	b.cond.L.Lock()
-	defer func() {
-		b.cond.L.Unlock()
-		b.cond.Broadcast()
-	}()
+
+func (b *Batch[T]) MakeN(n int) (p *T) {
+	if n > batchN {
+		strs := make([]T, n)
+		return &strs[0]
+	}
+	b.Lock()
+	defer b.Unlock()
 	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
 	idx := atomic.AddUint32(&sn.idx, 1)
 	if int(idx) <= len(sn.s) {
 		p = &sn.s[idx-1]
 		return
 	}
-	strs := []T{}
-	for i := range b.gStrs {
-		if len(b.gStrs) != 0 {
-			strs = b.gStrs[i]
-			b.gStrs[i] = nil
-			break
-		}
-	}
-	if len(strs) == 0 {
-		strs = make([]T, batchN)
-	}
 	sn = &sliceNode[T]{
-		s:   strs,
-		idx: 1,
+		s:   make([]T, batchN),
+		idx: uint32(n),
 	}
 	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
 	p = &sn.s[0]
 	return
 }
 
-func (b *Batch[T]) MakeN(n int) (p *T) {
-	b.cond.L.Lock()
-	defer func() {
-		b.cond.L.Unlock()
-		b.cond.Broadcast()
-	}()
-	sn := (*sliceNode[T])(atomic.LoadPointer(&b.pool))
-	idx := atomic.AddUint32(&sn.idx, 1)
-	if int(idx) <= len(sn.s) {
-		p = &sn.s[idx-1]
-		return
-	}
-	if n > batchN {
-		strs := make([]T, n)
-		return &strs[0]
-	}
-	strs := []T{}
-	for i := range b.gStrs {
-		if len(b.gStrs) != 0 {
-			strs = b.gStrs[i]
-			b.gStrs[i] = nil
-			break
+type sliceObj struct {
+	p   unsafe.Pointer
+	idx uint32 // atomic
+	end uint32 // atomic
+}
+type BatchObj struct {
+	pool   unsafe.Pointer // *sliceObj[T]
+	goType *GoType
+	size   uint32
+	sync.Mutex
+}
+
+func NewBatchObj(typ reflect.Type) *BatchObj {
+	if typ == nil {
+		return &BatchObj{
+			pool: unsafe.Pointer(&sliceObj{}),
 		}
 	}
-	if len(strs) == 0 {
-		strs = make([]T, batchN)
+	goType := UnpackType(typ)
+	ret := &BatchObj{
+		pool:   unsafe.Pointer(&sliceObj{}),
+		goType: goType,
+		size:   uint32(goType.Size),
 	}
-	sn = &sliceNode[T]{
-		s:   make([]T, batchN), // <-b.ch, // make([]T, batchN),
-		idx: uint32(n),
+	return ret
+}
+
+func (b *BatchObj) Get() unsafe.Pointer {
+	sn := (*sliceObj)(atomic.LoadPointer(&b.pool))
+	idx := atomic.AddUint32(&sn.idx, b.size)
+	if idx <= sn.end {
+		return pointerOffset(sn.p, uintptr(idx-b.size))
+	}
+	return b.Make()
+}
+
+func (b *BatchObj) Make() unsafe.Pointer {
+	b.Lock()
+	defer b.Unlock()
+
+	sn := (*sliceObj)(atomic.LoadPointer(&b.pool))
+	idx := atomic.AddUint32(&sn.idx, b.size)
+	if idx <= sn.end {
+		return pointerOffset(sn.p, uintptr(idx-b.size))
+	}
+
+	const N = 1 << 10
+	sn = &sliceObj{
+		p:   unsafe_NewArray(b.goType, N),
+		idx: uint32(b.goType.Size),
+		end: uint32(N) * uint32(b.goType.Size),
 	}
 	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
-	p = &sn.s[0]
-	return
+	return sn.p
+}
+
+func (b *BatchObj) GetN(n int) unsafe.Pointer {
+	sn := (*sliceObj)(atomic.LoadPointer(&b.pool))
+	offset := uint32(n) * b.size
+	idx := atomic.AddUint32(&sn.idx, offset)
+	if idx <= sn.end {
+		return pointerOffset(sn.p, uintptr(idx-offset))
+	}
+	return b.MakeN(n)
+
+}
+
+func (b *BatchObj) MakeN(n int) (p unsafe.Pointer) {
+	if n > batchN {
+		return unsafe_NewArray(b.goType, n)
+	}
+	b.Lock()
+	defer b.Unlock()
+	sn := (*sliceObj)(atomic.LoadPointer(&b.pool))
+	offset := uint32(n) * b.size
+	idx := atomic.AddUint32(&sn.idx, offset)
+	if idx <= sn.end {
+		return pointerOffset(sn.p, uintptr(idx-offset))
+	}
+	const N = 1 << 10
+	sn = &sliceObj{
+		p:   unsafe_NewArray(b.goType, N),
+		idx: offset,
+		end: uint32(N) * uint32(b.goType.Size),
+	}
+	atomic.StorePointer(&b.pool, unsafe.Pointer(sn))
+	return sn.p
 }
 
 type Store struct {
@@ -379,7 +398,7 @@ type Store struct {
 }
 type PoolStore struct {
 	obj  unsafe.Pointer
-	pool *dynamicPool
+	pool unsafe.Pointer
 	tag  *TagInfo
 }
 
@@ -401,14 +420,14 @@ type dynamicPool struct {
 }
 
 func (ps PoolStore) Idx(idx uintptr) (p unsafe.Pointer) {
-	p = pointerOffset(ps.pool.structPool, idx)
+	p = pointerOffset((*dynamicPool)(ps.pool).structPool, idx)
 	*(*unsafe.Pointer)(ps.obj) = p
 	return
 }
 
 func (ps PoolStore) GetNoscan() []byte {
-	pool := ps.pool.noscanPool
-	ps.pool.noscanPool = nil
+	pool := (*dynamicPool)(ps.pool).noscanPool
+	(*dynamicPool)(ps.pool).noscanPool = nil
 	if cap(pool)-len(pool) > 0 {
 		return pool
 	}
@@ -417,7 +436,7 @@ func (ps PoolStore) GetNoscan() []byte {
 }
 
 func (ps PoolStore) SetNoscan(pool []byte) {
-	ps.pool.noscanPool = pool
+	(*dynamicPool)(ps.pool).noscanPool = pool
 	return
 }
 
@@ -437,8 +456,8 @@ func GrowBytes(in []byte, need int) []byte {
 }
 
 func (ps PoolStore) GetStrings() []string {
-	pool := ps.pool.stringPool
-	ps.pool.stringPool = nil
+	pool := (*dynamicPool)(ps.pool).stringPool
+	(*dynamicPool)(ps.pool).stringPool = nil
 	if cap(pool)-len(pool) > 0 {
 		return pool
 	}
@@ -447,7 +466,7 @@ func (ps PoolStore) GetStrings() []string {
 }
 
 func (ps PoolStore) SetStrings(strs []string) {
-	ps.pool.stringPool = strs
+	(*dynamicPool)(ps.pool).stringPool = strs
 	return
 }
 
@@ -463,12 +482,12 @@ func GrowStrings(in []string, need int) []string {
 	}
 	out := make([]string, 0, l)
 	out = append(out, in...)
-	return out[:l]
+	return out[:need+len(in)]
 }
 
 func (ps PoolStore) GetInts() []int {
-	pool := ps.pool.intsPool
-	ps.pool.intsPool = nil
+	pool := (*dynamicPool)(ps.pool).intsPool
+	(*dynamicPool)(ps.pool).intsPool = nil
 	if cap(pool)-len(pool) > 0 {
 		return pool
 	}
@@ -478,7 +497,7 @@ func (ps PoolStore) GetInts() []int {
 
 func (ps PoolStore) SetInts(strs []int) {
 	if cap(strs)-len(strs) > 4 {
-		ps.pool.intsPool = strs
+		(*dynamicPool)(ps.pool).intsPool = strs
 		return
 	}
 }
@@ -494,6 +513,78 @@ func GrowInts(in []int) []int {
 		l *= 2
 	}
 	out := make([]int, 0, l)
+	out = append(out, in...)
+	return out[:1+len(in)]
+}
+
+func (ps PoolStore) GetObjs(offset uintptr, typ reflect.Type) []uint8 {
+	pObj := pointerOffset(ps.pool, offset)
+	p := (*[]uint8)(pObj)
+	pool := *p
+	*p = nil
+	if cap(pool)-len(pool) > 0 {
+		return pool
+	}
+	l := 1024
+	v := reflect.MakeSlice(typ, 0, l) // SPoolN)
+	pSlice := reflectValueToPointer(&v)
+	pH := (*SliceHeader)(pSlice)
+	pH.Cap = pH.Cap * int(typ.Size())
+	return *(*[]uint8)(pSlice)
+}
+
+func (ps PoolStore) SetObjs(in []uint8, offset uintptr) {
+	pObj := pointerOffset(ps.pool, offset)
+	p := (*[]uint8)(pObj)
+	*p = in
+	return
+}
+
+func GrowObjs(in []uint8, need int, typ reflect.Type) []uint8 {
+	l := need + len(in)
+	if l <= cap(in) {
+		return in[:l]
+	}
+	if l < 1024 {
+		l = 1024
+	} else {
+		l *= 2
+	}
+	v := reflect.MakeSlice(typ, 0, l) // SPoolN)
+	pSlice := reflectValueToPointer(&v)
+	pH := (*SliceHeader)(pSlice)
+	pH.Cap = pH.Cap * int(typ.Size())
+	out := *(*[]uint8)(pSlice)
+	out = append(out, in...)
+	return out[:need+len(in)]
+}
+
+func (ps PoolStore) GetPointers() []string { // []unsafe.Pointer
+	pool := (*dynamicPool)(ps.pool).stringPool
+	(*dynamicPool)(ps.pool).stringPool = nil
+	if cap(pool)-len(pool) > 0 {
+		return pool
+	}
+	l := 1024
+	return make([]string, 0, l)
+}
+
+func (ps PoolStore) SetPointers(strs []string) {
+	(*dynamicPool)(ps.pool).stringPool = strs
+	return
+}
+
+func GrowPointers(in []string, need int) []string {
+	l := need + len(in)
+	if l <= cap(in) {
+		return in[:l]
+	}
+	if l < 1024 {
+		l = 1024
+	} else {
+		l *= 2
+	}
+	out := make([]string, 0, l)
 	out = append(out, in...)
 	return out[:l]
 }

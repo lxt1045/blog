@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync/atomic"
+	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
 )
@@ -59,15 +60,16 @@ func Unmarshal(bsIn []byte, in interface{}) (err error) {
 		return
 	}
 
-	pool := tag.stack.Get().(*dynamicPool)
-	pool.structPool = tag.Builder.NewFromPool()
+	pool := tag.stack.Get().(unsafe.Pointer)
+	p := (*dynamicPool)(pool)
+	p.structPool = tag.batchCache.Get()
 	store := PoolStore{
 		tag:  tag,
 		obj:  prv.ptr, // eface.Value,
-		pool: pool,
+		pool: unsafe.Pointer(pool),
 	}
 	err = parseRoot(bs[i:], store)
-	pool.structPool = nil
+	p.structPool = nil
 	tag.stack.Put(pool)
 	return
 }
@@ -116,15 +118,16 @@ func UnmarshalString(bs string, in interface{}) (err error) {
 	if err != nil {
 		return
 	}
-	pool := tag.stack.Get().(*dynamicPool)
-	pool.structPool = tag.Builder.NewFromPool()
+	pool := tag.stack.Get().(unsafe.Pointer)
+	p := (*dynamicPool)(pool)
+	p.structPool = tag.batchCache.Get()
 	store := PoolStore{
 		tag:  tag,
 		obj:  prv.ptr, // eface.Value,
-		pool: pool,
+		pool: unsafe.Pointer(pool),
 	}
 	err = parseRoot(bs[i:], store)
-	pool.structPool = nil
+	p.structPool = nil
 	tag.stack.Put(pool)
 	return
 }

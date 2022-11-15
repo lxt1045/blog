@@ -35,9 +35,29 @@ func BenchmarkBatch(b *testing.B) {
 			}
 		})
 		runtime.GC()
-		b.Run("batch-GetN", func(b *testing.B) {
+		b.Run("batch-GetN4", func(b *testing.B) {
 			for i := 0; i < b.N*N; i++ {
 				pgStr = batch.GetN(4)
+			}
+		})
+
+		bObj := NewBatchObj(reflect.TypeOf(""))
+		runtime.GC()
+		b.Run("BatchObj-Get", func(b *testing.B) {
+			for i := 0; i < b.N*N; i++ {
+				pgStr = (*string)(bObj.Get())
+			}
+		})
+		runtime.GC()
+		b.Run("BatchObj-GetN", func(b *testing.B) {
+			for i := 0; i < b.N*N; i++ {
+				pgStr = (*string)(bObj.GetN(1))
+			}
+		})
+		runtime.GC()
+		b.Run("BatchObj-GetN4", func(b *testing.B) {
+			for i := 0; i < b.N*N; i++ {
+				pgStr = (*string)(bObj.GetN(4))
 			}
 		})
 	}

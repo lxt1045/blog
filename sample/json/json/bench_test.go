@@ -172,6 +172,15 @@ go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalType$ github.com/lxt1045/blo
 go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalType$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
 go tool pprof ./json.test cpu.prof
 
+
+BenchmarkUnmarshalType/[]int8-10-lxt
+BenchmarkUnmarshalType/[]int8-10-lxt-12         	  912650	      1255 ns/op	      60 B/op	       0 allocs/op
+BenchmarkUnmarshalType/[]int8-10-sonic
+BenchmarkUnmarshalType/[]int8-10-sonic-12       	 1809181	       648.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkUnmarshalType/[]int-10-lxt
+BenchmarkUnmarshalType/[]int-10-lxt-12          	  869449	      1217 ns/op	    1018 B/op	       0 allocs/op
+BenchmarkUnmarshalType/[]int-10-sonic
+BenchmarkUnmarshalType/[]int-10-sonic-12        	 1950355	       620.3 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkUnmarshalType(b *testing.B) {
 	type X struct {
@@ -192,6 +201,7 @@ func BenchmarkUnmarshalType(b *testing.B) {
 		{int(0), `888888`},
 		{true, `true`},
 		{"", `"asdfghjkl"`},
+		{[]int8{}, `[1,2,3]`},
 		{[]int{}, `[1,2,3]`},
 		{[]string{}, `["1","2","3"]`},
 		{[]X{}, `[{"A":"aaaa","B":"bbbb"},{"A":"aaaa","B":"bbbb"},{"A":"aaaa","B":"bbbb"}]`},
@@ -202,7 +212,7 @@ func BenchmarkUnmarshalType(b *testing.B) {
 	}
 	N := 10
 	idxs := []int{3, 6, 7, 8}
-	idxs = []int{6}
+	idxs = []int{6, 7}
 	if len(idxs) > 0 {
 		get := all[:0]
 		for _, i := range idxs {
@@ -239,7 +249,6 @@ func BenchmarkUnmarshalType(b *testing.B) {
 				}
 			}
 		})
-		return
 		runtime.GC()
 		b.Run(fmt.Sprintf("%s-%d-sonic", fieldType, N), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -249,6 +258,7 @@ func BenchmarkUnmarshalType(b *testing.B) {
 				}
 			}
 		})
+		continue
 		runtime.GC()
 		// b.Run(fmt.Sprintf("%s-%d-std", fieldType, N), func(b *testing.B) {
 		// 	for i := 0; i < b.N; i++ {
@@ -460,11 +470,11 @@ func BenchmarkUnmarshalMapInterface(b *testing.B) {
 
 // TODO: slice
 /*
-go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalSlice$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
-go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalSlice$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStrings$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStrings$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
 go tool pprof ./json.test cpu.prof
 //   */
-func BenchmarkUnmarshalSlice(b *testing.B) {
+func BenchmarkStrings(b *testing.B) {
 	// str := `{"X0":["1","2","3"]}`
 	// str := `{"X0":["1","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3","2","3"],"X1":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X2":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X3":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X4":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X5":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X6":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X7":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X8":["1","2","3","2","3","2","3","2","3","2","3","2","3"],"X9":["1","2","3","2","3","2","3","2","3","2","3","2","3"]}`
 	str := `{"X0":["1","2","3"],"X1":["1","2","3"],"X2":["1","2","3"],"X3":["1","2","3"],"X4":["1","2","3"],"X5":["1","2","3"],"X6":["1","2","3"],"X7":["1","2","3"],"X8":["1","2","3"],"X9":["1","2","3"]}`
@@ -495,6 +505,50 @@ func BenchmarkUnmarshalSlice(b *testing.B) {
 	})
 	// return
 	b.Run("sonic-strings", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			err := sonic.UnmarshalString(str, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+}
+
+func BenchmarkObj(b *testing.B) {
+	str := `{"X0":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X1":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X2":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X3":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X4":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X5":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X6":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X7":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X8":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}],"X9":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}]}`
+	// str := `{"X0":[{"A":"1","B":"2"},{"A":"1","B":"2"},{"A":"1","B":"2"}]}`
+	type X struct {
+		A string
+		B string
+	}
+	d := struct {
+		X0 []X
+		X1 []X
+		X2 []X
+		X3 []X
+		X4 []X
+		X5 []X
+		X6 []X
+		X7 []X
+		X8 []X
+		X9 []X
+	}{}
+	b.Run("lxt-obj", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			err := lxt.UnmarshalString(str, &d)
+			if err != nil {
+				b.Fatalf("[%d]:%v", i, err)
+			}
+		}
+		b.StopTimer()
+		b.SetBytes(int64(b.N))
+	})
+	// return
+	b.Run("sonic-obj", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			err := sonic.UnmarshalString(str, &d)

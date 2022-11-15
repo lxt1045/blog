@@ -29,8 +29,13 @@ type TagInfo struct {
 	Children        map[string]*TagInfo
 	ChildList       []*TagInfo // 遍历的顺序和速度
 	MChildren       tagMap
-	Builder         *TypeBuilder
-	idxBuilder      uintptr // 在 store.pool 的 index 文字
+
+	cacheType  reflect.Type // pointer 的 cache
+	batchCache *BatchObj    // struct 的指针对象组成的类型 的 pool
+
+	sliceCacheType reflect.Type // 除 cdynamicPool 以外的 slice 缓存; slice 动态增长，与 pointer 不一样
+	idxSliceCache  uintptr
+	idxSliceCache2 uintptr // ptrDeep > 1 时，需要使用
 
 	fUnm unmFunc
 	fM   mFunc
@@ -38,9 +43,8 @@ type TagInfo struct {
 	SPool  sync.Pool // TODO：slice pool 和 store.pool 放在一起吧，通过 id 来获取获取 pool，并把剩余的”垃圾“放回 sync.Pool 中共下次复用
 	SPoolN int32
 
-	stack        sync.Pool
-	stackBuilder *TypeBuilder // dynamicPool 的 builder 用于创建 dynamicPool 对象
-	idxCacheST   int32        // 在 store.pool 的 index 文字
+	stack      sync.Pool
+	idxDynamic uintptr // 在 store.pool 的 index 文字
 
 	sPooloffset  int32 // slice pool 在 PoolStore的偏移量； TODO
 	psPooloffset int32 // pointer slice pool  在 PoolStore的偏移量
@@ -69,9 +73,6 @@ func (t *TagInfo) buildChildMap() {
 		mc := buildTagMap(nodes)
 		t.MChildren = mc
 		t.Children = nil // 减少 gc 扫描指针
-	}
-	t.stack.New = func() any {
-		return &dynamicPool{}
 	}
 }
 
@@ -107,7 +108,7 @@ type ancestor struct {
 	tag  *TagInfo
 }
 
-func (ti *TagInfo) setFuncs(builder *TypeBuilder, typ reflect.Type, anonymous bool, ancestors []ancestor) (err error) {
+func (ti *TagInfo) setFuncs(builder, sliceBuilder *TypeBuilder, typ reflect.Type, anonymous bool, ancestors []ancestor) (err error) {
 	ptrDeep, baseType := 0, typ
 	var pidx *uintptr
 	for ; ; typ = typ.Elem() {
@@ -120,7 +121,7 @@ func (ti *TagInfo) setFuncs(builder *TypeBuilder, typ reflect.Type, anonymous bo
 	}
 	if ptrDeep > 0 {
 		pidx = &[]uintptr{0}[0]
-		builder.AppendTagField(ti.TagName, baseType, pidx)
+		builder.AppendTagField(ti.TagName, "p", ti.Offset, baseType, pidx)
 	}
 
 	// 先从最后一个基础类型开始处理
@@ -155,13 +156,21 @@ func (ti *TagInfo) setFuncs(builder *TypeBuilder, typ reflect.Type, anonymous bo
 		} else {
 			ti.BaseType = baseType
 			sliceType := baseType.Elem()
+			sliceBuilder.AppendTagField(ti.TagName, "", ti.Offset, ti.BaseType, &ti.idxSliceCache)
+			if ptrDeep > 0 {
+				typ := reflect.TypeOf([]unsafe.Pointer{})
+				sliceBuilder.AppendTagField(ti.TagName, "p", ti.Offset, typ, &ti.idxSliceCache2)
+			}
 			if isStrings(baseType) {
+				// 字符串数组
 				ti.fUnm, ti.fM = sliceStringsMFuncs()
 			} else if ptrDeep > 0 {
+				//指针数组
 				ti.fUnm, ti.fM = sliceNoscanMFuncs(pidx)
 			} else if UnpackType(sliceType).Hash == UnpackType(reflect.TypeOf(int(0))).Hash && ptrDeep == 0 {
-				// ti.fUnm, ti.fM = sliceIntsMFuncs(pidx)
-				ti.fUnm, ti.fM = sliceNoscanMFuncs(pidx)
+				// int 数组
+				ti.fUnm, ti.fM = sliceIntsMFuncs(pidx)
+				// ti.fUnm, ti.fM = sliceNoscanMFuncs(pidx)
 			} else if UnpackType(sliceType).PtrData == 0 && ptrDeep == 0 {
 				ti.fUnm, ti.fM = sliceNoscanMFuncs(pidx)
 			} else {
@@ -170,10 +179,9 @@ func (ti *TagInfo) setFuncs(builder *TypeBuilder, typ reflect.Type, anonymous bo
 			son := &TagInfo{
 				TagName:  `"son"`,
 				TypeSize: int(sliceType.Size()),
-				Builder:  ti.Builder,
 			}
 
-			err = son.setFuncs(builder, sliceType, false /*anonymous*/, ancestors)
+			err = son.setFuncs(builder, sliceBuilder, sliceType, false /*anonymous*/, ancestors)
 			if err != nil {
 				return lxterrs.Wrap(err, "Struct")
 			}
@@ -182,22 +190,8 @@ func (ti *TagInfo) setFuncs(builder *TypeBuilder, typ reflect.Type, anonymous bo
 				return lxterrs.Wrap(err, "Struct")
 			}
 
-			// ch := func() (ch chan *[]byte) {
-			// 	ch = make(chan *[]uint8, 4)
-			// 	go func() {
-			// 		for {
-			// 			v := reflect.MakeSlice(ti.BaseType, 0, SPoolN)
-			// 			p := reflectValueToPointer(&v)
-			// 			pH := (*SliceHeader)(p)
-			// 			pH.Cap = pH.Cap * int(sliceType.Size())
-			// 			ch <- (*[]uint8)(p)
-			// 		}
-			// 	}()
-			// 	return
-			// }()
 			ti.SPoolN = (1 << 20) / int32(ti.BaseType.Size())
 			ti.SPool.New = func() any {
-				// return <-ch
 				v := reflect.MakeSlice(ti.BaseType, 0, int(ti.SPoolN)) // SPoolN)
 				p := reflectValueToPointer(&v)
 				pH := (*SliceHeader)(p)
@@ -206,16 +200,23 @@ func (ti *TagInfo) setFuncs(builder *TypeBuilder, typ reflect.Type, anonymous bo
 			}
 		}
 	case reflect.Struct:
-		ti.fUnm, ti.fM = structMFuncs2(pidx)
+		var sonIdx uintptr = 0
+		ti.fUnm, ti.fM = structMFuncs(pidx, &sonIdx)
 
 		son, e := NewStructTagInfo(baseType, ancestors)
 		if err = e; err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
+		if son != nil && son.cacheType != nil {
+			builder.AppendTagField(ti.TagName, "son", ti.Offset, son.cacheType, &sonIdx)
+		}
+		if son != nil && son.sliceCacheType != nil {
+			sliceBuilder.AppendTagField(ti.TagName, "slice", ti.Offset, son.sliceCacheType, &son.idxSliceCache)
+		}
 		if son == nil {
 			// TODO: fUnm中需要重建 store.pool，并从
 			// tag, err := LoadTagNode(vi, goType.Hash) 获取 tag，需要延后处理？
-			ti.fUnm, ti.fM = structMFuncs2(pidx)
+			ti.fUnm, ti.fM = structMFuncs(pidx, &sonIdx)
 		}
 		// 匿名成员的处理; 这里只能处理费指针嵌入，指针嵌入逻辑在上一层
 		if !anonymous {
@@ -270,7 +271,7 @@ func (ti *TagInfo) setFuncs(builder *TypeBuilder, typ reflect.Type, anonymous bo
 		if err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
-		err = son.setFuncs(builder, valueType, false /*anonymous*/, ancestors)
+		err = son.setFuncs(builder, sliceBuilder, valueType, false /*anonymous*/, ancestors)
 		if err != nil {
 			return lxterrs.Wrap(err, "Struct")
 		}
@@ -308,18 +309,19 @@ func NewStructTagInfo(typIn reflect.Type, ancestors []ancestor) (ti *TagInfo, er
 		return
 	}
 
+	builder := NewTypeBuilder()
+	sliceBuilder := NewTypeBuilder()
 	ti = &TagInfo{
-		TagName:      typIn.String(),
-		BaseKind:     typIn.Kind(), // 解析出最内层类型
-		Builder:      NewTypeBuilder(),
-		stackBuilder: NewTypeBuilder(),
-		TypeSize:     int(typIn.Size()),
+		TagName:  typIn.String(),
+		BaseKind: typIn.Kind(), // 解析出最内层类型
+		TypeSize: int(typIn.Size()),
 	}
 
 	goType := UnpackType(typIn)
 	for _, a := range ancestors {
 		if a.hash == goType.Hash {
-			return // 避免嵌套循环
+			ti = nil // 以返回 nil 来处理后续逻辑
+			return   // 避免嵌套循环
 		}
 	}
 	ancestors = append(ancestors, ancestor{goType.Hash, ti})
@@ -331,8 +333,6 @@ func NewStructTagInfo(typIn reflect.Type, ancestors []ancestor) (ti *TagInfo, er
 			Offset:   field.Offset,
 			BaseKind: field.Type.Kind(),
 			TypeSize: int(field.Type.Size()),
-			// Builder:      builder,
-			// stackBuilder: builder,
 		}
 
 		if !field.IsExported() {
@@ -364,7 +364,7 @@ func NewStructTagInfo(typIn reflect.Type, ancestors []ancestor) (ti *TagInfo, er
 			}
 		}
 
-		err = son.setFuncs(ti.Builder, field.Type, field.Anonymous, ancestors)
+		err = son.setFuncs(builder, sliceBuilder, field.Type, field.Anonymous, ancestors)
 		if err != nil {
 			err = lxterrs.Wrap(err, "son.setFuncs")
 			return
@@ -383,6 +383,28 @@ func NewStructTagInfo(typIn reflect.Type, ancestors []ancestor) (ti *TagInfo, er
 					return
 				}
 			}
+		}
+	}
+
+	ti.cacheType = builder.Build()
+	ti.batchCache = NewBatchObj(ti.cacheType)
+
+	ti.sliceCacheType = sliceBuilder.Build()
+	if ti.sliceCacheType == nil {
+		ti.stack.New = func() any {
+			return unsafe.Pointer(&dynamicPool{})
+		}
+	} else {
+		stackBuilder := NewTypeBuilder()
+		var offset, offset2 uintptr
+		stackBuilder.AppendField("Static", reflect.TypeOf(dynamicPool{}), &offset2)
+		stackBuilder.AppendField("Dynamic", ti.sliceCacheType, &offset)
+		stackTyp := stackBuilder.Build()
+		ti.idxDynamic = offset
+		ti.stack.New = func() any {
+			vi := reflect.New(stackTyp)
+			p := reflectValueToValue(&vi).ptr
+			return p
 		}
 	}
 	return

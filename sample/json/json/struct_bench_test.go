@@ -166,7 +166,7 @@ func BenchmarkMyUnmarshalMarshalPoniter(b *testing.B) {
 		b.StopTimer()
 		b.SetBytes(int64(b.N))
 	})
-	return
+	// return
 	b.Run("Unmarshal", func(b *testing.B) {
 		d := NameA{}
 		b.ReportAllocs()

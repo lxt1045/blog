@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"strconv"
 	"strings"
-	"sync"
 	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
@@ -716,7 +715,7 @@ func float32MFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 	return
 }
 
-func structMFuncs2(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
+func structMFuncs(pidx, sonPidx *uintptr) (fUnm unmFunc, fM mFunc) {
 	if pidx == nil {
 		fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 			if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
@@ -725,6 +724,7 @@ func structMFuncs2(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 				return
 			}
 			store.obj = pointerOffset(store.obj, store.tag.Offset)
+			store.pool = pointerOffset(store.pool, *sonPidx)
 			n, iSlash := parseObj(idxSlash-1, stream[1:], store)
 			iSlash++
 			i += n + 1
@@ -744,6 +744,7 @@ func structMFuncs2(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 			return
 		}
 		store.obj = pointerOffset(store.obj, store.tag.Offset)
+		store.pool = pointerOffset(store.pool, *sonPidx)
 		p := *(*unsafe.Pointer)(store.obj)
 		if p == nil {
 			store.obj = store.Idx(*pidx)
@@ -823,6 +824,67 @@ func sliceIntsMFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 	return
 }
 func sliceNoscanMFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
+	if pidx == nil {
+		fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+			if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+				i = 4
+				iSlash = idxSlash
+				store.obj = pointerOffset(store.obj, store.tag.Offset)
+				pHeader := (*SliceHeader)(store.obj)
+				pHeader.Data = store.obj
+				return
+			}
+			store.obj = pointerOffset(store.obj, store.tag.Offset) //
+			n, iSlash := parseNoscanSlice(idxSlash-1, stream[1:], store)
+			iSlash++
+			i += n + 1
+			return
+		}
+		fM = func(store Store, in []byte) (out []byte) {
+			// store.obj = pointerOffset(store.obj, store.tag.Offset)
+			pHeader := (*SliceHeader)(store.obj)
+			son := store.tag.ChildList[0]
+			out = marshalSlice(in, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
+			return
+		}
+		return
+	}
+	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
+		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
+			i = 4
+			iSlash = idxSlash
+			store.obj = pointerOffset(store.obj, store.tag.Offset)
+			store.obj = store.Idx(*pidx)
+			pHeader := (*SliceHeader)(store.obj)
+			pHeader.Data = store.obj
+			return
+		}
+		store.obj = pointerOffset(store.obj, store.tag.Offset) //
+		p := *(*unsafe.Pointer)(store.obj)
+		if p == nil {
+			store.obj = store.Idx(*pidx)
+		}
+		n, iSlash := parseNoscanSlice(idxSlash-1, stream[1:], store)
+		iSlash++
+		i += n + 1
+		return
+	}
+	fM = func(store Store, in []byte) (out []byte) {
+		// store.obj = pointerOffset(store.obj, store.tag.Offset)
+		store.obj = *(*unsafe.Pointer)(store.obj)
+		if store.obj == nil {
+			out = append(in, "null"...)
+			return
+		}
+		pHeader := (*SliceHeader)(store.obj)
+		son := store.tag.ChildList[0]
+		out = marshalSlice(in, Store{obj: pHeader.Data, tag: son}, pHeader.Len)
+		return
+	}
+	return
+}
+
+func sliceNoscanMFuncs2(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 	if pidx == nil {
 		fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 			if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
@@ -1027,23 +1089,6 @@ func slicePointerMFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 	return
 }
 func sliceStringsMFuncs() (fUnm unmFunc, fM mFunc) {
-	size := int(unsafe.Sizeof(""))
-	SPoolN := (1 << 20) / size
-	// ch := make(chan *[]string, 2)
-	// go func() {
-	// 	for {
-	// 		strs := make([]string, 0, SPoolN)
-	// 		ch <- &strs
-	// 	}
-	// }()
-	strsPool := sync.Pool{
-		New: func() any {
-			// return <-ch
-			strs := make([]string, 0, SPoolN)
-			return &strs
-		},
-	}
-
 	fUnm = func(idxSlash int, store PoolStore, stream string) (i, iSlash int) {
 		if stream[0] == 'n' && stream[1] == 'u' && stream[2] == 'l' && stream[3] == 'l' {
 			i = 4
@@ -1054,7 +1099,7 @@ func sliceStringsMFuncs() (fUnm unmFunc, fM mFunc) {
 			return
 		}
 		store.obj = pointerOffset(store.obj, store.tag.Offset) //
-		n, iSlash := parseSliceString(idxSlash-1, stream[1:], store, SPoolN, &strsPool)
+		n, iSlash := parseSliceString(idxSlash-1, stream[1:], store)
 		iSlash++
 		i += n + 1
 		return
