@@ -676,7 +676,7 @@ func BenchmarkUnmarshalStruct1xMap(b *testing.B) {
 }
 
 /*
-go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1x_small$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1x_middle$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
 */
 func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 	bs := []byte(testdata.BookData)
@@ -788,6 +788,7 @@ func BenchmarkUnmarshalStruct1x_small(b *testing.B) {
 	}
 
 	for _, r := range runs[:] {
+		runtime.GC()
 		b.Run(r.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				r.f()
@@ -904,7 +905,8 @@ func BenchmarkUnmarshalStruct1x_middle(b *testing.B) {
 		},
 	}
 
-	for _, r := range runs {
+	for _, r := range runs[:] {
+		runtime.GC()
 		b.Run(r.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				r.f()
@@ -1032,6 +1034,7 @@ func BenchmarkUnmarshalStruct1x_large(b *testing.B) {
 	}
 
 	for _, r := range runs {
+		runtime.GC()
 		b.Run(r.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				r.f()

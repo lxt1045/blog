@@ -724,7 +724,8 @@ func structMFuncs(pidx, sonPidx *uintptr) (fUnm unmFunc, fM mFunc) {
 				return
 			}
 			store.obj = pointerOffset(store.obj, store.tag.Offset)
-			store.pool = pointerOffset(store.pool, *sonPidx)
+			store.pointerPool = pointerOffset(store.pointerPool, *sonPidx) //这里有问题，这个 pool 导致 slicePool 的偏移
+			store.slicePool = pointerOffset(store.slicePool, store.tag.idxSliceObjPool)
 			n, iSlash := parseObj(idxSlash-1, stream[1:], store)
 			iSlash++
 			i += n + 1
@@ -744,7 +745,8 @@ func structMFuncs(pidx, sonPidx *uintptr) (fUnm unmFunc, fM mFunc) {
 			return
 		}
 		store.obj = pointerOffset(store.obj, store.tag.Offset)
-		store.pool = pointerOffset(store.pool, *sonPidx)
+		store.pointerPool = pointerOffset(store.pointerPool, *sonPidx) //这里有问题，这个 pool 导致 slicePool 的偏移
+		store.slicePool = pointerOffset(store.slicePool, store.tag.idxSliceObjPool)
 		p := *(*unsafe.Pointer)(store.obj)
 		if p == nil {
 			store.obj = store.Idx(*pidx)
@@ -957,6 +959,7 @@ func sliceMFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 				return
 			}
 			store.obj = pointerOffset(store.obj, store.tag.Offset) //
+			store.slicePool = pointerOffset(store.slicePool, store.tag.idxSliceObjPool)
 			n, iSlash := parseSlice(idxSlash-1, stream[1:], store)
 			iSlash++
 			i += n + 1
@@ -982,9 +985,10 @@ func sliceMFuncs(pidx *uintptr) (fUnm unmFunc, fM mFunc) {
 			return
 		}
 		store.obj = pointerOffset(store.obj, store.tag.Offset) //
+		store.slicePool = pointerOffset(store.slicePool, store.tag.idxSliceObjPool)
 		p := *(*unsafe.Pointer)(store.obj)
 		if p == nil {
-			store.obj = store.Idx(*pidx)
+			store.obj = store.Idx(*pidx) // TODO 这个可以 pidx==nil 合并? 这时 *pidx==0？
 		}
 		n, iSlash := parseSlice(idxSlash-1, stream[1:], store)
 		iSlash++

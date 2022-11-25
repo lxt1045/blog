@@ -397,37 +397,36 @@ type Store struct {
 	tag *TagInfo
 }
 type PoolStore struct {
-	obj  unsafe.Pointer
-	pool unsafe.Pointer
-	tag  *TagInfo
+	obj         unsafe.Pointer
+	pointerPool unsafe.Pointer
+	slicePool   unsafe.Pointer
+	dynPool     *dynamicPool
+	tag         *TagInfo
 }
 
 type dynamicPool struct {
-	structPool  unsafe.Pointer
-	noscanPool  []byte   // 不含指针的
-	intsPool    []int    // 不含指针的
-	stringPool  []string // 不含指针的
-	pointerPool []unsafe.Pointer
-	mapPool     *sync.Pool
-	// scanPool    []Struct{} // 含指针的，GC 需要标注、扫描
-	// 含指针的 struct 需要单独处理
-	/*
-		type X struct{
-			dynamicPool
-			structSlice []Struct // reflcet 动态生成对象
-		}
-	*/
+	noscanPool   []byte        // 不含指针的
+	intsPool     []int         // 不含指针的
+	stringPool   []string      //
+	ifacePool    []interface{} //
+	ifaceMapPool []interface{} //
+}
+
+var dynPool = sync.Pool{
+	New: func() any {
+		return &dynamicPool{}
+	},
 }
 
 func (ps PoolStore) Idx(idx uintptr) (p unsafe.Pointer) {
-	p = pointerOffset((*dynamicPool)(ps.pool).structPool, idx)
+	p = pointerOffset(ps.pointerPool, idx)
 	*(*unsafe.Pointer)(ps.obj) = p
 	return
 }
 
 func (ps PoolStore) GetNoscan() []byte {
-	pool := (*dynamicPool)(ps.pool).noscanPool
-	(*dynamicPool)(ps.pool).noscanPool = nil
+	pool := ps.dynPool.noscanPool
+	ps.dynPool.noscanPool = nil
 	if cap(pool)-len(pool) > 0 {
 		return pool
 	}
@@ -436,7 +435,7 @@ func (ps PoolStore) GetNoscan() []byte {
 }
 
 func (ps PoolStore) SetNoscan(pool []byte) {
-	(*dynamicPool)(ps.pool).noscanPool = pool
+	ps.dynPool.noscanPool = pool
 	return
 }
 
@@ -448,7 +447,7 @@ func GrowBytes(in []byte, need int) []byte {
 	if l < 8*1024 {
 		l = 8 * 1024
 	} else {
-		l *= 2
+		l *= 16
 	}
 	out := make([]byte, 0, l)
 	out = append(out, in...)
@@ -456,8 +455,8 @@ func GrowBytes(in []byte, need int) []byte {
 }
 
 func (ps PoolStore) GetStrings() []string {
-	pool := (*dynamicPool)(ps.pool).stringPool
-	(*dynamicPool)(ps.pool).stringPool = nil
+	pool := ps.dynPool.stringPool
+	ps.dynPool.stringPool = nil
 	if cap(pool)-len(pool) > 0 {
 		return pool
 	}
@@ -466,7 +465,7 @@ func (ps PoolStore) GetStrings() []string {
 }
 
 func (ps PoolStore) SetStrings(strs []string) {
-	(*dynamicPool)(ps.pool).stringPool = strs
+	ps.dynPool.stringPool = strs
 	return
 }
 
@@ -478,7 +477,7 @@ func GrowStrings(in []string, need int) []string {
 	if l < 1024 {
 		l = 1024
 	} else {
-		l *= 2
+		l *= 16
 	}
 	out := make([]string, 0, l)
 	out = append(out, in...)
@@ -486,8 +485,8 @@ func GrowStrings(in []string, need int) []string {
 }
 
 func (ps PoolStore) GetInts() []int {
-	pool := (*dynamicPool)(ps.pool).intsPool
-	(*dynamicPool)(ps.pool).intsPool = nil
+	pool := ps.dynPool.intsPool
+	ps.dynPool.intsPool = nil
 	if cap(pool)-len(pool) > 0 {
 		return pool
 	}
@@ -497,7 +496,7 @@ func (ps PoolStore) GetInts() []int {
 
 func (ps PoolStore) SetInts(strs []int) {
 	if cap(strs)-len(strs) > 4 {
-		(*dynamicPool)(ps.pool).intsPool = strs
+		ps.dynPool.intsPool = strs
 		return
 	}
 }
@@ -510,15 +509,15 @@ func GrowInts(in []int) []int {
 	if l < 1024 {
 		l = 1024
 	} else {
-		l *= 2
+		l *= 16
 	}
 	out := make([]int, 0, l)
 	out = append(out, in...)
 	return out[:1+len(in)]
 }
 
-func (ps PoolStore) GetObjs(offset uintptr, typ reflect.Type) []uint8 {
-	pObj := pointerOffset(ps.pool, offset)
+func (ps PoolStore) GetObjs(goType *GoType) []uint8 {
+	pObj := ps.slicePool
 	p := (*[]uint8)(pObj)
 	pool := *p
 	*p = nil
@@ -526,21 +525,25 @@ func (ps PoolStore) GetObjs(offset uintptr, typ reflect.Type) []uint8 {
 		return pool
 	}
 	l := 1024
-	v := reflect.MakeSlice(typ, 0, l) // SPoolN)
-	pSlice := reflectValueToPointer(&v)
-	pH := (*SliceHeader)(pSlice)
-	pH.Cap = pH.Cap * int(typ.Size())
-	return *(*[]uint8)(pSlice)
+	parr := unsafe_NewArray(goType, l)
+	l = l * int(goType.Size)
+	// s := SliceHeader{
+	// 	Data: parr,
+	// 	Len:  0,
+	// 	Cap:  l,
+	// }
+	// return *(*[]uint8)(unsafe.Pointer(&s))
+	out := (*(*[1 << 30]uint8)(parr))[:0:l]
+	return out
 }
 
-func (ps PoolStore) SetObjs(in []uint8, offset uintptr) {
-	pObj := pointerOffset(ps.pool, offset)
-	p := (*[]uint8)(pObj)
+func (ps PoolStore) SetObjs(in []uint8) PoolStore {
+	p := (*[]uint8)(ps.slicePool)
 	*p = in
-	return
+	return ps
 }
 
-func GrowObjs(in []uint8, need int, typ reflect.Type) []uint8 {
+func GrowObjs(in []uint8, need int, goType *GoType) []uint8 {
 	l := need + len(in)
 	if l <= cap(in) {
 		return in[:l]
@@ -548,20 +551,26 @@ func GrowObjs(in []uint8, need int, typ reflect.Type) []uint8 {
 	if l < 1024 {
 		l = 1024
 	} else {
-		l *= 2
+		l *= 16
 	}
-	v := reflect.MakeSlice(typ, 0, l) // SPoolN)
-	pSlice := reflectValueToPointer(&v)
-	pH := (*SliceHeader)(pSlice)
-	pH.Cap = pH.Cap * int(typ.Size())
-	out := *(*[]uint8)(pSlice)
+	parr := unsafe_NewArray(goType, l)
+	l = l * int(goType.Size)
+	out := (*(*[1 << 30]uint8)(parr))[:0:l]
+
+	// s := SliceHeader{
+	// 	Data: parr,
+	// 	Len:  0,
+	// 	Cap:  l,
+	// }
+	// out := *(*[]uint8)(unsafe.Pointer(&s))
+
 	out = append(out, in...)
 	return out[:need+len(in)]
 }
 
 func (ps PoolStore) GetPointers() []string { // []unsafe.Pointer
-	pool := (*dynamicPool)(ps.pool).stringPool
-	(*dynamicPool)(ps.pool).stringPool = nil
+	pool := ps.dynPool.stringPool
+	ps.dynPool.stringPool = nil
 	if cap(pool)-len(pool) > 0 {
 		return pool
 	}
@@ -570,7 +579,7 @@ func (ps PoolStore) GetPointers() []string { // []unsafe.Pointer
 }
 
 func (ps PoolStore) SetPointers(strs []string) {
-	(*dynamicPool)(ps.pool).stringPool = strs
+	ps.dynPool.stringPool = strs
 	return
 }
 

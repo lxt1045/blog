@@ -14,6 +14,7 @@ import (
 	lxterrs "github.com/lxt1045/errors"
 )
 
+//go:noinline
 func ErrStream(stream string) string {
 	if len(stream[:]) > 128 {
 		stream = stream[:128]
@@ -100,9 +101,11 @@ func parseObj(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 
 		if son != nil {
 			storeSon := PoolStore{
-				tag:  son,
-				pool: store.pool,
-				obj:  store.obj,
+				tag:         son,
+				pointerPool: store.pointerPool,
+				slicePool:   store.slicePool,
+				dynPool:     store.dynPool,
+				obj:         store.obj,
 			}
 			n, iSlash = son.fUnm(iSlash-i, storeSon, stream[i:])
 			iSlash += i
@@ -267,17 +270,20 @@ func parseSlice2(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	}
 	son := store.tag.ChildList[0]
 	size := son.TypeSize
-	uint8s := store.tag.SPool.Get().(*[]uint8) // cpu %12; parseSlice, cpu 20%
+	tag := store.tag
+	uint8s := tag.SPool.Get().(*[]uint8) // cpu %12; parseSlice, cpu 20%
 	pHeader := (*SliceHeader)(store.obj)
 	bases := (*[]uint8)(store.obj)
+	SPoolN, BaseType := store.tag.SPoolN, store.tag.BaseType
+	store.tag = son
 	for n, nB := 0, 0; ; {
 		if len(*uint8s)+size > cap(*uint8s) {
 			l := cap(*uint8s) / size
 			c := l * 2
-			if c < int(store.tag.SPoolN) {
-				c = int(store.tag.SPoolN)
+			if c < int(SPoolN) {
+				c = int(SPoolN)
 			}
-			v := reflect.MakeSlice(store.tag.BaseType, 0, c)
+			v := reflect.MakeSlice(BaseType, 0, c)
 			p := reflectValueToPointer(&v)
 			news := (*[]uint8)(p)
 
@@ -287,15 +293,13 @@ func parseSlice2(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 			// *uint8s = *news
 			*uint8s = append((*news)[:0], *uint8s...)
 		}
+
 		l := len(*uint8s)
 		*uint8s = (*uint8s)[:l+size]
 
 		p := unsafe.Pointer(&(*uint8s)[l])
-		n, iSlash = son.fUnm(iSlash-i, PoolStore{
-			obj:  p,
-			tag:  son,
-			pool: store.pool,
-		}, stream[i:])
+		store.obj = p
+		n, iSlash = son.fUnm(iSlash-i, store, stream[i:])
 		iSlash += i
 		// if n == 0 {
 		// 	pHeader.Len -= size
@@ -315,7 +319,7 @@ func parseSlice2(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	*bases = (*uint8s)[:len(*uint8s):len(*uint8s)]
 	if cap(*uint8s)-len(*uint8s) > 16*size {
 		*uint8s = (*uint8s)[len(*uint8s):]
-		store.tag.SPool.Put(uint8s)
+		tag.SPool.Put(uint8s)
 	}
 	// pH.Data = uintptr(pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len)))
 	// pH.Cap = pHeader.Cap - pHeader.Len
@@ -337,33 +341,23 @@ func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 	}
 	son := store.tag.ChildList[0]
 	size := son.TypeSize
-	uint8s := store.tag.SPool.Get().(*[]uint8) // cpu %12; parseSlice, cpu 20%
+
+	// TODO : 从 store.pool 获取 pool
+	// uint8s := store.tag.SPool.Get().(*[]uint8) // cpu %12; parseSlice, cpu 20%
+
+	// uint8s := store.GetObjs(store.tag.idxSliceObjPool, store.tag.BaseType)
+	uint8s := store.GetObjs(store.tag.sliceElemGoType)
+
 	pHeader := (*SliceHeader)(store.obj)
 	bases := (*[]uint8)(store.obj)
+	// TODO
+	// slicePool := son.slicePool.Get().(unsafe.Pointer)
+	sliceElemGoType := store.tag.sliceElemGoType
+	store.tag = son
 	for n, nB := 0, 0; ; {
-		if len(*uint8s)+size > cap(*uint8s) {
-			l := cap(*uint8s) / size
-			c := l * 2
-			if c < int(store.tag.SPoolN) {
-				c = int(store.tag.SPoolN)
-			}
-			v := reflect.MakeSlice(store.tag.BaseType, 0, c)
-			p := reflectValueToPointer(&v)
-			news := (*[]uint8)(p)
-
-			pH := (*SliceHeader)(p)
-			pH.Cap = pH.Cap * size
-			*uint8s = append((*news)[:0], *uint8s...)
-		}
-		l := len(*uint8s)
-		*uint8s = (*uint8s)[:l+size]
-
-		p := unsafe.Pointer(&(*uint8s)[l])
-		n, iSlash = son.fUnm(iSlash-i, PoolStore{
-			obj:  p,
-			tag:  son,
-			pool: store.pool,
-		}, stream[i:])
+		uint8s = GrowObjs(uint8s, size, sliceElemGoType)
+		store.obj = unsafe.Pointer(&uint8s[len(uint8s)-size])
+		n, iSlash = son.fUnm(iSlash-i, store, stream[i:])
 		iSlash += i
 		i += n
 		n, nB = parseByte(stream[i:], ',')
@@ -377,13 +371,12 @@ func parseSlice(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 		}
 	}
 
-	*bases = (*uint8s)[:len(*uint8s):len(*uint8s)]
-	if cap(*uint8s)-len(*uint8s) > 16*size {
-		*uint8s = (*uint8s)[len(*uint8s):]
-		store.tag.SPool.Put(uint8s)
+	*bases = (uint8s)[:len(uint8s):len(uint8s)]
+	if cap(uint8s)-len(uint8s) > 4*size {
+		uint8s = uint8s[len(uint8s):]
+		// store.SetObjs(uint8s, store.tag.idxSliceObjPool)
+		store.SetObjs(uint8s)
 	}
-	// pH.Data = uintptr(pointerOffset(unsafe.Pointer(pHeader.Data), uintptr(pHeader.Len)))
-	// pH.Cap = pHeader.Cap - pHeader.Len
 	pHeader.Len = pHeader.Len / size
 	pHeader.Cap = pHeader.Cap / size
 
@@ -408,9 +401,11 @@ func parseNoscanSlice(idxSlash int, stream string, store PoolStore) (i, iSlash i
 		bytes = GrowBytes(bytes, size)
 		p := unsafe.Pointer(&bytes[l])
 		n, iSlash = son.fUnm(iSlash-i, PoolStore{
-			obj:  p,
-			tag:  son,
-			pool: store.pool,
+			obj:         p,
+			tag:         son,
+			pointerPool: store.pointerPool,
+			slicePool:   store.slicePool,
+			dynPool:     store.dynPool,
 		}, stream[i:])
 		iSlash += i
 		i += n

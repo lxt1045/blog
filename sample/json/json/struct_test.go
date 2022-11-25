@@ -21,7 +21,7 @@ func TestStruct(t *testing.T) {
 		_, file = filepath.Split(file)
 		return file + ":" + strconv.Itoa(line)
 	}
-	idx := -6
+	idx := -1
 
 	datas := []struct {
 		name   string
@@ -29,6 +29,18 @@ func TestStruct(t *testing.T) {
 		target string
 		data   interface{}
 	}{
+		{
+			name:   "struct:" + fLine(),
+			bs:     `{"out": 11 , "struct_0": [{ "count":8,"Anonymous":{"X":"xxx","Count":1}}]}`,
+			target: `{"out":11,"struct_0":[{"count":8,"Anonymous":{"count":0,"X":"xxx"}}]}`,
+			data: &struct {
+				Out    int `json:"out"`
+				Struct []struct {
+					Count     int `json:"count"`
+					Anonymous Anonymous
+				} `json:"struct_0"`
+			}{},
+		},
 		{
 			name:   "interface:" + fLine(),
 			bs:     `{"out":88,"struct_0":{"a":"<a href=\"//itunes.apple.com/us/app/twitter/id409789998?mt=12%5C%22\" rel=\"\\\"nofollow\\\"\">Twitter for Mac</a>"}}`,

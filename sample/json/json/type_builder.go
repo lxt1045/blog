@@ -105,8 +105,8 @@ func (b *TypeBuilder) NewFromPool() unsafe.Pointer {
 /*
 针对 slice，要添加一个 [4]type 的空间作为预分配的资源
 */
-func (b *TypeBuilder) AppendTagField(tag, post string, offset uintptr, typ reflect.Type, lazyOffset *uintptr) *TypeBuilder {
-	name := fmt.Sprintf("F_%s_%s_%d", tag[1:len(tag)-1], post, offset)
+func (b *TypeBuilder) AppendTagField(typ reflect.Type, lazyOffset *uintptr) *TypeBuilder {
+	name := fmt.Sprintf("F_%d", len(b.fields))
 	b.fields = append(b.fields, reflect.StructField{Name: name, Type: typ})
 	b.lazyOffsets = append(b.lazyOffsets, lazyOffset)
 	return b
