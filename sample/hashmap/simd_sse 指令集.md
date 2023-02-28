@@ -88,7 +88,44 @@ punpcklbw XMM,XMM/m128
 http://www.yibei.com/book/4df5ae4d7e021e33400728e6
 
 
+-------------------------------------------------
 
+1. pshufb
+```asm
+  pshufb xmm1,xmm2 根据xmm2重写xmm1
+```
+xmm2共16个字节，
+解释：每个src 寄存器是128bit=16byte, 每个byte的最高位存放是否shuffle, 如果是1，则dest对应byte 置零。
+否则，该byte的低4byte对应了相应的移动位置。
+```c++
+for i = 0 to 15 {
+    if (SRC[(i * 8)+7] = 1 ) then
+      DEST[(i*8)+7..(i*8)+0] ← 0;
+    else
+      index[3..0] ← SRC[(i*8)+3 .. (i*8)+0]; DEST[(i*8)+7..(i*8)+0] ← DEST[(index*8+7)..(index*8+0)];
+    endif
+}
+```
+DEST[VLMAX-1:128] ← 0
+
+2. pshufd
+pshufd  xmm3, xmm1, 80h 
+PSHUFD xmm1, xmm2/m128,imm8
+按照 imm8 中的编码对 xmm2/m128 中的双字执行乱序处理，结果存储到 xmm1。
+pshufd XMM,XMM/m128,imm8(0~255)
+　　描述：
+　　将源存储器的4个双字由imm8指定选入目的寄存器,内存变量必须对齐内存16字节.
+　　　　　　　　　　　　　　　　高64位 | 低64位
+　　源寄存器: 　　　　　    (11) | b(10) | b(01) | b(00)
+　　目的寄存器排列结果: b(00~11) | b(00~11) | b(00~11) | b(00~11)
+　　例:
+　　当 XMM1 = 0x 11111111 22222222 33333333 44444444,
+     执行 pshufd XMM0,XMM1,11 01 01 10b
+　　则 XMM0 = 0x 11111111 33333333 33333333 22222222
+
+3.pshufw
+pshufw mm2,mm1,0xC0   在mm1中取 c0 个单元存入mm2
+PSHUFW: __m64 _mm_shuffle_pi16(__m64 a, int n)
 
 -------------------------------------------------
 
@@ -192,4 +229,24 @@ _mm_xor_ps对两个数据逐分量xor
 
 详情可查Intel的Intrinsics Guide
 
++++++++++++++++++++++++++++
+PSADBW
+Compute the absolute differences of packed unsigned 8-bit integers in a and b, then horizontally sum each consecutive 8 differences to produce four unsigned 16-bit integers, and pack these unsigned 16-bit integers in the low 16 bits of dst.
+Operation
+FOR j := 0 to 7
+	i := j*8
+	tmp[i+7:i] := ABS(a[i+7:i] - b[i+7:i])
+ENDFOR
+dst[15:0] := tmp[7:0] + tmp[15:8] + tmp[23:16] + tmp[31:24] + tmp[39:32] + tmp[47:40] + tmp[55:48] + tmp[63:56]
+dst[63:16] := 0
 
+这条指令是SSE1引入的用于视频编码绝对差值求和的指令。
+
+在视频编码中的运动估计模块，一种常见的SAD代码如下：
+1 // Get the SAD 16x16 macro block with full pixel
+2  for (y = 0; y < 16; y++)
+3    for(x = 0; x < 16; x++)
+4     sad += abs(current[y][x] - reference[y][x])
+对于这段代码，我们首先来用MMX指令做优化。
+
+mpsadbw：

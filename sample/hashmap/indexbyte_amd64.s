@@ -317,3 +317,121 @@ TEXT	·InSpaceQ2(SB), NOSPLIT, $0-16
 
 	RETFL
 
+
+
+// handle for lengths < 16
+//func IndexBytes(bs []byte, cs []byte) (idx int)
+TEXT	·Hash(SB), NOSPLIT, $0-56
+	MOVQ b_base+0(FP), SI  	// bs.p
+	MOVQ b_len+8(FP), R13	// bs.len
+					//16(FB)   bs.cap
+	MOVQ c_len+24(FP), DI	// cs.p	
+	// MOVQ c_len+32(FP), R14	// cs.len	
+					//40(FB)   cs.cap
+	LEAQ ret+48(FP), R8		// &idx
+
+	MOVQ $0, CX				// i
+
+loop:
+	MOVOU	0(SI)(CX*1), X0
+	MOVOU	0(DI)(CX*1), X1
+
+	ADDQ	$16, CX
+
+	PAND	X1, X0
+	// MOVHPS  X0, BX
+	// MOVLPS  X0, DX
+	MOVQ  X0, BX
+	MOVHLPS X0,X3
+	MOVQ  X3, DX
+	// MOVLPS  X0, DX
+
+	// if l <n
+	CMPQ R13,CX
+	JLT small
+
+h_bit:
+	BSFL	BX, BX	// Find first set bit.
+	JZ	l_bit	// No set bit, failure.
+
+	JMP h_bit
+l_bit:
+	BSFL	DX, DX	// Find first set bit.
+	JZ	loop	// No set bit, failure.
+
+	JMP l_bit
+
+small:
+h_bit1:
+	BSFL	BX, BX	// Find first set bit.
+	JZ	l_bit1	// No set bit, failure.
+
+	JMP h_bit1
+l_bit1:
+	BSFL	DX, DX	// Find first set bit.
+	JZ	return	// No set bit, failure.
+
+	JMP l_bit1
+
+return:
+	MOVQ	CX, (R8)
+	RET
+
+back:
+	MOVQ $-2, (R8)
+	RET
+
+failure:
+	MOVQ CX, (R8)
+	RET
+
+
+// handle for lengths < 16
+/*
+struct s{
+	pick   [1024]byte
+	mask   [1024]byte
+	shiftL [128]int64
+}
+ 加速宣告失败： 	执行代码 1ns； 函数调用 5ns
+*/
+//func Hashx(bs []byte, cs []s) (idx int)
+TEXT	·Hashx(SB), NOSPLIT, $0-64
+	MOVQ b_base+0(FP), SI  	// bs.p
+	MOVQ b_len+8(FP), R13	// bs.len
+					//16(FB)   bs.cap
+	MOVQ c_base+24(FP), DI	// cs.p	
+	// MOVQ c_len+32(FP), R14	// cs.len	
+					//40(FB)   cs.cap
+	LEAQ ret+48(FP), R8		// &idx
+
+	PXOR 	X4, X4
+	LEAQ    ·Pick08(SB), CX
+	MOVOU 	(CX), X5
+	MOVQ 	$0, BX				// i
+
+loop:
+	MOVOU	0(SI)(BX*1), X0
+	MOVOU	0(DI)(BX*1), X1  // pick
+	MOVOU	8(DI)(BX*1), X2  // mask
+	MOVQ	16(DI)(BX*1), CX // shiftL
+	MOVQ	$16, BX
+
+	PSHUFB 	X0, X1
+	PAND	X0, X2
+	PSADBW	X0, X4  // Sum, 高 64bit 和低 64bit 分开处理
+	PSHUFB	X0, X5  // 合并高低 64bit
+	MOVQ	X0, AX
+	SHLQ	CX, AX
+	ADDQ	AX,(R8)
+
+	// if l <n
+	CMPQ R13,BX
+	JLT small
+	JMP	loop	// No set bit, failure.
+
+small:
+
+return:
+	RET
+

@@ -974,6 +974,16 @@ SSSE3:
         包裹式右移    将两个寄存器的值串起来，然后根据编码到指令中的立即数将寄存器中的值右移。
     PSHUFB
         包裹式将任意字节重新排布到目的寄存器    如果源寄存器高位被置1，就把目的寄存器赋值为0,否则根据源操作数的低4位选择目的操作数，将其拷贝到目的操作数的相应位置。
+        
+        字节混选指令: PSHUFB (https://www.officedaytime.com/simd512e/simdimg/si.php?f=pshufb)
+           这条指令非常的灵活，用于选取源寄存器的任意字节重新排布到目的寄存器。用伪代码描述如下：
+        　　char a[16]; // input a
+        　　char b[16]; // input b
+        　　char r[16]; // output r
+        　　for (i=0; i < 16; i++)
+        　　    r[i] = (b[i] < 0) ? 0 : a[b[i] % 16];
+        如果源操作数的该字节高位符号位为1，即源字节操作数小于零的时候，把目的寄存器赋值为零。
+        否则，根据源操作数的低4位选择目的操作数，将其拷贝到目的操作数的相应位。
     PMULHRSW
         包裹式舍入相乘    将两个寄存器中的16位word处理成-1到1间的15位定点数(例如0x4000被处理成0.5，0xa000 处理成−0.75), 并且将他们舍入相乘。
     PMADDUBSW
@@ -1062,4 +1072,67 @@ AMD公司的Barcelona微体系架构中引入了SSE4a指令组。这些说明在
 其他：
 clflush 从所有级别的 cache 刷新 cache line
 
-
+++++++++++++++++++++++++++++++
+SSE
+ 2 CVTSI2SS – 把一个64位的有符号整型转换为一个浮点值，并把它插入到一个128位的参数中。内部指令：_mm_cvtsi64_ss
+ 3 CVTSS2SI – 取出一个32位的浮点值，并取整（四舍五入）为一个64位的整型。内部指令：_mm_cvtss_si64
+ 4 CVTTSS2SI – 取出一个32位的浮点值，并截断为一个64位的整型。内部指令：_mm_cvttss_si64
+ 5 SSE2
+ 6 CVTSD2SI – 取出最低位的64位浮点值，并取整为一个整型。内部指令：_mm_cvtsd_si64
+ 7 CVTSI2SD – 取出最低位的64位整型，并将其转换为一个浮点值。内部指令：_mm_cvtsi64_sd
+ 8 CVTTSD2SI – 取出一个64位的浮点值，并截断为一个64位的整型。内部指令：_mm_cvttsd_si64
+ 9 MOVNTI – 写64位数据到特定内存位置。内部指令：_mm_stream_si64
+10 MOVQ – 移动一个64位的整型到一个128位的参数中，或从128位的参数中移动一个64位的整型。内部指令：_mm_cvtsi64_si128、_mm_cvtsi128_si64
+11 SSSE3
+12 PABSB / PABSW / PABSD – 取有符号整型的绝对值。内部指令：_mm_abs_epi8、_mm_abs_epi16、_mm_abs_epi32、_mm_abs_pi8、_mm_abs_pi16、_mm_abs_pi32
+13 PALIGNR – 结合两个参数并右移结果。内部指令：_mm_alignr_epi8、_mm_alignr_pi8
+14 PHADDSW – 将两个包含16位有符号整型的参数相加，并尽量使结果为16位可表示的最大值。内部指令：_mm_hadds_epi16、_mm_hadds_pi16
+15 PHADDW / PHADDD – 将两个包含有符号整型的参数相加。内部指令：_mm_hadd_epi16、_mm_hadd_epi32、_mm_hadd_pi16、_mm_hadd_pi32
+16 PHSUBSW – 将两个包含16位有符号整型的参数相减，并尽量使结果为16位可表示的最大值。内部指令：_mm_hsubs_epi16、_mm_shubs_pi16
+17 PHSUBW / PHSUBD – 将两个包含有符号整型的参数相减。内部指令：_mm_hsub_epi16、_mm_hsub_epi32、_mm_hsub_pi16、_mm_hsub_pi32
+18 PMADDUBSW – 相乘并相加8位整型。内部指令：_mm_maddubs_epi16、_mm_maddubs_pi16
+19 PMULHRSW – 乘以16位有符号整型，并右移结果。内部指令：_mm_mulhrs_epi16、_mm_mulhrs_pi16
+20 PSHUFB – 从一个128位的参数中选取并乱序其中8位的数据块。内部指令：_mm_shuffle_epi8、_mm_shuffle_pi8
+21 PSIGNB / PSIGNW / PSIGND – 求反（取非）、取零、或保留有符号整型。内部指令：_mm_sign_epi8、_mm_sign_epi16、_mm_sign_epi32、_mm_sign_pi8、_mm_sign_pi16、_mm_sign_pi32
+22 SSE4A
+23 EXTRQ – 从参数中取特定位。内部指令：_mm_extract_si64、_mm_extracti_si64
+24 INSERTQ – 插入特定位到给定参数中。内部指令：_mm_insert_si64、_mm_inserti_si64
+25 MOVNTSD / MOVNTSS – 不使用缓存，直接把数据位写到特定内存位置。内部指令：_mm_stream_sd、_mm_stream_ss
+26 SSE4.1
+27 DPPD / DPPS – 计算两参数的点结果。内部指令：_mm_dp_pd、_mm_dp_ps
+28 EXTRACTPS – 从参数中取出一个特定的32位浮点值。内部指令：_mm_extract_ps
+29 INSERTPS – 把一个32位整型插入到一个128位参数中，并把某些位置零。内部指令：_mm_insert_ps
+30 MOVNTDQA – 从特定内存位置加载128位数据。内部指令：_mm_stream_load_si128
+31 MPSADBW – 计算绝对差分的八个偏移总和。内部指令：_mm_mpsadbw_epu8
+32 PACKUSDW – 使用16位饱和度，把32位有符号整型转换为有符号16位整型。内部指令：_mm_packus_epi32
+33 PBLENDW / BLENDPD / BLENDPS / PBLENDVB / BLENDVPD / BLENDVPS – 把两个不同块大小的参数混合在一起。内部指令：_mm_blend_epi16、_mm_blend_pd、_mm_blend_ps、_mm_blendv_epi8、_mm_blendv_pd、_mm_blendv_ps
+34 PCMPEQQ － 比较64位整型是否相等。内部指令：_mm_cmpeq_epi64
+35 PEXTRB / PEXTRW / PEXTRD / PEXTRQ － 从输入的参数中取出一个整型。内部指令：_mm_extract_epi8、_mm_extract_epi16、_mm_extract_epi32、_mm_extract_epi64
+36 PHMINPOSUW － 选择最小的16位无符号整型并确定它的下标。内部指令：_mm_minpos_epu16
+37 PINSRB / PINSRD / PINSRQ － 把一个整型插入到一个128位参数中。内部指令：_mm_insert_epi8、_mm_insert_epi32、_mm_insert_epi64
+38 PMAXSB / PMAXSD － 接受两个参数中的有符号整型，并选择其中的最大者。内部指令：_mm_max_epi8、_mm_max_epi32
+39 PMAXUW / PMAXUD － 接受两个参数中的无符号整型，并选择其中的最大者。内部指令：_mm_max_epu16、_mm_max_epu32
+40 PMINSB / PMINSD － 接受两个参数中的有符号整型，并选择其中的最小者。内部指令：_mm_min_epi8、_mm_min_epi32
+41 PMINUW / PMINUD － 接受两个参数中的无符号整型，并选择其中的最小者。内部指令：_mm_min_epu16、_mm_min_epu32
+42 PMOVSXBW / PMOVSXBD / PMOVSXBQ / PMOVSXWD / PMOVSXWQ / PMOVSXDQ － 把一有符号整型转换到更大的尺寸。内部指令：_mm_cvtepi8_epi16、_mm_cvtepi8_epi32、_mm_cvtepi8_epi64、_mm_cvtepi16_epi32、_mm_cvtepi16_epi64、_mm_cvtepi32_epi64
+43 PMOVZXBW / PMOVZXBD / PMOVZXBQ / PMOVZXWD / PMOVZXWQ / PMOVZXDQ － 把一无符号整型转换到更大的尺寸。内部指令：_mm_cvtepu8_epi16、_mm_cvtepu8_epi32、_mm_cvtepu8_epi64、_mm_cvtepu16_epi32、_mm_cvtepu16_epi64、_mm_cvtepu32_epi64
+44 PMULDQ － 32位有符号整型相乘，并把结果存储为64位有符号整型。内部指令：_mm_mul_epi32
+45 PMULLUD － 32位有符号整型相乘。内部指令：_mm_mullo_epi32
+46 PTEST － 按位计算两个128位参数，并基于CC标志寄存器的CF与ZF位返回值。内部指令：_mm_testc_si128、_mm_testnzc_si128、_mm_testz_si128
+47 ROUNDPD / ROUNDPS － 取整浮点数值。内部指令：_mm_ceil_pd、_mm_ceil_ps、_mm_floor_pd、_mm_floor_ps、_mm_round_pd、_mm_round_ps
+48 ROUNDSD / ROUNDSS － 结合两个参数，从其一取整到一个浮点数值。内部指令：_mm_ceil_sd、_mm_ceil_ss、_mm_floor_sd、_mm_floor_ss、_mm_round_sd、_mm_round_ss
+49 SSE4.2
+50 CRC32 － 计算参数的CRC-32C检验和。内部指令：_mm_crc32_u8、_mm_crc32_u16、_mm_crc32_u32、_mm_crc32_u64
+51 PCMPESTRI / PCMPESTRM －比较特定长度的两个参数。内部指令：_mm_cmpestra、_mm_cmpestrc、_mm_cmpestri、_mm_cmpestrm、_mm_cmpestro、_mm_cmpestrs、_mm_cmpestrz
+52 PCMPGTQ － 比较两个参数。内部指令：_mm_cmpgt_epi64
+53 PCMPISTRI / PCMPISTRM － 比较两个参数。内部指令：_mm_cmpistra、_mm_cmpistrc、_mm_cmpistri、_mm_cmpistrm、_mm_cmpistro、_mm_cmpistrs、_mm_cmpistrz
+54 POPCNT － 统计位集中1的数量。内部指令：_mm_popcnt_u32、_mm_popcnt_u64、__popcnt16、__popcnt、__popcnt64
+55 高级位操纵
+56 LZCNT － 统计参数中零的数量。内部指令：__lzcnt16、 __lzcnt、__lzcnt64
+57 POPCNT － 统计位集中1的数量。内部指令：_mm_popcnt_u32、_mm_popcnt_u64、__popcnt16、__popcnt、__popcnt64
+58 其他新指令
+59 _InterlockedCompareExchange128 － 对比两个参数。
+60 _mm_castpd_ps / _mm_castpd_si128 / _mm_castps_pd / _mm_castps_si128 / _mm_castsi128_pd / _mm_castsi128_ps － 对32位浮点值（ps）、64位浮点值（pd）及32位整型值（si128）重新解释。
+61 _mm_cvtsd_f64 － 从参数中取出最低的64位浮点值。
+62 _mm_cvtss_f32 － 取出一个32位的浮点值。
+63 _rdtscp － 生成RDTSCP。把TSC AUX[31:0]写到内存，并返回64位时间戳计数器结果。

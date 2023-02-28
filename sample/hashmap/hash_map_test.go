@@ -1,10 +1,11 @@
-package json
+package hashmap
 
 import (
 	"fmt"
 	"math/rand"
 	"runtime"
 	"testing"
+	"time"
 	"unsafe"
 )
 
@@ -71,7 +72,7 @@ func Test_getPivotMask2(t *testing.T) {
 func Test_logicalHash_new(t *testing.T) {
 	keys := []string{}
 	// keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
-	for i := 0; i < 160; i++ {
+	for i := 0; i < 512; i++ {
 		keys = append(keys, getRandStr(rand.Intn(10)+5))
 	}
 
@@ -123,10 +124,11 @@ func Benchmark_getPivotMask(b *testing.B) {
 	}
 	keys = nil
 	// keys = []string{`"avatar"`, `"avatar72"`, `"avatar240"`, `"avatar640"`}
-	for i := 0; i < 160; i++ {
+	for i := 0; i < 257; i++ {
 		keys = append(keys, getRandStr(rand.Intn(18)+2))
 	}
-	lens := []int{8, 16, 32, 64, 128}
+	// lens := []int{8, 16, 32, 64, 128, 180}
+	lens := []int{230}
 	// lens = []int{8, 64, 128}
 	// lens = []int{128}
 	for _, l := range lens {
@@ -232,8 +234,8 @@ go build -gcflags=-m ./     2> ./gc.log
 //   */
 func Benchmark_buildMap(b *testing.B) {
 	keys := []string{}
-	for i := 0; i < 16; i++ {
-		keys = append(keys, getRandStr(rand.Intn(20)+5))
+	for i := 0; i < 8; i++ {
+		keys = append(keys, getRandStr(rand.Intn(6)+4))
 	}
 	ns := []mapNode{}
 	for _, k := range keys {
@@ -253,12 +255,12 @@ func Benchmark_buildMap(b *testing.B) {
 
 	runtime.GC()
 
-	b.Run("TagMapGetV", func(b *testing.B) {
+	b.Run("TagMapGetV4", func(b *testing.B) {
 		NN := (b.N * 100) / len(keys)
 		p := &m
 		for i := 0; i < NN; i++ {
 			for _, k := range keys {
-				v := TagMapGetV3(p, k)
+				v := TagMapGetV4(p, k)
 				if v == nil {
 					b.Fatalf("[%s] not found", string(k))
 				}
@@ -295,11 +297,11 @@ func Benchmark_buildMap(b *testing.B) {
 				}
 			}
 		})
-		b.Run("Get3", func(b *testing.B) {
+		b.Run("Get4", func(b *testing.B) {
 			NN := (b.N * 100) / len(keys)
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
-					v := m.Get3(k)
+					v := m.Get4(k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(n.K))
 					}
@@ -318,12 +320,12 @@ func Benchmark_buildMap(b *testing.B) {
 				}
 			}
 		})
-		b.Run("TagMapGetV3", func(b *testing.B) {
+		b.Run("TagMapGetV4", func(b *testing.B) {
 			NN := (b.N * 100) / len(keys)
 			p := &m
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
-					v := TagMapGetV3(p, k)
+					v := TagMapGetV4(p, k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(n.K))
 					}
@@ -345,10 +347,117 @@ func Benchmark_buildMap(b *testing.B) {
 	}
 }
 
+func Benchmark_buildMap_one(b *testing.B) {
+	keys := []string{}
+	for i := 0; i < 16; i++ {
+		keys = append(keys, getRandStr(rand.Intn(6)+4))
+	}
+	ns := []mapNode{}
+	for _, k := range keys {
+		ns = append(ns, mapNode{
+			K: k,
+			V: &TagInfo{},
+		})
+	}
+	m := buildTagMap(ns)
+	b.Logf("%+v", m.String())
+	for _, n := range ns {
+		v := m.Get(n.K)
+		if v == nil {
+			b.Fatalf("[%s] not found", string(n.K))
+		}
+	}
+	mm := make(map[string]mapNode)
+	mm2 := make(map[string]mapNode, 2*len(ns))
+	mm4 := make(map[string]mapNode, 4*len(ns))
+	mm8 := make(map[string]mapNode, 8*len(ns))
+	for _, n := range ns {
+		mm[string(n.K)] = n
+		mm2[string(n.K)] = n
+		mm4[string(n.K)] = n
+		mm8[string(n.K)] = n
+	}
+
+	runtime.GC()
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
+
+	for _, k := range keys[:1] {
+		_ = k
+		b.Run("TagMapGetV", func(b *testing.B) {
+			NN := (b.N * 100)
+			p := &m
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					v := TagMapGetV(p, k)
+					if v == nil {
+						b.Fatalf("[%s] not found", string(k))
+					}
+				}
+			}
+		})
+		// b.Run("TagMapGetV4", func(b *testing.B) {
+		// 	NN := (b.N * 100)
+		// 	p := &m
+		// 	for i := 0; i < NN; i++ {
+		// 		v := TagMapGetV4(p, k)
+		// 		if v == nil {
+		// 			b.Fatalf("[%s] not found", string(k))
+		// 		}
+		// 	}
+		// })
+		b.Run("map", func(b *testing.B) {
+			NN := (b.N * 100)
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					v := mm[k]
+					if v.V == nil {
+						b.Fatalf("[%s] not found", string(k))
+					}
+				}
+			}
+		})
+		b.Run("map2", func(b *testing.B) {
+			NN := (b.N * 100)
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					v := mm2[k]
+					if v.V == nil {
+						b.Fatalf("[%s] not found", string(k))
+					}
+				}
+			}
+		})
+		b.Run("map4", func(b *testing.B) {
+			NN := (b.N * 100)
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					v := mm4[k]
+					if v.V == nil {
+						b.Fatalf("[%s] not found", string(k))
+					}
+				}
+			}
+		})
+		b.Run("map8", func(b *testing.B) {
+			NN := (b.N * 100)
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					v := mm8[k]
+					if v.V == nil {
+						b.Fatalf("[%s] not found", string(k))
+					}
+				}
+			}
+		})
+	}
+}
+
 func Benchmark_map_hash(b *testing.B) {
 	keys := []string{}
 	for i := 0; i < 16; i++ {
-		keys = append(keys, getRandStr(rand.Intn(20)+5))
+		keys = append(keys, getRandStr(rand.Intn(5)+5))
 	}
 	bsList := [][]byte{}
 	for _, k := range keys {
@@ -377,10 +486,61 @@ func noescape(p unsafe.Pointer) unsafe.Pointer {
 	return unsafe.Pointer(x ^ 0)
 }
 
+func toHashx(n int) (fout func(k string) int) {
+	if n == 1 {
+		fout = func(k string) int { return 1 }
+		return
+	}
+	f := toHashx(n - 1)
+	return func(key string) (idx int) {
+		x := f(key)
+		x++
+		return
+	}
+}
+
+func toHashx2(n int) (fout func(k string) int) {
+	fout = func(k string) int { return 1 }
+	for i := 0; i < n; i++ {
+		f1 := fout
+		f := func(key string) (idx int) {
+			x := f1(key)
+			x++
+			return
+		}
+		fout = f
+	}
+
+	return
+}
+func Benchmark_toHashx(b *testing.B) {
+	key := "11111111"
+	// f5 := toHashx(5)
+	// f1 := toHashx(1)
+	f5 := toHashx2(5)
+	f1 := toHashx2(1)
+	for range make([]struct{}, 2) {
+		runtime.GC()
+		b.Run("toHashx(1)", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				f1(key)
+			}
+		})
+		b.Run("toHashx(5)", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				f5(key)
+			}
+		})
+	}
+}
+
+// hash 参数太多了，影响性能
 func Benchmark_hash(b *testing.B) {
 	keys := []string{}
-	for i := 0; i < 10; i++ {
-		keys = append(keys, getRandStr(rand.Intn(20)+5))
+	for i := 0; i < 16; i++ {
+		keys = append(keys, getRandStr(rand.Intn(10)+5))
 	}
 	ns := []mapNode{}
 	for _, k := range keys {
@@ -398,9 +558,26 @@ func Benchmark_hash(b *testing.B) {
 		}
 	}
 
-	runtime.GC()
+	idxN2 := make([]iN2, 0, 100)
+	idxN2 = append(idxN2, m.idxN2...)
+	idxN2 = idxN2[:cap(idxN2)]
+	mm := make(map[string]mapNode)
+	for _, n := range ns {
+		mm[string(n.K)] = n
+	}
 
 	for range make([]struct{}, 2) {
+		runtime.GC()
+		b.Run("range", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					for range []byte(k) {
+					}
+				}
+			}
+		})
+		runtime.GC()
 		b.Run("hash", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
@@ -409,6 +586,7 @@ func Benchmark_hash(b *testing.B) {
 				}
 			}
 		})
+		runtime.GC()
 		b.Run("hash2", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
@@ -417,14 +595,34 @@ func Benchmark_hash(b *testing.B) {
 				}
 			}
 		})
-		b.Run("hash3", func(b *testing.B) {
+		runtime.GC()
+		b.Run("hash2x", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
-					_ = hash3(k, m.idxNTable, m.idxN2)
+					_ = hash2x(k, m.idxN[:m.idxNTable[len(k)]])
 				}
 			}
 		})
+		runtime.GC()
+		b.Run("hash21", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash21(k, m.idxNTable, m.idxN)
+				}
+			}
+		})
+		runtime.GC()
+		b.Run("hash41", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash41(k, m.idxNTable, m.idxN2)
+				}
+			}
+		})
+		runtime.GC()
 		b.Run("hash4", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
@@ -433,49 +631,152 @@ func Benchmark_hash(b *testing.B) {
 				}
 			}
 		})
-		b.Run("hash5", func(b *testing.B) {
+		runtime.GC()
+		b.Run("hash4x", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
-					_ = hash5(k, m.idxNTable, m.idxN2)
+					_ = hash4x(k, m.idxN2[:m.idxNTable[len(k)]])
 				}
 			}
 		})
-		b.Run("range", func(b *testing.B) {
+		runtime.GC()
+		b.Run("hash41", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
-					for range k {
-					}
+					_ = hash41(k, m.idxNTable, m.idxN2)
 				}
 			}
 		})
+		runtime.GC()
+		b.Run("hash51", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash51(k, m.idxNTable, m.idxN2)
+				}
+			}
+		})
+		runtime.GC()
+		b.Run("hash52", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash52(k, m.idxNTable, m.idxN2)
+				}
+			}
+		})
+		runtime.GC()
+		b.Run("hash3", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash3(k, m.idxNTable, m.idxN2)
+				}
+			}
+		})
+		runtime.GC()
+		b.Run("hash31", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash31(k, m.idxNTable, m.idxN2)
+				}
+			}
+		})
+		runtime.GC()
+		b.Run("hash32", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash32(k, m.idxNTable, idxN2)
+				}
+			}
+		})
+		runtime.GC()
+		b.Run("hash33", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash33(k, m.idxNTable, idxN2)
+				}
+			}
+		})
+		runtime.GC()
+		b.Run("hash34", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = hash34(k, m.idxNTable, idxN2)
+				}
+			}
+		})
+		runtime.GC()
+		k0 := make([]byte, 1024) //[]byte(keys[0])
+		b.Run("simd.Hash", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = Hash(stringBytes(k), k0)
+				}
+			}
+		})
+		cs := [1024]N{}
+		b.Run("simd.Hashx", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = Hashx(stringBytes(k), cs[:])
+				}
+			}
+		})
+		runtime.GC()
+		k0[0] = keys[0][0]
+		k0[1] = keys[0][1]
+		b.Run("simd.Hash", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = Hash(stringBytes(k), k0)
+				}
+			}
+		})
+		runtime.GC()
+		k0 = []byte(keys[0])
+		b.Run("simd.Hash", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = Hash(stringBytes(k), k0)
+				}
+			}
+		})
+		runtime.GC()
 		pm := *(**hmap)(unsafe.Pointer(&map[string]mapNode{}))
 		b.Run("map.hasher", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
-					_ = strhash(noescape(unsafe.Pointer(&k)), uintptr(pm.hash0))
+					_ = strhasher(noescape(unsafe.Pointer(&k)), uintptr(pm.hash0))
 				}
 			}
 		})
 
-		b.Run("TagMapGetV3", func(b *testing.B) {
+		runtime.GC()
+		b.Run("TagMapGetV", func(b *testing.B) {
 			NN := b.N * 100
 			p := &m
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
-					v := TagMapGetV3(p, k)
+					v := TagMapGetV(p, k)
 					if v == nil {
 						b.Fatalf("[%s] not found", string(k))
 					}
 				}
 			}
 		})
-		mm := make(map[string]mapNode)
-		for _, n := range ns {
-			mm[string(n.K)] = n
-		}
+		runtime.GC()
 		b.Run("map", func(b *testing.B) {
 			NN := b.N * 100
 			for i := 0; i < NN; i++ {
@@ -488,6 +789,45 @@ func Benchmark_hash(b *testing.B) {
 			}
 		})
 	}
+}
+
+var char byte
+
+func Benchmark_range(b *testing.B) {
+	keys := []string{}
+	for i := 0; i < 16; i++ {
+		keys = append(keys, getRandStr(rand.Intn(20)+5))
+	}
+	b.Run("range", func(b *testing.B) {
+		NN := b.N * 100
+		for i := 0; i < NN; i++ {
+			for _, k := range keys {
+				bs := *(*[]byte)(unsafe.Pointer(&k))
+				for _, c := range bs {
+					char = c
+				}
+			}
+		}
+	})
+	b.Run("range2", func(b *testing.B) {
+		NN := b.N * 100
+		for i := 0; i < NN; i++ {
+			for _, k := range keys {
+				for j := 0; j < len(k); j++ {
+					char = k[j]
+				}
+			}
+		}
+	})
+	pm := *(**hmap)(unsafe.Pointer(&map[string]mapNode{}))
+	b.Run("map.hasher", func(b *testing.B) {
+		NN := b.N * 100
+		for i := 0; i < NN; i++ {
+			for _, k := range keys {
+				_ = strhash(noescape(unsafe.Pointer(&k)), uintptr(pm.hash0))
+			}
+		}
+	})
 }
 
 func Test_Map1(t *testing.T) {

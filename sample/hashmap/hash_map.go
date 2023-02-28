@@ -1,10 +1,11 @@
-package json
+package hashmap
 
 import (
 	"fmt"
 	"log"
 	"math"
 	"sort"
+	"unsafe"
 
 	lxterrs "github.com/lxt1045/errors"
 )
@@ -25,13 +26,13 @@ var allMask = func() (allMask []byte) {
 	// 1bit 的
 	allMask = append(allMask, seed...)
 
+	return
 	// 2. 2bit 的
 	for i, a := range seed {
 		for _, b := range seed[i+1:] {
 			allMask = append(allMask, a+b)
 		}
 	}
-	return
 
 	// 3bit 的
 	for i, a := range seed {
@@ -137,8 +138,8 @@ func TagMapGetV(m *tagMap, k string) (v *TagInfo) {
 	}
 	return
 }
-func TagMapGetV3(m *tagMap, k string) (v *TagInfo) {
-	idx := hash3(k, m.idxNTable, m.idxN2)
+func TagMapGetV4(m *tagMap, k string) (v *TagInfo) {
+	idx := hash4(k, m.idxNTable, m.idxN2)
 	n := m.S[idx]
 	if k == n.K {
 		return n.V
@@ -170,8 +171,8 @@ func (m *tagMap) Get2(k string) (v *TagInfo) {
 	}
 	return
 }
-func (m *tagMap) Get3(k string) (v *TagInfo) {
-	idx := hash3(k, m.idxNTable, m.idxN2)
+func (m *tagMap) Get4(k string) (v *TagInfo) {
+	idx := hash4(k, m.idxNTable, m.idxN2)
 	n := m.S[idx]
 	if k == n.K {
 		return n.V
@@ -287,10 +288,10 @@ type iN struct {
 }
 
 type iN2 struct {
+	mask  byte
 	iByte int16 // string的偏移量
 	i     int16
 	iBit  int16
-	mask  byte
 }
 
 type Mask struct {
@@ -629,10 +630,7 @@ func getHashParam(idxN []iN) (idxNTable []int16) {
 			idxNTable[i] = j
 			continue
 		}
-		for int(j) < len(idxN) {
-			if int(j) == len(idxN) || idxN[j].iByte >= i {
-				break
-			}
+		for int(j) < len(idxN) && int(j) != len(idxN) && idxN[j].iByte < i {
 			j++
 		}
 		idxNTable[i] = j
@@ -640,6 +638,23 @@ func getHashParam(idxN []iN) (idxNTable []int16) {
 	return
 }
 
+func toHash(idxN []iN) (fs []func(k string) int) {
+	fs = append(fs, func(k string) int { return 0 })
+	for i, x := range idxN {
+		f := func(key string) (idx int) {
+			idx = fs[i](key)
+			if (x.mask & key[x.iByte]) == x.mask {
+				idx |= x.iBit
+			}
+			return
+		}
+		fs = append(fs, f)
+	}
+
+	return
+}
+
+//-go:noinline
 func hash(key string, idxN []iN) (idx int) {
 	for _, x := range idxN {
 		if x.iByte >= len(key) {
@@ -652,43 +667,56 @@ func hash(key string, idxN []iN) (idx int) {
 	return
 }
 
+//-go:noinline
 func hash2(key string, idxNTable []int16, idxN []iN) (idx int) {
 	n := idxNTable[len(key)]
 	for _, x := range idxN[:n] {
 		if (x.mask & key[x.iByte]) == x.mask {
 			idx |= x.iBit
 		}
-		// TODO
-		/*
-			可以改进，用 uint64 来匹配：
-			flag := 0b0010010010
-			if (in & flag) ^ flag == 0 {
-				// 表示匹配
-			}
-		*/
+	}
+	return
+}
+func hash2x(key string, idxN []iN) (idx int) {
+	for _, x := range idxN {
+		if (x.mask & key[x.iByte]) == x.mask {
+			idx |= x.iBit
+		}
 	}
 	return
 }
 
-func hash3(key string, idxNTable []int16, idxN []iN2) (idx int16) {
+//-go:noinline
+func hash21(key string, idxNTable []int16, idxN []iN) (idx int) {
 	n := idxNTable[len(key)]
+	/*
+		if (x == a)
+		  x= b
+		else
+		  x= a;
+		等价于 x= a ^ b ^ x;
+	*/
 	for _, x := range idxN[:n] {
-		if (x.mask & key[x.iByte]) == x.mask {
-			idx |= x.iBit
-		}
-		// TODO
-		/*
-			可以改进，用 uint64 来匹配：
-			flag := 0b0010010010
-			if (in & flag) ^ flag == 0 {
-				// 表示匹配
-			}
-		*/
+		b := int(x.mask & key[x.iByte])
+		// if b == 0 { idx |= x.iBit }
+		// b = 0 ^ x.iBit ^ b
+		b = x.iBit ^ b
+		idx |= b
 	}
+	return
+}
+
+//-go:noinline
+func byte2bit(b, mask byte) (one byte) {
+	// return b & mask
+	zero := (mask & b) ^ mask
+	one = (1 << zero) & 1
 	return
 }
 
 // 参考 /usr/local/go/src/runtime/hash64.go: memhashFallback 函数
+
+//-go:noinline
 func hash4(key string, idxNTable []int16, idxN []iN2) (idx int) {
 	n := idxNTable[len(key)]
 	for _, x := range idxN[:n] {
@@ -696,112 +724,337 @@ func hash4(key string, idxNTable []int16, idxN []iN2) (idx int) {
 		// one := (1 << zero) & 1
 		// idx |= (one << x.i)
 		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-
-		// TODO
-		/*
-			可以改进，用 uint64 来匹配：
-			flag := 0b0010010010
-			if (in & flag) ^ flag == 0 {
-				// 表示匹配
-			}
-		*/
+		idx |= one << x.i
 	}
 	return
 }
 
-func byte2bit(b, mask byte) (one byte) {
-	zero := (mask & b) ^ mask
-	one = (1 << zero) & 1
+func hash4x(key string, idxN []iN2) (idx int) {
+	for _, x := range idxN {
+		mask := x.mask
+		b := key[x.iByte]
+		one := int(b & mask)
+		idx |= one << x.i
+	}
 	return
 }
 
-//*
-func hash5(key string, idxNTable []int16, idxN []iN2) (idx int) {
+//-go:noinline
+func hash41(key string, idxNTable []int16, idxN []iN2) (idx int) {
 	n := idxNTable[len(key)]
-	switch {
-	case n == 16:
-		x := idxN[15]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 15:
-		x := idxN[14]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 14:
-		x := idxN[13]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 13:
-		x := idxN[12]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 12:
-		x := idxN[11]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 11:
-		x := idxN[10]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 10:
-		x := idxN[9]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 9:
-		x := idxN[8]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 8:
-		x := idxN[7]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 7:
-		x := idxN[6]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 6:
-		x := idxN[5]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 5:
-		x := idxN[4]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 4:
-		x := idxN[3]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 3:
-		x := idxN[2]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 2:
-		x := idxN[1]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		fallthrough
-	case n == 1:
-		x := idxN[0]
-		one := int(byte2bit(key[x.iByte], x.mask))
-		idx |= (one << x.i)
-		return
+	for _, x := range idxN[:n] {
+		mask := x.mask
+		b := key[x.iByte]
+		one := int(b & mask)
+		idx |= one << x.i
 	}
 	return
 }
 
-//*/
+// range key 会不会更快一点？
+//hash 表就是直接 range key 的
+
+//-go:noinline
+func hash3(key string, idxNTable []int16, idxN []iN2) (idx int) {
+	n := idxNTable[len(key)]
+	for _, x := range idxN[:n] {
+		idx = int(key[x.iByte])
+	}
+	return
+}
+
+//-go:noinline
+func hash31(key string, idxNTable []int16, idxN []iN2) (idx int) {
+	n := idxNTable[len(key)]
+	for i := int16(0); i < n; i++ {
+		idx = int(key[i])
+	}
+	return
+}
+
+//-go:noinline
+func hash32(key string, idxNTable []int16, idxN []iN2) (idx int) {
+	n := len(key)
+	bs := stringBytes(key)
+	var u uint64
+	for i := 0; i < n; i += 8 {
+		mask := *(*uint64)(unsafe.Pointer(&idxN[i]))
+		// bit := *(*int)(pointerOffset(unsafe.Pointer(&idxN), uintptr(i)))
+		x := *(*uint64)(unsafe.Pointer(&bs[i])) & mask
+		// u |= (x & 0b1) | (0b10 & x >> 4) | (0b1000 & x >> 8)
+		u |= (x & 0b1) + 10086
+	}
+	idx = int(u & 0xffff)
+	/*
+			0b0000 1000 0001 0010
+		+	0b0111 1
+		+	0b0011 111111111
+		+	0b0001 111111111 1110
+			---------------------
+			0b1111
+	*/
+
+	// idx |= idx >> 32
+	// idx |= idx >> 16
+	// idx |= idx >> 8
+	// idx = idx & 0xff
+
+	return
+}
+
+//-go:noinline
+func hash33(key string, idxNTable []int16, idxN []iN2) (idx int) {
+	n := len(key)
+	bs := stringBytes(key)
+	var u uint64
+	for i := 0; i < n; i += 8 {
+		mask := *(*uint64)(unsafe.Pointer(&idxN[i]))
+		// bit := *(*int)(pointerOffset(unsafe.Pointer(&idxN), uintptr(i)))
+		x := *(*uint64)(unsafe.Pointer(&bs[i])) & mask
+		u |= (x & 0b1) | (0b10 & x >> 4) | (0b1000 & x >> 8) | (0b1000 & x >> 8)
+	}
+	idx = int(u & 0xffff)
+	return
+}
+
+//go:noinline
+func hash34(key string, idxNTable []int16, idxN []iN2) (idx int) {
+	n := len(key)
+	bs := stringBytes(key)
+	var u uint64
+	for i := 0; i < n; i += 8 {
+		mask := *(*uint64)(unsafe.Pointer(&idxN[i]))
+		// bit := *(*int)(pointerOffset(unsafe.Pointer(&idxN), uintptr(i)))
+		x := *(*uint64)(unsafe.Pointer(&bs[i])) & mask
+		u |= (x & 0b1) | (0b10 & x >> 4) | (0b1000 & x >> 8) | (0b1000 & x >> 8)
+	}
+	idx = int(u & 0xffff)
+	return
+}
+
+//-go:noinline
+func strhasher(p unsafe.Pointer, h uintptr) uintptr {
+
+	return strhash(p, h)
+}
+
+//-go:noinline
+func hash51(key string, idxNTable []int16, idxN []iN2) (idx int) {
+	// return idxNTableFunc[len(key)-1](key, idxN)
+	return hashx3(key, idxN)
+}
+
+//-go:noinline
+func hash52(key string, idxNTable []int16, idxN []iN2) (idx int) {
+	// return idxNTableFunc[len(key)-1](key, idxN)
+	// return hashx1(key, idxN)
+
+	switch idxNTable[len(key)-1] {
+	case 1:
+		idx = hashx1(key, idxN)
+	case 2:
+		idx = hashx2(key, idxN)
+	case 3:
+		idx = hashx3(key, idxN)
+	case 4:
+		idx = hashx4(key, idxN)
+	case 5:
+		idx = hashx5(key, idxN)
+	case 6:
+		idx = hashx6(key, idxN)
+	case 7:
+		idx = hashx7(key, idxN)
+	case 8:
+		idx = hashx8(key, idxN)
+	default:
+		panic(fmt.Sprintf("getHashParamFunc err:%d", len(key)-1))
+	}
+	return
+}
+
+func hashx8(key string, idxN []iN2) (idx int) {
+	x := idxN[0]
+	one := int(byte2bit(key[x.iByte], x.mask))
+	idx |= (one << x.i)
+	x = idxN[1]
+	one = int(byte2bit(key[x.iByte], x.mask))
+	idx |= (one << x.i)
+	x = idxN[2]
+	one = int(byte2bit(key[x.iByte], x.mask))
+	idx |= (one << x.i)
+	x = idxN[3]
+	one = int(byte2bit(key[x.iByte], x.mask))
+	idx |= (one << x.i)
+	x = idxN[4]
+	one = int(byte2bit(key[x.iByte], x.mask))
+	idx |= (one << x.i)
+	x = idxN[5]
+	one = int(byte2bit(key[x.iByte], x.mask))
+	idx |= (one << x.i)
+	x = idxN[6]
+	one = int(byte2bit(key[x.iByte], x.mask))
+	idx |= (one << x.i)
+	x = idxN[7]
+	one = int(byte2bit(key[x.iByte], x.mask))
+	idx |= (one << x.i)
+	return
+}
+func hashx7(key string, idxN []iN2) (idx int) {
+	{
+		x := idxN[0]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[1]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[2]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[3]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[4]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[5]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[6]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	return
+}
+func hashx6(key string, idxN []iN2) (idx int) {
+	{
+		x := idxN[0]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[1]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[2]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[3]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[4]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[5]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	return
+}
+func hashx5(key string, idxN []iN2) (idx int) {
+	{
+		x := idxN[0]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[1]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[2]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[3]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[4]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	return
+}
+func hashx4(key string, idxN []iN2) (idx int) {
+	{
+		x := idxN[0]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[1]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[2]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[3]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	return
+}
+func hashx3(key string, idxN []iN2) (idx int) {
+	{
+		x := idxN[0]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[1]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[2]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	return
+}
+func hashx2(key string, idxN []iN2) (idx int) {
+	{
+		x := idxN[0]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	{
+		x := idxN[1]
+		one := x.mask & key[x.iByte]
+		idx |= int(one) << x.i
+	}
+	return
+}
+func hashx1(key string, idxN []iN2) (idx int) {
+	x := idxN[0]
+	one := x.mask & key[x.iByte]
+	idx |= int(one) << x.i
+	return
+}
