@@ -142,8 +142,6 @@ func LoadTagNodeSlow(v reflect.Value, hash uint32) (*TagInfo, error) {
 		return nil, err
 	}
 
-	ti.buildChildMap()
-
 	cacheStructTagInfo.Set(hash, ti)
 	return ti, nil
 }

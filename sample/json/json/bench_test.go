@@ -214,7 +214,7 @@ func BenchmarkUnmarshalType(b *testing.B) {
 	}
 	N := 10
 	idxs := []int{}
-	idxs = []int{8, 9, 10, 11}
+	// idxs = []int{8, 9, 10, 11}
 	if len(idxs) > 0 {
 		get := all[:0]
 		for _, i := range idxs {

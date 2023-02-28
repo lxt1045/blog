@@ -91,13 +91,7 @@ func parseObj(idxSlash int, stream string, store PoolStore) (i, iSlash int) {
 		if nB != 1 {
 			panic(lxterrs.New(ErrStream(stream[i:])))
 		}
-		// 解析 value ； 手动内联
-		var son *TagInfo
-		if store.tag.MChildrenEnable {
-			son = TagMapGetV(&store.tag.MChildren, key)
-		} else {
-			son = store.tag.GetChildFromMap(key)
-		}
+		son := store.tag.Children[string(key)]
 
 		if son != nil {
 			storeSon := PoolStore{
@@ -967,42 +961,3 @@ func unescapeToRune(raw string) rune {
 	}
 	return rune(n)
 }
-
-//go:noescape
-func IndexByte(bs []byte, c byte) int
-
-//go:noescape
-func IndexBytes(bs []byte, cs []byte) int
-
-//go:noescape
-func IndexBytes1(bs []byte, cs []byte) int
-
-//go:noescape
-func IndexBytes2(bs []byte, cs []byte) int
-
-func Test1(x, y int) (a, b int)
-func Test2(a int, xs []byte) (n int)
-
-var SpaceBytes = [8][16]byte{
-	fillBytes16('\t'),
-	fillBytes16('\n'),
-	fillBytes16('\v'),
-	fillBytes16('\f'),
-	fillBytes16('\r'),
-	fillBytes16(' '),
-	fillBytes16(0x85),
-	fillBytes16(0xA0),
-}
-
-func fillBytes16(b byte) (bs [16]byte) {
-	for i := 0; i < 16; i++ {
-		bs[i] = b
-	}
-	return
-}
-
-// asm 中读入 X0 寄存器
-var SpaceQ = [8]byte{0x85, 0xA0, '\t', '\n', '\v', '\f', '\r', ' '}
-
-// 在 asm 中实现
-func InSpaceQ(b byte) bool

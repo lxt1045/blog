@@ -21,14 +21,10 @@ type TagInfo struct {
 	OmitemptyTag bool         //  `json:"some_field,omitempty"`
 
 	/*
-		MChildrenEnable: true 时表示使用 MChildren
-		Children： son 超过 128 时tagMap解析很慢，用 map 替代
 		ChildList： 遍历 map 性能较差，加个 list
 	*/
-	MChildrenEnable bool
-	Children        map[string]*TagInfo
-	ChildList       []*TagInfo // 遍历的顺序和速度
-	MChildren       tagMap
+	Children  map[string]*TagInfo
+	ChildList []*TagInfo // 遍历的顺序和速度
 
 	cacheType  reflect.Type // pointer 的 cache
 	batchCache *BatchObj    // struct 的指针对象组成的类型 的 pool
@@ -54,28 +50,6 @@ type TagInfo struct {
 }
 
 const SPoolN = 1024 // * 1024
-
-func (t *TagInfo) buildChildMap() {
-	if len(t.ChildList) == 0 {
-		return
-	}
-	nodes := make([]mapNode, 0, len(t.ChildList))
-	for _, child := range t.ChildList {
-		if len(child.TagName) == 0 {
-			continue
-		}
-		nodes = append(nodes, mapNode{
-			K: child.TagName,
-			V: child,
-		})
-	}
-	if len(t.ChildList) <= 64 {
-		t.MChildrenEnable = true
-		mc := buildTagMap(nodes)
-		t.MChildren = mc
-		t.Children = nil // 减少 gc 扫描指针
-	}
-}
 
 func (t *TagInfo) GetChildFromMap(key string) *TagInfo {
 	return t.Children[string(key)]

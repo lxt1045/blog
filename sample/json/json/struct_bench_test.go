@@ -1448,28 +1448,6 @@ func TestMyUnmarshalStd(t *testing.T) {
 	t.Logf("%T:%+v", m, m)
 }
 
-func TestCtz64(t *testing.T) {
-	// xs := make([]byte, 16)
-	// xs[4] = 'x'
-	xs := [32]byte{}
-	y := Test2('a', xs[:])
-	t.Logf("Test1(),as:%+v,y:%d", xs, y)
-	t.Logf("Test1(),as:%+v", fillBytes16('x'))
-}
-
-func BenchmarkTest1(b *testing.B) {
-	b.Run("0", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			Test1(0b100, 5)
-		}
-	})
-	b.Run("2", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			Test1(0b1000000000000000000, 5)
-		}
-	})
-}
-
 var bsG string
 var bsG1 []byte
 
@@ -1498,93 +1476,6 @@ func BenchmarkTrimSpace(b *testing.B) {
 		b.SetBytes(int64(b.N))
 		b.StopTimer()
 	})
-	b.Run("7", func(b *testing.B) {
-		xss := [32]byte{}
-		p := (*[8]byte)(unsafe.Pointer((uintptr(unsafe.Pointer(&xss)) + 0xf) & (^uintptr(0xf))))
-		*p = [8]byte{0x85, 0xA0, '\t', '\n', '\v', '\f', '\r', ' '}
-		xs := (*p)[:]
-
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			max := len(bs)
-			max = max / 8 * 8
-			count := IndexBytes2(xs, bs[0:max])
-			for ; max < len(bs); max++ {
-				if table[bs[max]] {
-					count++
-				}
-			}
-			// count := IndexBytes2(xs, bs)
-			if countG[6] == 0 {
-				countG[6] = count
-			}
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	// b.Logf("countG:%+v", countG)
-	// return
-	b.Run("5", func(b *testing.B) {
-		xss := [32]byte{}
-		p := (*[8]byte)(unsafe.Pointer(uintptr(unsafe.Pointer(&xss)) & (^uintptr(0xf))))
-		*p = [8]byte{0x85, 0xA0, '\t', '\n', '\v', '\f', '\r', ' '}
-		xs := (*p)[:]
-
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			count := IndexBytes1(xs, bs[0:])
-			if countG[4] == 0 {
-				countG[4] = count
-			}
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("6", func(b *testing.B) {
-		xss := [32]byte{}
-		p := (*[8]byte)(unsafe.Pointer(uintptr(unsafe.Pointer(&xss)) & (^uintptr(0xf))))
-		*p = [8]byte{0x85, 0xA0, '\t', '\n', '\v', '\f', '\r', ' '}
-		xs := (*p)[:]
-
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			count := 0
-			Ns := [8]int{}
-			for j := 0; j < len(bs); {
-				last := len(bs)
-				for idx, x := range xs[:] {
-					if Ns[idx] < j {
-						c := bytes.IndexByte(bs[j:], x)
-						if c < 0 {
-							Ns[idx] = len(bs)
-						} else {
-							Ns[idx] = j + c
-						}
-					}
-					if Ns[idx] < last {
-						last = Ns[idx]
-					}
-				}
-				j = last
-
-				idx := IndexBytes(xs, bs[j:])
-				if idx <= 0 {
-					j++
-					continue
-				}
-				j += idx
-				count += idx
-			}
-			if countG[5] == 0 {
-				countG[5] = count
-			}
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
 
 	b.Run("1", func(b *testing.B) {
 		b.ReportAllocs()
@@ -1593,24 +1484,6 @@ func BenchmarkTrimSpace(b *testing.B) {
 			count := 0
 			for _, bb := range bs {
 				if table[bb] {
-					count++
-				}
-			}
-			if countG[0] == 0 {
-				countG[0] = count
-			}
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-
-	b.Run("1-2", func(b *testing.B) {
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			count := 0
-			for _, bb := range bs {
-				if InSpaceQ(bb) {
 					count++
 				}
 			}
@@ -1738,30 +1611,6 @@ func BenchmarkTrimSpace(b *testing.B) {
 			}
 			if countG[2] == 0 {
 				countG[2] = int(count)
-			}
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-
-	b.Run("4", func(b *testing.B) {
-		xss := [16]byte{}
-		p := (*[8]byte)(unsafe.Pointer(uintptr(unsafe.Pointer(&xss)) & (^uintptr(0xf))))
-		*p = [8]byte{0x85, 0xA0, '\t', '\n', '\v', '\f', '\r', ' '}
-		xs := (*p)[:]
-
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			count := 0
-			for _, x := range bs {
-				if IndexByte(xs, x) >= 0 {
-					count++
-				}
-			}
-			// strings.Index()
-			if countG[3] == 0 {
-				countG[3] = count
 			}
 		}
 		b.SetBytes(int64(b.N))
