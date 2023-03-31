@@ -32,6 +32,12 @@ func TestVar(t *testing.T) {
 	})
 }
 
+func TestPrintln(t *testing.T) {
+	t.Run("GetVar", func(t *testing.T) {
+		Print("sss")
+	})
+}
+
 func BenchmarkGoid(b *testing.B) {
 	b.Run("Getg", func(b *testing.B) {
 		b.ReportAllocs()
@@ -54,5 +60,36 @@ func BenchmarkGoid(b *testing.B) {
 			Getg()
 		}
 		b.StopTimer()
+	})
+}
+
+//go:noinline
+func maxNoinline(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func maxInline(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func BenchmarkInline(b *testing.B) {
+	x, y := 1, 2
+	b.Run("BenchmarkNoInline", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			maxNoinline(x, y)
+		}
+	})
+	b.Run("BenchmarkInline", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			maxInline(x, y)
+		}
 	})
 }

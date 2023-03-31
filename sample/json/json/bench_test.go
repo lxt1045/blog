@@ -241,6 +241,7 @@ func BenchmarkUnmarshalType(b *testing.B) {
 		// b.Logf("json:%s", str)
 		typ := builder.Build()
 		value := reflect.New(typ).Interface()
+		// b.Logf("\ntype:%T\n", value)
 
 		runtime.GC()
 		b.Run(fmt.Sprintf("%s-%d-lxt", fieldType, N), func(b *testing.B) {

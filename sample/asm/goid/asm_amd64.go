@@ -77,6 +77,11 @@ var getgg func(uintptr, uintptr) uintptr
 //go:linkname add runtime.add
 func add(uintptr, uintptr) uintptr
 
+//go:linkname Println fmt.Println
+func Println(a ...any) (n int, err error)
+
+func Print(delta interface{})
+
 func doSth() {
 	fmt.Printf("Name:%s\n", Name)
 }

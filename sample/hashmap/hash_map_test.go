@@ -1,6 +1,7 @@
 package hashmap
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"runtime"
@@ -8,6 +9,41 @@ import (
 	"time"
 	"unsafe"
 )
+
+type OperationHTTPResponse struct {
+	HTTPCode *int32 `thrift:"HttpCode,1" json:"HttpCode,omitempty"`
+
+	ContentType *string `thrift:"ContentType,2" json:"ContentType,omitempty"`
+
+	ContentDisposition *string `thrift:"ContentDisposition,3" json:"ContentDisposition,omitempty"`
+
+	ResponseBody []byte `thrift:"ResponseBody,4" json:"ResponseBody,omitempty"`
+
+	Location *string `thrift:"Location,5" json:"Location,omitempty"`
+
+	Cookie *string `thrift:"Cookie,6" json:"Cookie,omitempty"`
+
+	BaseResp map[string]interface{} `thrift:"BaseResp,255" json:"BaseResp"`
+}
+
+func Test_JSON(t *testing.T) {
+	str := `{
+		"BaseResp": {
+			"StatusCode": 0,
+			"StatusMessage": "success"
+		},
+		"ContentType": "application/json",
+		"HttpCode": 200,
+		"ResponseBody": "eyJjb2RlIjowLCJkYXRhIjpbeyJJRCI6IjcyMDI1ODQ0NjExODIwMDkzNzYiLCJjb250YWN0TmFtZSI6Im1vIiwiY3JlYXRlVGltZSI6IjIwMjMtMDItMjEiLCJuYW1lIjoie1wiemgtQ05cIjpcIm1vIG1vIHByb1wiLFwiZW4tVVNcIjpcIlwifSIsInBob25lIjpudWxsfV0sInRva2VuIjoiIn0="
+	}
+	`
+	m := OperationHTTPResponse{}
+	err := json.Unmarshal([]byte(str), &m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%v", string(m.ResponseBody))
+}
 
 func getRandStr(l int) (str string) {
 	const encodeStd = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -728,6 +764,15 @@ func Benchmark_hash(b *testing.B) {
 			for i := 0; i < NN; i++ {
 				for _, k := range keys {
 					_ = Hashx(stringBytes(k), cs[:])
+				}
+			}
+		})
+		rcs := [1024]runtime.N{}
+		b.Run("runtime.simd.Hashx", func(b *testing.B) {
+			NN := b.N * 100
+			for i := 0; i < NN; i++ {
+				for _, k := range keys {
+					_ = runtime.Hashx(stringBytes(k), rcs[:])
 				}
 			}
 		})

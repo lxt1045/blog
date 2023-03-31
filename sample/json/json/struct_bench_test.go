@@ -506,6 +506,9 @@ func BenchmarkUnMarshalStructMap(b *testing.B) {
 }
 
 /*
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1x$ github.com/lxt1045/blog/sample/json/json -count=1 -v -cpuprofile cpu.prof -c
+go test -benchmem -run=^$ -bench ^BenchmarkUnmarshalStruct1x$ github.com/lxt1045/blog/sample/json/json -count=1 -v -memprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
 go test -benchmem -run=^$ -benchtime=1000000x -bench "^BenchmarkUnmarshalStruct1x$"
 BenchmarkUnmarshalStruct1x/lxt-st-12             1000000              1221 ns/op             320 B/op          1 allocs/op
 BenchmarkUnmarshalStruct1x/sonic-st-12           1000000              1571 ns/op             364 B/op          1 allocs/op
@@ -576,7 +579,7 @@ func BenchmarkUnmarshalStruct1x(b *testing.B) {
 		},
 	}
 
-	for _, r := range runs {
+	for _, r := range runs[:1] {
 		b.Run(r.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				r.f()

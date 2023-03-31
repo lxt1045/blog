@@ -6,9 +6,8 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"image/jpeg"
-	_ "image/jpeg" // 通过 jpeg 包中的 init 函数注册解码器
-	_ "image/png"
+	"image/jpeg" // 通过 jpeg 包中的 init 函数注册解码器
+	"image/png"
 	"os"
 
 	"github.com/nfnt/resize"
@@ -274,6 +273,24 @@ func saveImage(img image.Image, filename string) error {
 	defer outFile.Close()
 	b := bufio.NewWriter(outFile)
 	err = jpeg.Encode(b, img, nil)
+	if err != nil {
+		return err
+	}
+	err = b.Flush()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func savePng(img image.Image, filename string) error {
+	outFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	b := bufio.NewWriter(outFile)
+	err = png.Encode(b, img, nil)
 	if err != nil {
 		return err
 	}

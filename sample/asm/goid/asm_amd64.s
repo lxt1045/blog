@@ -109,5 +109,21 @@ DATA ·Helloworld+8(SB)/8,$12        // StringHeader.Len = 12
 GLOBL ·Helloworld(SB),NOPTR,$16     // struct{Data uintptr, Len int}
 
 
+TEXT ·Print1(SB), NOSPLIT, $48-16   
+  LEAQ strp+0(FP),AX
+  MOVQ AX, 0(SP)        // []interface{} slice 的 pointer
+  MOVQ $1, BX    
+  MOVQ BX, 8(SP)        // slice 的 len
+  MOVQ BX, 16(SP)       // slice 的 cap
+  CALL fmt·Println(SB)    
+  RET
 
+TEXT ·Print<ABIInternal>(SB), NOSPLIT, $48-16   
+  LEAQ strp+0(FP),AX
+  MOVQ AX, 0(SP)        // []interface{} slice 的 pointer
+  MOVQ $1, BX    
+  MOVQ BX, 8(SP)        // slice 的 len
+  MOVQ BX, 16(SP)       // slice 的 cap
+  CALL fmt·Println(SB)    
+  RET
 

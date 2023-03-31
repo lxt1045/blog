@@ -56,6 +56,7 @@ func fillBytes16(b byte) (bs [16]byte) {
 	for i := 0; i < 16; i++ {
 		bs[i] = b
 	}
+
 	return
 }
 

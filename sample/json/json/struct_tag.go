@@ -307,6 +307,8 @@ func NewStructTagInfo(typIn reflect.Type, ancestors []ancestor) (ti *TagInfo, er
 	}
 
 	goType := UnpackType(typIn)
+
+	// 通过 ancestors 避免死循环
 	for _, a := range ancestors {
 		if a.hash == goType.Hash {
 			ti = nil // 以返回 nil 来处理后续逻辑
@@ -314,6 +316,7 @@ func NewStructTagInfo(typIn reflect.Type, ancestors []ancestor) (ti *TagInfo, er
 		}
 	}
 	ancestors = append(ancestors, ancestor{goType.Hash, ti})
+
 	for i := 0; i < typIn.NumField(); i++ {
 		field := typIn.Field(i)
 		son := &TagInfo{

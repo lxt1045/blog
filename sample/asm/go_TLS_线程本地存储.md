@@ -13,16 +13,16 @@ runtime/sys_linx_amd64.s : 606
     //DI寄存器中存放的是m.tls[0]的地址，m的tls成员是一个数组，读者如果忘记了可以回头看一下m结构体的定义
     //下面这一句代码把DI寄存器中的地址加8，为什么要+8呢，主要跟ELF可执行文件格式中的TLS实现的机制有关
     //执行下面这句指令之后DI寄存器中的存放的就是m.tls[1]的地址了
-    ADDQ $8, DI// ELF wants to use -8(FS)
+    ADDQ $8, DI    // ELF wants to use -8(FS)
 
     //下面通过arch_prctl系统调用设置FS段基址
-    MOVQ DI, SI//SI存放arch_prctl系统调用的第二个参数
-    MOVQ $0x1002, DI// ARCH_SET_FS //arch_prctl的第一个参数
-    MOVQ $SYS_arch_prctl, AX//系统调用编号
+    MOVQ DI, SI                 //SI存放arch_prctl系统调用的第二个参数
+    MOVQ $0x1002, DI            // ARCH_SET_FS //arch_prctl的第一个参数
+    MOVQ $SYS_arch_prctl, AX    //系统调用编号
     SYS CALL
     CMP QAX, $0xfffffffffffff001
     JLS 2(PC)
-    MOVL $0xf1, 0xf1 // crash //系统调用失败直接crash
+    MOVL $0xf1, 0xf1            // crash //系统调用失败直接crash
     RET
 ```
 从代码可以看到，这里通过arch_prctl系统调用把m0.tls[1]的地址设置成了fs段的段基址。CPU中有个叫fs的段寄存器与之对应，而每个线程都有自己的一组CPU寄存器值，操作系统在把线程调离CPU运行时会帮我们把所有寄存器中的值保存在内存中，调度线程起来运行时又会从内存中把这些寄存器的值恢复到CPU，这样，在此之后，工作线程代码就可以通过fs寄存器来找到m.tls，读者可以参考上面初始化tls之后对tls功能验证的代码来理解这一过程。
@@ -363,16 +363,43 @@ type p struct {
 
 
 ---------------
-[Go语言内幕（5）：运行时启动过程](https://studygolang.com/articles/7211)
+[Go语言内幕（5）：运行时启动过程](https://studygolang.com/articles/7211)\
 [Golang内部构件，第5部分：运行时引导程序](https://segmentfault.com/a/1190000039745029)
 
-TLS 内部实现
+运行下面的命令：
+```
+objdump -f 6.out
+```
+你可以看到包含开始地址的输出信息：
+```
+6.out:     file format elf64-x86-64
+architecture: i386:x86-64, flags 0x00000112:
+EXEC_P, HAS_SYMS, D_PAGED
+start address 0x000000000042f160
+```
+接下来，我们要反汇编可执行程序，再找到在开始位置处到底是什么函数：
+```
+objdump -d 6.out > disassemble.txt
+```
+现在，我们可以打开 disassemble.txt 文件并搜索 “42f160”，可以得到如下结果：
+```
+000000000042f160 <_rt0_amd64_linux>:
+  42f160:	48 8d 74 24 08       		lea    0x8(%rsp),%rsi
+  42f165:	48 8b 3c 24          		mov    (%rsp),%rdi
+  42f169:	48 8d 05 10 00 00 00 	lea    0x10(%rip),%rax        # 42f180 
+
+  42f170:	ff e0               		 	jmpq   *%rax
+  ```
+很好，我们找到它了。在我的这台电脑上（与 OS 以及机器的架构有关）入口点的函数为 _rt0_amd64_linux。
+
+TLS 内部实现\
 如果你仔细阅读过前面的代码，很容易就会发现只有几行是真正起作用的代码：
-
+```asm
 LEAQ	runtime·tls0(SB), DI
-	CALL	runtime·settls(SB)
+CALL	runtime·settls(SB)
+````
 所有其它的代码都是在你的系统不支持 TLS 时跳过 TLS 设置或者检测 TLS 是否正常工作的代码。这两行代码将 runtime.tlso 变量的地址存储到 DI 寄存器中，然后调用 runtime.settls 函数。这个函数的代码如下：
-
+```asm
 // set tls base to DI
 TEXT runtime·settls(SB),NOSPLIT,$32
 	ADDQ	$8, DI	// ELF wants to use -8(FS)
@@ -385,12 +412,21 @@ TEXT runtime·settls(SB),NOSPLIT,$32
 	JLS	2(PC)
 	MOVL	$0xf1, 0xf1  // crash
 	RET
-从注释可以看出，这个函数执行了 arch_prctl 系统调用，并将 ARCH_SET_FS 作为参数传入。我们也可以看到，系统调用使用 FS 寄存器存储基址。在这个例子中，我们将 TLS 指向 runtime.tls0 变量。
+```
+从注释可以看出，这个函数执行了 arch_prctl 系统调用，并将 ARCH_SET_FS 作为参数传入。我们也可以看到，系统调用使用 FS 寄存器存储基址。在这个例子中，我们将 TLS 指向 runtime.tls[0] 变量。
 
 还记得 main 开始时的汇编指令吗？
-
+```asm
 0x0000 00000 (test.go:3)	MOVQ	(TLS),CX
+```
 在前面我已经解释了这条指令将 runtime.g 结构体实例的地址加载到 CX 寄存器中。这个结构体描述了当前 goroutine，且存储到 TLS 中。现在我们明白了这条指令是如何被汇编成机器指令的了。打开之前是创建的 disasembly.txt 文件，搜索 main.main 函数，你会看到其中第一条指令为：
-
+```asm
 400c00:       64 48 8b 0c 25 f0 ff    mov    %fs:0xfffffffffffffff0,%rcx
-这条指令中的冒号（%fs:0xfffffffffffffff0）表示段寻址（更多内容请参考这里）。
+```
+这条指令中的冒号（%fs:0xfffffffffffffff0）表示段寻址（更多内容请参考[这里](https://thestarman.pcministry.com/asm/debug/Segments.html)）。
+
+[](https://taoshu.in/go/monkey/monkey-2.html)
+
+[Monkey Patching in Go](https://bou.ke/blog/monkey-patching-in-go/)\
+[翻译](https://berryjam.github.io/2018/12/golang%E6%9B%BF%E6%8D%A2%E8%BF%90%E8%A1%8C%E6%97%B6%E5%87%BD%E6%95%B0%E4%BD%93%E5%8F%8A%E5%85%B6%E5%8E%9F%E7%90%86/)
+
