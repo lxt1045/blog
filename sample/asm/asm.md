@@ -1675,7 +1675,8 @@ loop:
 ```
 这里 MOVOU、PCMPEQB、PMOVMSKB 等就是 SIMD 指令。\
 如果想详细了解 SIMD 指令可以看一下 Intel 的官方文档 [Intel® Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html)。\
-笔者收集了相对较完整的 SSE 和 SSE2 指令集说明（ [simd_sse 指令集.md]()、[simd_sse2指令集.md]()），感兴趣的同学欢迎围观。
+笔者收集了相对较完整的 SSE 和 SSE2 指令集说明（ [simd_sse 指令集.md](https://github.com/lxt1045/blog/blob/main/sample/asm/simd_sse%20%E6%8C%87%E4%BB%A4%E9%9B%86.md)、[simd_sse2指令集.md](https://github.com/lxt1045/blog/blob/main/sample/asm/simd_sse2%E6%8C%87%E4%BB%A4%E9%9B%86.md)），感兴趣的同学欢迎围观。\
+另，据笔者的尝试，SSE 和 SSE2 指令是可以直接在 Go 语言会便利使用的。有想法的同学可以自己验证一下其他 SIMD 指令。
 
 ## 5.5、 字符串搜索
 我们常用的字符串搜索函数 strings.Index，也使用了汇编实现的 SIMD 指令加速。代码在：
@@ -1804,16 +1805,100 @@ func IndexString(a, b string) int
     TEXT indexbody<>(SB),NOSPLIT,$0
 ...
 ```
+笔者验证了一下 IndexByte 和自定义通过 for 循环实现建的差别：
+```go
+func BenchmarkIndexByte(b *testing.B) {
+	b.Run("IndexByte", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			str := testdata.TwitterJsonOut
+			n := 0
+			k := 0
+			for {
+				j := strings.IndexByte(str[k:], ']')
+				if j < 0 {
+					break
+				}
+				n++
+				k += j + 1
+			}
+			_ = n
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+	b.Run("for", func(b *testing.B) {
+		b.ReportAllocs()
+		str := testdata.TwitterJsonOut
+		for i := 0; i < b.N; i++ {
+			n := 0
+			for i := 0; i < len(str); i++ {
+				if str[i] == ']' {
+					n++
+				}
+			}
+			_ = n
+		}
+		b.SetBytes(int64(b.N))
+		b.StopTimer()
+	})
+}
+```
+结果如下：
+```
+BenchmarkIndexByte/IndexByte
+BenchmarkIndexByte/IndexByte-12    3072980    387.5 ns/op    7929621.19 MB/s    0 B/op	       0 allocs/op
+BenchmarkIndexByte/for
+BenchmarkIndexByte/for-12          516663    2417 ns/op      213777.66 MB/s    0 B/op	       0 allocs/op
+```
+由结果可知，SIMD 的加速性能还是挺好的。不过，实际上如果 strings.IndexByte() 字符串很短 或 所查找的字符在字符串中大量存在 的话，性能甚至会比 for 循环慢。这个可以自行验证一下。
 
 ## 5.6、 自定义SIMD优化
+如果感兴趣，可以照着 Go 编译器里的汇编抄，慢慢尝试。\
+github 上也有许多项目可以抄，比如：
 [minio/sha256-simd](https://github.com/minio/sha256-simd)
 
 ## 5.7、 随意跳转
 [关于 golang 错误处理的一些优化想法](https://tech.bytedance.net/articles/7120632282095812644) 中有详细说明。
-stack_amd64.go 代码：
+测试代码如下：
+```go
+func TestTagTry0(t *testing.T) {
+	defer func() {
+		fmt.Printf("1 -> ")
+	}()
+
+	tag, err1 := NewTag() // 当 tag.Try(err) 时，跳转此处并返回 err1
+	fmt.Printf("2 -> ")
+	if err1 != nil {
+		fmt.Printf("3 -> ")
+		return
+	}
+
+	defer func() {
+		fmt.Printf("4 -> ") // 由于的缺陷：这里 debug 下 defer 不内联，会执行；release 下 defer 内联，不会执行
+	}()
+
+	fmt.Printf("5 -> ")
+    err2 := errors.New("err2")
+	tag.Try(err2)  // 这里 err2!=nil，则会跳转到 tag 创建处的下一行指令执行，即 fmt.Printf("2 -> ")
+
+	fmt.Printf("6 -> ")
+	return
+}
+```
+测试结果：
+```sh
+# release 下 defer 内联，不会输出 4
+2 -> 5 -> 2 -> 3 -> 1 ->
+# debug 下 defer 不内联，会输出 4
+2 -> 5 -> 2 -> 3 -> 4 -> 1
+```
+
 
 ## 5.8 调用其他package的私有函数
 通过过摆脱golang编译器的一些约束，调用其他package的私有函数。如这篇文章：[How to call private functions (bind to hidden symbols) in GoLang](https://sitano.github.io/2016/04/28/golang-private/)。
+
+上面 goid 的例子的最后，也讲了通过汇编使用 package 私有的类型，即 DATA ·runtime_g_type+0(SB)/8,$type·runtime·g(SB) ，这里不在重复。
 
 ## 5.8 提高 CGO 调用的性能
 我们知道，CGO和系统调用时，Go 语言需要把 goroutine 的调用栈切换回 g0 调用栈，并使用 g0 调用，整个过程性能损耗比较大。实际上，我们可以通过汇编适配 C 语言的ABI来直接调用 C 语言的函数，参考这个库: [petermattis/fastcgo](https://github.com/petermattis/fastcgo)。不过，这么做也有很大的局限性，比如导致栈溢出、因goroutine 无法被抢占而影响 GC 性能等。
