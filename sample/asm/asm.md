@@ -11,7 +11,7 @@
   -->
 
 
-参考文档：
+### 参考文档：
 <!-- 柴树杉和曹春晖的书 -->
 [《Go语言高级编程》第三章](https://github.com/chai2010/advanced-go-programming-book/tree/master/ch3-asm)
 
@@ -27,16 +27,18 @@
 [《Go语言原本》1.4 Plan 9 汇编语言](https://golang.design/under-the-hood/zh-cn/part1basic/ch01basic/asm/)
 
 
-<!-- # 前言
-我们知道 Go 语言一些核心成员是 Plan 9 的遗老遗少，而且属于比较高傲的的学院派，这导致 Go 语言的汇编采用了令人抓狂的 Plan 9 风格。 -->
-
 ### 广告时间
 
 笔者写了两个性能提升库，欢迎大家来吐槽。
+
 1. [lxt1045/errors](https://github.com/lxt1045/errors): 有两个模块\
     1.1 errors：功能和 [pkg/errors](https://github.com/pkg/errors) 类似，性能比后者高一个数量级以上。\
-    1.2 errors/loglus：功能和 [sirupsen/logrus](https://github.com/sirupsen/logrus) 一样，目标是 100% 兼容。 利用了 errors 的高性能获取代码行号的接口，性能比后者高 35% 以上。
-2. [json](https://github.com/lxt1045/json): 以纯 Go 语言实现，在性能上追平了 SIMD 实现的 [sonic](https://github.com/bytedance/sonic)，甚至略胜一筹。
+    1.2 errors/loglus：功能和 [sirupsen/logrus](https://github.com/sirupsen/logrus) 一样，目标是 100% 兼容。 利用了 errors 获取行号的接口，性能比后者高 35% 以上。
+2. [lxt1045/json](https://github.com/lxt1045/json): 以纯 Go 语言实现，在性能略胜于 SIMD 实现的 [sonic](https://github.com/bytedance/sonic)。
+
+
+# 前言
+我们知道 Go 语言一些核心成员是 Plan 9 的遗老遗少，而且属于比较高傲的的学院派，这直接导致了 Go 语言的汇编采用令人抓狂的 Plan 9 风格。不过，我们不能因咽废食而放弃无所不能的汇编。
 
 # 1、 Go 汇编基础知识
 ## 1.1、通用寄存器
@@ -264,19 +266,19 @@ JMP -2(PC)      // 向后跳转2行
 JNZ target      // 如果zero flag被set过，则跳转
 
 ```
-<!-- 助记符	指令种类	用途	示例
-MOVQ	传送	数据传送	MOVQ 48, AX表示把48传送AX中
-LEAQ	传送	地址传送	LEAQ AX, BX表示把AX有效地址传送到BX中
-PUSHQ	传送	栈压入	PUSHQ AX表示先修改栈顶指针，将AX内容送入新的栈顶位置在go汇编中使用SUBQ代替
-POPQ	传送	栈弹出	POPQ AX表示先弹出栈顶的数据，然后修改栈顶指针在go汇编中使用ADDQ代替
-ADDQ	运算	相加并赋值	ADDQ BX, AX表示BX和AX的值相加并赋值给AX
-SUBQ	运算	相减并赋值	略，同上
-IMULQ	运算	无符号乘法	略，同上
-IDIVQ	运算	无符号除法	IDIVQ CX除数是CX，被除数是AX，结果存储到AX中
-CMPQ	运算	对两数相减，比较大小	CMPQ SI CX表示比较SI和CX的大小。与SUBQ类似，只是不返回相减的结果
-CALL	转移	调用函数	CALL runtime.printnl(SB)表示通过<mark>println</mark>函数的内存地址发起调用
-JMP	转移	无条件转移指令	JMP 389无条件转至0x0185地址处(十进制389转换成十六进制0x0185)
-JLS	转移	条件转移指令	JLS 389上一行的比较结果，左边小于右边则执行跳到0x0185地址处(十进制389转换成十六进制0x0185)
+<!-- 助记符    指令种类    用途    示例
+MOVQ    传送    数据传送    MOVQ 48, AX表示把48传送AX中
+LEAQ    传送    地址传送    LEAQ AX, BX表示把AX有效地址传送到BX中
+PUSHQ    传送    栈压入    PUSHQ AX表示先修改栈顶指针，将AX内容送入新的栈顶位置在go汇编中使用SUBQ代替
+POPQ    传送    栈弹出    POPQ AX表示先弹出栈顶的数据，然后修改栈顶指针在go汇编中使用ADDQ代替
+ADDQ    运算    相加并赋值    ADDQ BX, AX表示BX和AX的值相加并赋值给AX
+SUBQ    运算    相减并赋值    略，同上
+IMULQ    运算    无符号乘法    略，同上
+IDIVQ    运算    无符号除法    IDIVQ CX除数是CX，被除数是AX，结果存储到AX中
+CMPQ    运算    对两数相减，比较大小    CMPQ SI CX表示比较SI和CX的大小。与SUBQ类似，只是不返回相减的结果
+CALL    转移    调用函数    CALL runtime.printnl(SB)表示通过<mark>println</mark>函数的内存地址发起调用
+JMP    转移    无条件转移指令    JMP 389无条件转至0x0185地址处(十进制389转换成十六进制0x0185)
+JLS    转移    条件转移指令    JLS 389上一行的比较结果，左边小于右边则执行跳到0x0185地址处(十进制389转换成十六进制0x0185)
 可以看到，表中的PUSHQ和POPQ被去掉了，这是因为在go汇编中，对栈的操作并不是出栈入栈，而是通过对SP进行运算来实现的。 -->
 
 常用标志位：
@@ -366,31 +368,31 @@ Any function with a //go:nosplit annotation should explain why it is nosplit in 
  [src/cmd/internal/obj/x86/obj6.go](/usr/local/go/src/cmd/internal/obj/x86/obj6.go:620)
 ```go
     //const StackSmall  = 128
-	if ctxt.Arch.Family == sys.AMD64 && autoffset < objabi.StackSmall && !p.From.Sym.NoSplit() {
-		leaf := true
-	LeafSearch:
-		for q := p; q != nil; q = q.Link {
-			switch q.As {
-			case obj.ACALL:
-				// Treat common runtime calls that take no arguments
-				// the same as duffcopy and duffzero.
-				if !isZeroArgRuntimeCall(q.To.Sym) {
-					leaf = false
-					break LeafSearch
-				}
-				fallthrough
-			case obj.ADUFFCOPY, obj.ADUFFZERO:
-				if autoffset >= objabi.StackSmall-8 {
-					leaf = false
-					break LeafSearch
-				}
-			}
-		}
+    if ctxt.Arch.Family == sys.AMD64 && autoffset < objabi.StackSmall && !p.From.Sym.NoSplit() {
+        leaf := true
+    LeafSearch:
+        for q := p; q != nil; q = q.Link {
+            switch q.As {
+            case obj.ACALL:
+                // Treat common runtime calls that take no arguments
+                // the same as duffcopy and duffzero.
+                if !isZeroArgRuntimeCall(q.To.Sym) {
+                    leaf = false
+                    break LeafSearch
+                }
+                fallthrough
+            case obj.ADUFFCOPY, obj.ADUFFZERO:
+                if autoffset >= objabi.StackSmall-8 {
+                    leaf = false
+                    break LeafSearch
+                }
+            }
+        }
 
-		if leaf {
-			p.From.Sym.Set(obj.AttrNoSplit, true)
-		}
-	}
+        if leaf {
+            p.From.Sym.Set(obj.AttrNoSplit, true)
+        }
+    }
 
 ```
 
@@ -435,8 +437,8 @@ GLOBL ·Helloworld(SB),NOPTR,$16     // struct{Data uintptr, Len int}
 ```go
 var Name,Helloworld string
 func doSth() {
-	fmt.Printf("Name: %s\n", Name)               // 读取汇编中初始化的变量 Name
-	fmt.Printf("Helloworld: %s\n", Helloworld)   // 读取汇编中初始化的变量 Helloworld
+    fmt.Printf("Name: %s\n", Name)               // 读取汇编中初始化的变量 Name
+    fmt.Printf("Helloworld: %s\n", Helloworld)   // 读取汇编中初始化的变量 Helloworld
 }
 // 输出： 
 // Name: gopher
@@ -515,18 +517,18 @@ package main
 import "fmt"
 func add(x, y int64) int64
 func main() {
-	fmt.Println(add(2, 3))
+    fmt.Println(add(2, 3))
 }
 ```
 ```asm
 // add_amd64.s
 // add(x,y) -> x+y
 TEXT ·add(SB),NOSPLIT,$0
-	MOVQ x+0(FP), BX
-	MOVQ y+8(FP), BP
-	ADDQ BP, BX
-	MOVQ BX, ret+16(FP)
-	RET
+    MOVQ x+0(FP), BX
+    MOVQ y+8(FP), BP
+    ADDQ BP, BX
+    MOVQ BX, ret+16(FP)
+    RET
 ```
 
 汇编调用 go语言函数：
@@ -821,19 +823,19 @@ Go编译器默认将进行内联优化，可以通过 -gcflags="-l" 选项全局
 ```go
 // 3.1: var closure = NewClosure()
 func main() {
-	// 3.2: var closure func() int
-	var closure = NewClosure()
-	closure()
-	// 3.3: closure = NewClosure()
-	closure()
+    // 3.2: var closure func() int
+    var closure = NewClosure()
+    closure()
+    // 3.3: closure = NewClosure()
+    closure()
 }
 
 func NewClosure() func() int {
-	i := 0
-	return func() int {
-		i++
-		return i
-	}
+    i := 0
+    return func() int {
+        i++
+        return i
+    }
 }
 ```
 命令 go build -gcflags="-m" main.go 和 go build -gcflags="-m -l -l" main.go 都是输出：
@@ -875,19 +877,19 @@ func maxInline(a, b int) int {
 }
 
 func BenchmarkInline(b *testing.B) {
-	x, y := 1, 2
-	b.Run("BenchmarkNoInline", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			maxNoinline(x, y)
-		}
-	})
-	b.Run("BenchmarkInline", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			maxInline(x, y)
-		}
-	})
+    x, y := 1, 2
+    b.Run("BenchmarkNoInline", func(b *testing.B) {
+        b.ResetTimer()
+        for i := 0; i < b.N; i++ {
+            maxNoinline(x, y)
+        }
+    })
+    b.Run("BenchmarkInline", func(b *testing.B) {
+        b.ResetTimer()
+        for i := 0; i < b.N; i++ {
+            maxInline(x, y)
+        }
+    })
 }
 ```
 在程序代码中，想要禁止编译器内联优化很简单，在函数定义前一行添加//go:noinline即可。以下是性能对比结果:
@@ -911,7 +913,7 @@ Go 语言代码函数内联的策略每个编译器版本都有细微差别，�
 9. 函数内部使用 type 关键字重定义了类型：比如 "type Int int" 或 "type Int = int"。
 10. 作为尾递归调用时。
 
-此外，还有一些编译器觉得内联成本很低，所以必然内联的函数：\
+此外，还有一些编译器觉得内联成本很低，所以必然内联的函数：
 1. "runtime" package 下的 "heapBits.nextArena" 和 "builtin" package 下的 "append"。
 2. "encoding/binary" package 下的：
  "littleEndian.Uint64", "littleEndian.Uint32", "littleEndian.Uint16","bigEndian.Uint64", "bigEndian.Uint32", "bigEndian.Uint16","littleEndian.PutUint64", "littleEndian.PutUint32", "littleEndian.PutUint16","bigEndian.PutUint64", "bigEndian.PutUint32", "bigEndian.PutUint16", "append"。
@@ -920,26 +922,26 @@ Go 语言代码函数内联的策略每个编译器版本都有细微差别，�
 
 此外，关于闭包内联是一个比较复杂的话题，据笔者测试，1.18 有如上规则：
 1. 满足条件的闭包可以内联。
-2. 闭包占用函数的 15 个 AST 节点。
+2. 闭包通用部分在内联统计的时候，占用函数的 15 个 AST 节点。
 3. 变量保存的闭包，如果是局部变量且没有重新赋值过，则可以被内联。
 
 关于闭包内联的第 3 条规则，有如下例子：
 ```go
 // 3.1: var closure = NewClosure()
 func main() {
-	// 3.2: var closure func() int
-	var closure = NewClosure()
-	closure()
-	// 3.3: closure = NewClosure()
-	closure()
+    // 3.2: var closure func() int
+    var closure = NewClosure()
+    closure()
+    // 3.3: closure = NewClosure()
+    closure()
 }
 
 func NewClosure() func() int {
-	i := 0
-	return func() int {
-		i++
-		return i
-	}
+    i := 0
+    return func() int {
+        i++
+        return i
+    }
 }
 ```
 执行 go build -gcflags="-m" ./ 输出如下
@@ -980,81 +982,81 @@ go build -gcflags="-d inlfuncswithclosures=0" main.go
 // fn and fn.Body will already have been typechecked.
 func CanInline(fn *ir.Func) {
 ...
-	// If marked "go:noinline", don't inline
-	if fn.Pragma&ir.Noinline != 0 {
-		reason = "marked go:noinline"
-		return
-	}
+    // If marked "go:noinline", don't inline
+    if fn.Pragma&ir.Noinline != 0 {
+        reason = "marked go:noinline"
+        return
+    }
 
-	// If marked "go:norace" and -race compilation, don't inline.
-	if base.Flag.Race && fn.Pragma&ir.Norace != 0 {
-		reason = "marked go:norace with -race compilation"
-		return
-	}
+    // If marked "go:norace" and -race compilation, don't inline.
+    if base.Flag.Race && fn.Pragma&ir.Norace != 0 {
+        reason = "marked go:norace with -race compilation"
+        return
+    }
 
-	// If marked "go:nocheckptr" and -d checkptr compilation, don't inline.
-	if base.Debug.Checkptr != 0 && fn.Pragma&ir.NoCheckPtr != 0 {
-		reason = "marked go:nocheckptr"
-		return
-	}
+    // If marked "go:nocheckptr" and -d checkptr compilation, don't inline.
+    if base.Debug.Checkptr != 0 && fn.Pragma&ir.NoCheckPtr != 0 {
+        reason = "marked go:nocheckptr"
+        return
+    }
 
-	// If marked "go:cgo_unsafe_args", don't inline, since the
-	// function makes assumptions about its argument frame layout.
-	if fn.Pragma&ir.CgoUnsafeArgs != 0 {
-		reason = "marked go:cgo_unsafe_args"
-		return
-	}
+    // If marked "go:cgo_unsafe_args", don't inline, since the
+    // function makes assumptions about its argument frame layout.
+    if fn.Pragma&ir.CgoUnsafeArgs != 0 {
+        reason = "marked go:cgo_unsafe_args"
+        return
+    }
 
-	// If marked as "go:uintptrescapes", don't inline, since the
-	// escape information is lost during inlining.
-	if fn.Pragma&ir.UintptrEscapes != 0 {
-		reason = "marked as having an escaping uintptr argument"
-		return
-	}
+    // If marked as "go:uintptrescapes", don't inline, since the
+    // escape information is lost during inlining.
+    if fn.Pragma&ir.UintptrEscapes != 0 {
+        reason = "marked as having an escaping uintptr argument"
+        return
+    }
 
-	// The nowritebarrierrec checker currently works at function
-	// granularity, so inlining yeswritebarrierrec functions can
-	// confuse it (#22342). As a workaround, disallow inlining
-	// them for now.
-	if fn.Pragma&ir.Yeswritebarrierrec != 0 {
-		reason = "marked go:yeswritebarrierrec"
-		return
-	}
+    // The nowritebarrierrec checker currently works at function
+    // granularity, so inlining yeswritebarrierrec functions can
+    // confuse it (#22342). As a workaround, disallow inlining
+    // them for now.
+    if fn.Pragma&ir.Yeswritebarrierrec != 0 {
+        reason = "marked go:yeswritebarrierrec"
+        return
+    }
 
-	// If fn has no body (is defined outside of Go), cannot inline it.
-	if len(fn.Body) == 0 {
-		reason = "no function body"
-		return
-	}
+    // If fn has no body (is defined outside of Go), cannot inline it.
+    if len(fn.Body) == 0 {
+        reason = "no function body"
+        return
+    }
 ...
     visitor := hairyVisitor{
-		budget:        inlineMaxBudget, // inlineMaxBudget == 80 
-		extraCallCost: cc,
-	}
+        budget:        inlineMaxBudget, // inlineMaxBudget == 80 
+        extraCallCost: cc,
+    }
     if visitor.tooHairy(fn) {
-		reason = visitor.reason
-		return
-	}
+        reason = visitor.reason
+        return
+    }
 ...
 }
 
 func (v *hairyVisitor) tooHairy(fn *ir.Func) bool {
-	v.do = v.doNode // cache closure
-	if ir.DoChildren(fn, v.do) {
-		return true
-	}
+    v.do = v.doNode // cache closure
+    if ir.DoChildren(fn, v.do) {
+        return true
+    }
 ...
 }
 
 func (v *hairyVisitor) doNode(n ir.Node) bool {
 ...
-	case ir.OSELECT,
-		ir.OGO,
-		ir.ODEFER,
-		ir.ODCLTYPE, // can't print yet
-		ir.OTAILCALL:
-		v.reason = "unhandled op " + n.Op().String()
-		return true
+    case ir.OSELECT,
+        ir.OGO,
+        ir.ODEFER,
+        ir.ODCLTYPE, // can't print yet
+        ir.OTAILCALL:
+        v.reason = "unhandled op " + n.Op().String()
+        return true
 ...
 }
 ```
@@ -1099,36 +1101,36 @@ goid 即 goroutine id，最常用三方库应该就是 [petermattis/goid](https:
 package goid
 
 type stack struct {
-	lo uintptr
-	hi uintptr
+    lo uintptr
+    hi uintptr
 }
 
 type gobuf struct {
-	sp   uintptr
-	pc   uintptr
-	g    uintptr
-	ctxt uintptr
-	ret  uintptr
-	lr   uintptr
-	bp   uintptr
+    sp   uintptr
+    pc   uintptr
+    g    uintptr
+    ctxt uintptr
+    ret  uintptr
+    lr   uintptr
+    bp   uintptr
 }
 
 type g struct {
-	stack       stack
-	stackguard0 uintptr
-	stackguard1 uintptr
+    stack       stack
+    stackguard0 uintptr
+    stackguard1 uintptr
 
-	_panic       uintptr
-	_defer       uintptr
-	m            uintptr
-	sched        gobuf
-	syscallsp    uintptr
-	syscallpc    uintptr
-	stktopsp     uintptr
-	param        uintptr
-	atomicstatus uint32
-	stackLock    uint32
-	goid         int64 // Here it is!
+    _panic       uintptr
+    _defer       uintptr
+    m            uintptr
+    sched        gobuf
+    syscallsp    uintptr
+    syscallpc    uintptr
+    stktopsp     uintptr
+    param        uintptr
+    atomicstatus uint32
+    stackLock    uint32
+    goid         int64 // Here it is!
 }
 ```
 [goid_go1.5_amd64.go](https://github.com/petermattis/goid/blob/master/goid_go1.5_amd64.go) 代码：
@@ -1154,10 +1156,10 @@ func Get() int64
 
 // func Get() int64
 TEXT ·Get(SB),NOSPLIT,$0-8
-	MOVQ (TLS), R14
-	MOVQ g_goid(R14), R13
-	MOVQ R13, ret+0(FP)
-	RET
+    MOVQ (TLS), R14
+    MOVQ g_goid(R14), R13
+    MOVQ R13, ret+0(FP)
+    RET
 
 ```
 不过这样获取 goid 有一个局限性，就是如果当前处于 g0 调用栈（系统调用或CGO函数中）时，拿到的不是当前 g 的 goid，而是 是 g0 的 goid。在这种情况下 g.m.curg.goid 才是当前 g 的 goid。
@@ -1186,25 +1188,25 @@ To determine if you're running on the user stack or the system stack, use getg()
 package goid
 
 type p struct {
-	id int32 // Here is pid
+    id int32 // Here is pid
 }
 
 type m struct {
-	g0      uintptr // goroutine with scheduling stack
-	morebuf gobuf   // gobuf arg to morestack
-	divmod  uint32  // div/mod denominator for arm - known to liblink
-	_       uint32
+    g0      uintptr // goroutine with scheduling stack
+    morebuf gobuf   // gobuf arg to morestack
+    divmod  uint32  // div/mod denominator for arm - known to liblink
+    _       uint32
 
-	// Fields not known to debuggers.
-	procid     uint64       // for debuggers, but offset not hard-coded
-	gsignal    uintptr      // signal-handling g
-	goSigStack gsignalStack // Go-allocated signal handling stack
-	sigmask    sigset       // storage for saved signal mask
-	tls        [6]uintptr   // thread-local storage (for x86 extern register)
-	mstartfn   func()
-	curg       uintptr // current running goroutine
-	caughtsig  uintptr // goroutine running during fatal signal
-	p          *p      // attached p for executing go code (nil if not executing go code)
+    // Fields not known to debuggers.
+    procid     uint64       // for debuggers, but offset not hard-coded
+    gsignal    uintptr      // signal-handling g
+    goSigStack gsignalStack // Go-allocated signal handling stack
+    sigmask    sigset       // storage for saved signal mask
+    tls        [6]uintptr   // thread-local storage (for x86 extern register)
+    mstartfn   func()
+    curg       uintptr // current running goroutine
+    caughtsig  uintptr // goroutine running during fatal signal
+    p          *p      // attached p for executing go code (nil if not executing go code)
 }
 ```
 [pid_go1.5.go](https://github.com/choleraehyq/pid/blob/master/pid_go1.5.go) 代码：
@@ -1222,7 +1224,7 @@ func getPid() uintptr
 
 //go:nosplit
 func GetPid() int {
-	return int(getPid())
+    return int(getPid())
 }
 ```
 [pid_go1.5_amd64.s](https://github.com/choleraehyq/pid/blob/master/pid_go1.5_amd64.s) 代码：
@@ -1235,12 +1237,12 @@ func GetPid() int {
 
 // func getPid() int64
 TEXT ·getPid(SB),NOSPLIT,$0-8
-	MOVQ (TLS), R14
-	MOVQ g_m(R14), R13
-	MOVQ m_p(R13), R14
-	MOVL p_id(R14), R13
-	MOVQ R13, ret+0(FP)
-	RET
+    MOVQ (TLS), R14
+    MOVQ g_m(R14), R13
+    MOVQ m_p(R13), R14
+    MOVL p_id(R14), R13
+    MOVQ R13, ret+0(FP)
+    RET
 
 ```
 不过，通过这种方式获取的 pid 也有一个局限性：在持有 pid 之后的时间里，可能当前 goroutine 已经被调度到其他 P 上了，也就是在使用 pid 的时候当前 pid 已经改变了。\
@@ -1262,17 +1264,17 @@ runtime.procPin 和 runtime.procUnpin的实现代码在 [src/runtime/proc.go](ht
 ```go
 //go:nosplit
 func procPin() int {
-	_g_ := getg()
-	mp := _g_.m
+    _g_ := getg()
+    mp := _g_.m
 
-	mp.locks++     // 锁定 P 的调度
-	return int(mp.p.ptr().id)
+    mp.locks++     // 锁定 P 的调度
+    return int(mp.p.ptr().id)
 }
 
 //go:nosplit
 func procUnpin() {
-	_g_ := getg()
-	_g_.m.locks--
+    _g_ := getg()
+    _g_.m.locks--
 }
 ```
 通过 procPin 函数锁定 P 的调度后再使用 pid，然后通过 procUnpin 释放 P。不过这里也需要谨慎使用，使用不当会对性能产生严重影响。
@@ -1286,18 +1288,18 @@ func procUnpin() {
 func Getg() int64
 func getgi() interface{}
 var g_goid_offset uintptr = func() uintptr {
-	g := getgi()
-	if f, ok := reflect.TypeOf(g).FieldByName("goid"); ok {
-		return f.Offset
-	}
-	panic("can not find g.goid field")
+    g := getgi()
+    if f, ok := reflect.TypeOf(g).FieldByName("goid"); ok {
+        return f.Offset
+    }
+    panic("can not find g.goid field")
 }()
 ```
 
 ```asm
 TEXT ·Getg(SB), NOSPLIT, $0-8
     MOVQ (TLS), AX
-	ADDQ ·g_goid_offset(SB),AX
+    ADDQ ·g_goid_offset(SB),AX
     MOVQ (AX), BX
     MOVQ BX, ret+0(FP)
     RET
@@ -1330,17 +1332,17 @@ TEXT ·getgi(SB), NOSPLIT, $32-16
 var runtime_g_type uint64  // go 源码中声明
 
 var gGoidOffset uintptr = func() uintptr { //nolint
-	var iface interface{}
-	type eface struct {
-		_type uint64
-		data  unsafe.Pointer
-	}
+    var iface interface{}
+    type eface struct {
+        _type uint64
+        data  unsafe.Pointer
+    }
     // 结构 iface 后，修改他的类型为 g
-	(*eface)(unsafe.Pointer(&iface))._type = runtime_g_type
-	if f, ok := reflect.TypeOf(iface).FieldByName("goid"); ok {
-		return f.Offset
-	}
-	panic("can not find g.goid field")
+    (*eface)(unsafe.Pointer(&iface))._type = runtime_g_type
+    if f, ok := reflect.TypeOf(iface).FieldByName("goid"); ok {
+        return f.Offset
+    }
+    panic("can not find g.goid field")
 }()
 ```
 ```asm
@@ -1366,70 +1368,70 @@ support arm64 darwin (and refactored)
 
 其 Patch() 的调用路径如下：\
 Build() -> Patch() -> PatchValue() -> WriteWithSTW() -> Write() -> do_replace_code()\
-其中 do_replace_code() 是汇编实现的，作用是使用 mprotect 系统调用来修改内存权限。原因是：可执行代码区是只读的，需要修改为可读写后才能修改，修改为可执行的才能执行（有想用 Go 写病毒的，可以参考一下）。
+其中 do_replace_code() 是汇编实现的，作用是使用 mprotect 系统调用来修改内存权限（mprotect系统调用是修改内存页属性的）。原因是：可执行代码区是只读的，需要修改为可读写后才能修改，修改为可执行后才能执行（有想用 Go 写病毒的，可以参考一下）。
 
 ```go
 func (builder *MockBuilder) Build() *Mocker {
-	mocker := Mocker{target: reflect.ValueOf(builder.target), builder: builder}
-	mocker.buildHook(builder)
-	mocker.Patch()
-	return &mocker
+    mocker := Mocker{target: reflect.ValueOf(builder.target), builder: builder}
+    mocker.buildHook(builder)
+    mocker.Patch()
+    return &mocker
 }
 func (mocker *Mocker) Patch() *Mocker {
-	mocker.lock.Lock()
-	defer mocker.lock.Unlock()
-	if mocker.isPatched {
-		return mocker
-	}
-	mocker.patch = monkey.PatchValue(mocker.target, mocker.hook, reflect.ValueOf(mocker.proxy), mocker.builder.unsafe)
-	mocker.isPatched = true
-	addToGlobal(mocker)
+    mocker.lock.Lock()
+    defer mocker.lock.Unlock()
+    if mocker.isPatched {
+        return mocker
+    }
+    mocker.patch = monkey.PatchValue(mocker.target, mocker.hook, reflect.ValueOf(mocker.proxy), mocker.builder.unsafe)
+    mocker.isPatched = true
+    addToGlobal(mocker)
 
-	mocker.outerCaller = tool.OuterCaller()
-	return mocker
+    mocker.outerCaller = tool.OuterCaller()
+    return mocker
 }
 
 // PatchValue replace the target function with a hook function, and stores the target function in the proxy function
 // for future restore. Target and hook are values of function. Proxy is a value of proxy function pointer.
 func PatchValue(target, hook, proxy reflect.Value, unsafe bool) *Patch {
-	tool.Assert(hook.Kind() == reflect.Func, "'%s' is not a function", hook.Kind())
-	tool.Assert(proxy.Kind() == reflect.Ptr, "'%v' is not a function pointer", proxy.Kind())
-	tool.Assert(hook.Type() == target.Type(), "'%v' and '%s' mismatch", hook.Type(), target.Type())
-	tool.Assert(proxy.Elem().Type() == target.Type(), "'*%v' and '%s' mismatch", proxy.Elem().Type(), target.Type())
+    tool.Assert(hook.Kind() == reflect.Func, "'%s' is not a function", hook.Kind())
+    tool.Assert(proxy.Kind() == reflect.Ptr, "'%v' is not a function pointer", proxy.Kind())
+    tool.Assert(hook.Type() == target.Type(), "'%v' and '%s' mismatch", hook.Type(), target.Type())
+    tool.Assert(proxy.Elem().Type() == target.Type(), "'*%v' and '%s' mismatch", proxy.Elem().Type(), target.Type())
 
-	targetAddr := target.Pointer()
-	// The first few bytes of the target function code
-	const bufSize = 64
-	targetCodeBuf := common.BytesOf(targetAddr, bufSize)
-	// construct the branch instruction, i.e. jump to the hook function
-	hookCode := inst.BranchInto(common.PtrAt(hook))
-	// search the cutting point of the target code, i.e. the minimum length of full instructions that is longer than the hookCode
-	cuttingIdx := inst.Disassemble(targetCodeBuf, len(hookCode), !unsafe)
+    targetAddr := target.Pointer()
+    // The first few bytes of the target function code
+    const bufSize = 64
+    targetCodeBuf := common.BytesOf(targetAddr, bufSize)
+    // construct the branch instruction, i.e. jump to the hook function
+    hookCode := inst.BranchInto(common.PtrAt(hook))
+    // search the cutting point of the target code, i.e. the minimum length of full instructions that is longer than the hookCode
+    cuttingIdx := inst.Disassemble(targetCodeBuf, len(hookCode), !unsafe)
 
-	// construct the proxy code
-	proxyCode := common.AllocatePage()
-	// save the original code before the cutting point
-	copy(proxyCode, targetCodeBuf[:cuttingIdx])
-	// construct the branch instruction, i.e. jump to the cutting point
-	copy(proxyCode[cuttingIdx:], inst.BranchTo(targetAddr+uintptr(cuttingIdx)))
-	// inject the proxy code to the proxy function
-	fn.InjectInto(proxy, proxyCode)
+    // construct the proxy code
+    proxyCode := common.AllocatePage()
+    // save the original code before the cutting point
+    copy(proxyCode, targetCodeBuf[:cuttingIdx])
+    // construct the branch instruction, i.e. jump to the cutting point
+    copy(proxyCode[cuttingIdx:], inst.BranchTo(targetAddr+uintptr(cuttingIdx)))
+    // inject the proxy code to the proxy function
+    fn.InjectInto(proxy, proxyCode)
 
-	tool.DebugPrintf("PatchValue: hook code len(%v), cuttingIdx(%v)\n", len(hookCode), cuttingIdx)
+    tool.DebugPrintf("PatchValue: hook code len(%v), cuttingIdx(%v)\n", len(hookCode), cuttingIdx)
 
-	// replace target function codes before the cutting point
-	mem.WriteWithSTW(targetAddr, hookCode)
+    // replace target function codes before the cutting point
+    mem.WriteWithSTW(targetAddr, hookCode)
 
-	return &Patch{base: targetAddr, code: proxyCode, size: cuttingIdx}
+    return &Patch{base: targetAddr, code: proxyCode, size: cuttingIdx}
 }
 
 // WriteWithSTW copies data bytes to the target address and replaces the original bytes, during which it will stop the
 // world (only the current goroutine's P is running).
 func WriteWithSTW(target uintptr, data []byte) {
-	common.StopTheWorld()
-	defer common.StartTheWorld()
-	err := Write(target, data)
-	tool.Assert(err == nil, err)
+    common.StopTheWorld()
+    defer common.StartTheWorld()
+    err := Write(target, data)
+    tool.Assert(err == nil, err)
 }
 ```
 而 Write 函数的实现在
@@ -1438,24 +1440,23 @@ func WriteWithSTW(target uintptr, data []byte) {
 package mem
 
 import (
-	"syscall"
+    "syscall"
 
-	"github.com/bytedance/mockey/internal/monkey/common"
+    "github.com/bytedance/mockey/internal/monkey/common"
 )
 
 func Write(target uintptr, data []byte) error {
-	do_replace_code(target, common.PtrOf(data), uint64(len(data)), syscall.
-    , syscall.PROT_READ|syscall.PROT_WRITE, syscall.PROT_READ|syscall.PROT_EXEC)
-	return nil
+	do_replace_code(target, common.PtrOf(data), uint64(len(data)), syscall.SYS_MPROTECT, syscall.PROT_READ|syscall.PROT_WRITE, syscall.PROT_READ|syscall.PROT_EXEC))
+    return nil
 }
 
 func do_replace_code(
-	_ uintptr, // void   *addr
-	_ uintptr, // void   *data
-	_ uint64, // size_t  size
-	_ uint64, // int     mprotect
-	_ uint64, // int     prot_rw
-	_ uint64, // int     prot_rx
+    _ uintptr, // void   *addr
+    _ uintptr, // void   *data
+    _ uint64, // size_t  size
+    _ uint64, // int     mprotect
+    _ uint64, // int     prot_rw
+    _ uint64, // int     prot_rx
 )
 ```
 do_replace_code 函数的汇编实现在
@@ -1521,7 +1522,7 @@ RETURN:
 
 ```
 
-## 5.2、 优化获取行号性能
+## 5.3、 优化获取行号性能
 [golang文件行号探索](https://tech.bytedance.net/articles/7111885881002164238) 中有详细说明，代码如下：
 ```go
 //stack_amd64.go
@@ -1562,15 +1563,15 @@ func (l Line) LineNO() (line string) {
 # stack_amd64.s
 TEXT    ·NewLine(SB)， NOSPLIT， $0-8
     MOVQ     retpc-8(FP)， AX
-	SUBQ	 $1, AX             // 注意，这里要 -1
+    SUBQ     $1, AX             // 注意，这里要 -1
     MOVQ     AX， ret+0(FP)
     RET
 
 ```
 该代码除了使用汇编获取行号外，还是用了无锁的 RCU(Read-copy update) 算法提升并发查询速度。\
-还有一点要注意的，retpc-8(FP) 是函数返回地址，也就是调用指令 CALL 的下一行指令， 所以需要 -1 才能得到CALL指令的 pc，[参考](https://github.com/golang/go/blob/dev.boringcrypto.go1.18/src/runtime/traceback.go#L354)。
+还有一点要注意的，retpc-8(FP) 是函数返回地址，也就是调用指令 CALL 的下一行指令， 所以需要 -1 才能得到CALL指令的 pc，[参考Go 源码这段注释](https://github.com/golang/go/blob/dev.boringcrypto.go1.18/src/runtime/traceback.go#L354)。
 
-## 5.3、 优化获取调用栈性能
+## 5.4、 优化获取调用栈性能
 [关于 golang 错误处理的一些优化想法](https://tech.bytedance.net/articles/7120632282095812644) 中有详细说明。
 stack_amd64.go 代码：
 ```go
@@ -1580,7 +1581,7 @@ stack_amd64.go 代码：
 package errors
 
 import (
-	_ "unsafe"
+    _ "unsafe"
 )
 
 func buildStack(s []uintptr) int
@@ -1596,30 +1597,30 @@ stack_amd64.s 代码：
 
 // func buildStack(s []uintptr) int
 TEXT ·buildStack(SB), NOSPLIT, $24-8
-	NO_LOCAL_POINTERS
-	MOVQ 	cap+16(FP), DX 	// s.cap
-	MOVQ 	p+0(FP), AX		// s.ptr
-	MOVQ	$0, CX			// loop.i
+    NO_LOCAL_POINTERS
+    MOVQ     cap+16(FP), DX     // s.cap
+    MOVQ     p+0(FP), AX        // s.ptr
+    MOVQ    $0, CX            // loop.i
 loop:
-	MOVQ	+8(BP), BX		// last pc -> BX
-    SUBQ	 $1, BX 
-	MOVQ	BX, 0(AX)(CX*8)		// s[i] = BX
-	
-	ADDQ	$1, CX			// CX++ / i++
-	CMPQ	CX, DX			// if s.len >= s.cap { return }
-	JAE	return				// 无符号大于等于就跳转
+    MOVQ    +8(BP), BX        // last pc -> BX
+    SUBQ     $1, BX 
+    MOVQ    BX, 0(AX)(CX*8)        // s[i] = BX
+    
+    ADDQ    $1, CX            // CX++ / i++
+    CMPQ    CX, DX            // if s.len >= s.cap { return }
+    JAE    return                // 无符号大于等于就跳转
 
-	MOVQ	+0(BP), BP 		// last BP; 展开调用栈至上一层
-	CMPQ	BP, $0 			// if (BP) <= 0 { return }
-	JA loop					// 无符号大于就跳转
+    MOVQ    +0(BP), BP         // last BP; 展开调用栈至上一层
+    CMPQ    BP, $0             // if (BP) <= 0 { return }
+    JA loop                    // 无符号大于就跳转
 
 return:
-	MOVQ	CX,n+24(FP) 	// ret n
-	RET
+    MOVQ    CX,n+24(FP)     // ret n
+    RET
 
 ```
 
-## 5.4、 字符串比较
+## 5.5、 字符串比较
 Go 语言源码里的字符串比较函数，实际上使用了 SIMD 指令加速，由汇编实现。源码在：
 [src/cmd/compile/internal/typecheck/builtin/runtime.go](https://github.com/golang/go/blob/go1.18.10/src/cmd/compile/internal/typecheck/builtin/runtime.go#L74)
 ```go
@@ -1634,19 +1635,19 @@ func cmpstring(string, string) int
         // DI = b_base (want in DI)
         // SI = b_len  (want in DX)
         // R8 = b_cap  (unused)
-        MOVQ	SI, DX
-        MOVQ	AX, SI
-        JMP	cmpbody<>(SB)
+        MOVQ    SI, DX
+        MOVQ    AX, SI
+        JMP    cmpbody<>(SB)
 
     TEXT runtime·cmpstring<ABIInternal>(SB),NOSPLIT,$0-40
         // AX = a_base (want in SI)
         // BX = a_len  (want in BX)
         // CX = b_base (want in DI)
         // DI = b_len  (want in DX)
-        MOVQ	AX, SI
-        MOVQ	DI, DX
-        MOVQ	CX, DI
-        JMP	cmpbody<>(SB)
+        MOVQ    AX, SI
+        MOVQ    DI, DX
+        MOVQ    CX, DI
+        JMP    cmpbody<>(SB)
 
     // input:
     //   SI = a
@@ -1656,21 +1657,21 @@ func cmpstring(string, string) int
     // output:
     //   AX = output (-1/0/1)
     TEXT cmpbody<>(SB),NOSPLIT,$0-0
-        CMPQ	SI, DI
+        CMPQ    SI, DI
     ...
 loop:
-	CMPQ	R8, $16
-	JBE	_0through16
-	MOVOU	(SI), X0
-	MOVOU	(DI), X1
-	PCMPEQB X0, X1
-	PMOVMSKB X1, AX
-	XORQ	$0xffff, AX	// convert EQ to NE
-	JNE	diff16	// branch if at least one byte is not equal
-	ADDQ	$16, SI
-	ADDQ	$16, DI
-	SUBQ	$16, R8
-	JMP	loop
+    CMPQ    R8, $16
+    JBE    _0through16
+    MOVOU    (SI), X0
+    MOVOU    (DI), X1
+    PCMPEQB X0, X1
+    PMOVMSKB X1, AX
+    XORQ    $0xffff, AX    // convert EQ to NE
+    JNE    diff16    // branch if at least one byte is not equal
+    ADDQ    $16, SI
+    ADDQ    $16, DI
+    SUBQ    $16, R8
+    JMP    loop
     ···
 ```
 这里 MOVOU、PCMPEQB、PMOVMSKB 等就是 SIMD 指令。\
@@ -1678,34 +1679,34 @@ loop:
 笔者收集了相对较完整的 SSE 和 SSE2 指令集说明（ [simd_sse 指令集.md](https://github.com/lxt1045/blog/blob/main/sample/asm/simd_sse%20%E6%8C%87%E4%BB%A4%E9%9B%86.md)、[simd_sse2指令集.md](https://github.com/lxt1045/blog/blob/main/sample/asm/simd_sse2%E6%8C%87%E4%BB%A4%E9%9B%86.md)），感兴趣的同学欢迎围观。\
 另，据笔者的尝试，SSE 和 SSE2 指令是可以直接在 Go 语言会便利使用的。有想法的同学可以自己验证一下其他 SIMD 指令。
 
-## 5.5、 字符串搜索
+## 5.6、 字符串搜索
 我们常用的字符串搜索函数 strings.Index，也使用了汇编实现的 SIMD 指令加速。代码在：
 [src/strings/strings.go](https://github.com/golang/go/blob/go1.18.10/src/strings/strings.go#L112)
 ```go
 // Index returns the index of the first instance of substr in s, or -1 if substr is not present in s.
 func Index(s, substr string) int {
-	n := len(substr)
-	switch {
-	case n == 0:
-		return 0
-	case n == 1:
-		return IndexByte(s, substr[0])
-	case n == len(s):
-		if substr == s {
-			return 0
-		}
-		return -1
-	case n > len(s):
-		return -1
-	case n <= bytealg.MaxLen:
-		// Use brute force when s and substr both are small
-		if len(s) <= bytealg.MaxBruteForce {
-			return bytealg.IndexString(s, substr)
+    n := len(substr)
+    switch {
+    case n == 0:
+        return 0
+    case n == 1:
+        return IndexByte(s, substr[0])
+    case n == len(s):
+        if substr == s {
+            return 0
+        }
+        return -1
+    case n > len(s):
+        return -1
+    case n <= bytealg.MaxLen:
+        // Use brute force when s and substr both are small
+        if len(s) <= bytealg.MaxBruteForce {
+            return bytealg.IndexString(s, substr)
     ...
 }
 // IndexByte returns the index of the first instance of c in s, or -1 if c is not present in s.
 func IndexByte(s string, c byte) int {
-	return bytealg.IndexByteString(s, c)
+    return bytealg.IndexByteString(s, c)
 }
 ```
 IndexByteString 函数声明在
@@ -1745,14 +1746,14 @@ func IndexString(a, b string) int
     #include "go_asm.h"
     #include "textflag.h"
 
-    TEXT	·IndexByte(SB), NOSPLIT, $0-40
+    TEXT    ·IndexByte(SB), NOSPLIT, $0-40
         MOVQ b_base+0(FP), SI
         MOVQ b_len+8(FP), BX
         MOVB c+24(FP), AL
         LEAQ ret+32(FP), R8
         JMP  indexbytebody<>(SB)
 
-    TEXT	·IndexByteString(SB), NOSPLIT, $0-32
+    TEXT    ·IndexByteString(SB), NOSPLIT, $0-32
         MOVQ s_base+0(FP), SI
         MOVQ s_len+8(FP), BX
         MOVB c+16(FP), AL
@@ -1764,7 +1765,7 @@ func IndexString(a, b string) int
     //   BX: data len
     //   AL: byte sought
     //   R8: address to put result
-    TEXT	indexbytebody<>(SB), NOSPLIT, $0
+    TEXT    indexbytebody<>(SB), NOSPLIT, $0
         // Shuffle X0 around so that each byte contains
         // the character we're looking for.
         MOVD AX, X0
@@ -1808,82 +1809,83 @@ func IndexString(a, b string) int
 笔者验证了一下 IndexByte 和自定义通过 for 循环实现建的差别：
 ```go
 func BenchmarkIndexByte(b *testing.B) {
-	b.Run("IndexByte", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			str := testdata.TwitterJsonOut
-			n := 0
-			k := 0
-			for {
-				j := strings.IndexByte(str[k:], ']')
-				if j < 0 {
-					break
-				}
-				n++
-				k += j + 1
-			}
-			_ = n
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
-	b.Run("for", func(b *testing.B) {
-		b.ReportAllocs()
-		str := testdata.TwitterJsonOut
-		for i := 0; i < b.N; i++ {
-			n := 0
-			for i := 0; i < len(str); i++ {
-				if str[i] == ']' {
-					n++
-				}
-			}
-			_ = n
-		}
-		b.SetBytes(int64(b.N))
-		b.StopTimer()
-	})
+    b.Run("IndexByte", func(b *testing.B) {
+        b.ReportAllocs()
+        for i := 0; i < b.N; i++ {
+            str := testdata.TwitterJsonOut
+            n := 0
+            k := 0
+            for {
+                j := strings.IndexByte(str[k:], ']')
+                if j < 0 {
+                    break
+                }
+                n++
+                k += j + 1
+            }
+            _ = n
+        }
+        b.SetBytes(int64(b.N))
+        b.StopTimer()
+    })
+    b.Run("for", func(b *testing.B) {
+        b.ReportAllocs()
+        str := testdata.TwitterJsonOut
+        for i := 0; i < b.N; i++ {
+            n := 0
+            for i := 0; i < len(str); i++ {
+                if str[i] == ']' {
+                    n++
+                }
+            }
+            _ = n
+        }
+        b.SetBytes(int64(b.N))
+        b.StopTimer()
+    })
 }
 ```
 结果如下：
 ```
 BenchmarkIndexByte/IndexByte
-BenchmarkIndexByte/IndexByte-12    3072980    387.5 ns/op    7929621.19 MB/s    0 B/op	       0 allocs/op
+BenchmarkIndexByte/IndexByte-12    3072980    387.5 ns/op    7929621.19 MB/s    0 B/op           0 allocs/op
 BenchmarkIndexByte/for
-BenchmarkIndexByte/for-12          516663    2417 ns/op      213777.66 MB/s    0 B/op	       0 allocs/op
+BenchmarkIndexByte/for-12          516663    2417 ns/op      213777.66 MB/s    0 B/op           0 allocs/op
 ```
 由结果可知，SIMD 的加速性能还是挺好的。不过，实际上如果 strings.IndexByte() 字符串很短 或 所查找的字符在字符串中大量存在 的话，性能甚至会比 for 循环慢。这个可以自行验证一下。
 
-## 5.6、 自定义SIMD优化
+## 5.7、 自定义SIMD优化
 如果感兴趣，可以照着 Go 编译器里的汇编抄，慢慢尝试。\
 github 上也有许多项目可以抄，比如：
 [minio/sha256-simd](https://github.com/minio/sha256-simd)
 
-## 5.7、 随意跳转
+## 5.8、 随意跳转
+这段代码个人觉得很有意思，虽然有缺陷，但不失为一次大胆的尝试。\
 [关于 golang 错误处理的一些优化想法](https://tech.bytedance.net/articles/7120632282095812644) 中有详细说明。
 测试代码如下：
 ```go
 func TestTagTry0(t *testing.T) {
-	defer func() {
-		fmt.Printf("1 -> ")
-	}()
+    defer func() {
+        fmt.Printf("1 -> ")
+    }()
 
-	tag, err1 := NewTag() // 当 tag.Try(err) 时，跳转此处并返回 err1
-	fmt.Printf("2 -> ")
-	if err1 != nil {
-		fmt.Printf("3 -> ")
-		return
-	}
+    tag, err1 := NewTag() // 当 tag.Try(err) 时，跳转此处并返回 err1
+    fmt.Printf("2 -> ")
+    if err1 != nil {
+        fmt.Printf("3 -> ")
+        return
+    }
 
-	defer func() {
-		fmt.Printf("4 -> ") // 由于的缺陷：这里 debug 下 defer 不内联，会执行；release 下 defer 内联，不会执行
-	}()
+    defer func() {
+        fmt.Printf("4 -> ") // 由于的缺陷：这里 debug 下 defer 不内联，会执行；release 下 defer 内联，不会执行
+    }()
 
-	fmt.Printf("5 -> ")
+    fmt.Printf("5 -> ")
     err2 := errors.New("err2")
-	tag.Try(err2)  // 这里 err2!=nil，则会跳转到 tag 创建处的下一行指令执行，即 fmt.Printf("2 -> ")
+    tag.Try(err2)  // 这里 err2!=nil，则会跳转到 tag 创建处的下一行指令执行，即 fmt.Printf("2 -> ")
 
-	fmt.Printf("6 -> ")
-	return
+    fmt.Printf("6 -> ")
+    return
 }
 ```
 测试结果：
@@ -1895,12 +1897,12 @@ func TestTagTry0(t *testing.T) {
 ```
 
 
-## 5.8 调用其他package的私有函数
+## 5.9 调用其他package的私有函数
 通过过摆脱golang编译器的一些约束，调用其他package的私有函数。如这篇文章：[How to call private functions (bind to hidden symbols) in GoLang](https://sitano.github.io/2016/04/28/golang-private/)。
 
 上面 goid 的例子的最后，也讲了通过汇编使用 package 私有的类型，即 DATA ·runtime_g_type+0(SB)/8,$type·runtime·g(SB) ，这里不在重复。
 
-## 5.8 提高 CGO 调用的性能
+## 5.10 提高 CGO 调用的性能
 我们知道，CGO和系统调用时，Go 语言需要把 goroutine 的调用栈切换回 g0 调用栈，并使用 g0 调用，整个过程性能损耗比较大。实际上，我们可以通过汇编适配 C 语言的ABI来直接调用 C 语言的函数，参考这个库: [petermattis/fastcgo](https://github.com/petermattis/fastcgo)。不过，这么做也有很大的局限性，比如导致栈溢出、因goroutine 无法被抢占而影响 GC 性能等。
 
 <!-- 
