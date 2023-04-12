@@ -26,10 +26,10 @@ type TagInfo struct {
 	Children  map[string]*TagInfo
 	ChildList []*TagInfo // 遍历的顺序和速度
 
-	cacheType  reflect.Type // pointer 的 cache
-	batchCache *BatchObj    // struct 的指针对象组成的类型 的 pool
+	cacheType reflect.Type // pointer 的 cache
+	ptrCache  *BatchObj    // struct 的指针对象组成的类型 的 pool
 
-	sliceCacheType      reflect.Type // 除 cdynamicPool 以外的 slice 缓存; slice 动态增长，与 pointer 不一样
+	slicePoolType       reflect.Type // 除 cdynamicPool 以外的 slice 缓存; slice 动态增长，与 pointer 不一样
 	sliceElemGoType     *GoType
 	idxSliceObjPool     uintptr
 	idxSlicePointerPool uintptr // ptrDeep > 1 时，需要使用
@@ -200,11 +200,11 @@ func (ti *TagInfo) setFuncs(builder, sliceBuilder *TypeBuilder, typ reflect.Type
 		}
 		// 匿名成员的处理; 这里只能处理费指针嵌入，指针嵌入逻辑在上一层
 		if !anonymous {
-			if son.sliceCacheType != nil {
-				sliceBuilder.AppendTagField(son.sliceCacheType, &ti.idxSliceObjPool)
+			if son.slicePoolType != nil {
+				sliceBuilder.AppendTagField(son.slicePoolType, &ti.idxSliceObjPool)
 				// ti.slicePool.New = son.slicePool.New
-				// ti.sliceCacheType = son.sliceCacheType
-				// ti.batchCache = son.batchCache
+				// ti.slicePoolType = son.slicePoolType
+				// ti.ptrCache = son.ptrCache
 				// ti.cacheType = son.cacheType
 			}
 			for _, c := range son.ChildList {
@@ -379,12 +379,12 @@ func NewStructTagInfo(typIn reflect.Type, ancestors []ancestor) (ti *TagInfo, er
 	}
 
 	ti.cacheType = builder.Build()
-	ti.batchCache = NewBatchObj(ti.cacheType)
+	ti.ptrCache = NewBatchObj(ti.cacheType)
 
-	ti.sliceCacheType = sliceBuilder.Build()
-	if ti.sliceCacheType != nil {
-		// batch := NewBatchObj(ti.sliceCacheType)
-		goType := UnpackType(ti.sliceCacheType)
+	ti.slicePoolType = sliceBuilder.Build()
+	if ti.slicePoolType != nil {
+		// batch := NewBatchObj(ti.slicePoolType)
+		goType := UnpackType(ti.slicePoolType)
 		ti.slicePool = sync.Pool{
 			New: func() any {
 				return unsafe_NewArray(goType, 1)

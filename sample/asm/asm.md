@@ -38,7 +38,7 @@
 
 
 # 前言
-我们知道 Go 语言一些核心成员是 Plan 9 的遗老遗少，而且属于比较高傲的的学院派，这直接导致了 Go 语言的汇编采用令人抓狂的 Plan 9 风格。不过，我们不能因咽废食而放弃无所不能的汇编。
+我们知道 Go 语的三位领导者中有两位来自 Plan 9 项目，这直接导致了 Go 语言的汇编采用了比较有个性的 Plan 9 风格。不过，我们不能因咽废食而放弃无所不能的汇编。
 
 # 1、 Go 汇编基础知识
 ## 1.1、通用寄存器
@@ -1446,7 +1446,8 @@ import (
 )
 
 func Write(target uintptr, data []byte) error {
-	do_replace_code(target, common.PtrOf(data), uint64(len(data)), syscall.SYS_MPROTECT, syscall.PROT_READ|syscall.PROT_WRITE, syscall.PROT_READ|syscall.PROT_EXEC))
+	do_replace_code(target, common.PtrOf(data), uint64(len(data)), syscall.SYS_MPROTECT,
+        syscall.PROT_READ|syscall.PROT_WRITE, syscall.PROT_READ|syscall.PROT_EXEC))
     return nil
 }
 

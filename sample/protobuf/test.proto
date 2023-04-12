@@ -1,0 +1,36 @@
+syntax = "proto3";
+package gen;
+option go_package = "./gen";
+
+message person0 { //  aa 会生成 Aa 命名的结构体
+  int32 id = 1;
+  string name = 2;
+}
+
+message all_person { //  aa_bb 会生成 AaBb 的驼峰命名的结构体
+  repeated person0 Per = 1;
+}
+
+message Person {
+  uint32 doc_id = 1;
+  string position = 2;
+  string company = 3;
+  string city = 4;
+  int32 school_level = 5;
+  bool vip = 6;
+  bool chat = 7;
+  int32 active = 8;
+  int32 work_age = 9;
+}
+
+message Doc {
+  uint32 doc_id = 1;
+  string position = 2;
+  string company = 3;
+  string city = 4;
+  int32 school_level = 5;
+  bool vip = 6;
+  bool chat = 7;
+  int32 active = 8;
+  int32 work_age = 9;
+}

@@ -67,7 +67,7 @@ func UnmarshalString(bs string, in interface{}) (err error) {
 	store := PoolStore{
 		tag:         tag,
 		obj:         prv.ptr, // eface.Value,
-		pointerPool: tag.batchCache.Get(),
+		pointerPool: tag.ptrCache.Get(),
 	}
 	//slice 才需要的缓存
 	if tag.slicePool.New != nil {
