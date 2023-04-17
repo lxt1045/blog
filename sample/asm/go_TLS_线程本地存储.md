@@ -1,7 +1,134 @@
 线程本地存储
 
 
-[Go语言goroutine调度器初始化 (12)](https://zhuanlan.zhihu.com/p/64672362)\
+gobuf 放着 g 调度所需要的所有上下文：
+```go
+type gobuf struct {
+	// The offsets of sp, pc, and g are known to (hard-coded in) libmach.
+	//
+	// ctxt is unusual with respect to GC: it may be a
+	// heap-allocated funcval, so GC needs to track it, but it
+	// needs to be set and cleared from assembly, where it's
+	// difficult to have write barriers. However, ctxt is really a
+	// saved, live register, and we only ever exchange it between
+	// the real register and the gobuf. Hence, we treat it as a
+	// root during stack scanning, which means assembly that saves
+	// and restores it doesn't need write barriers. It's still
+	// typed as a pointer so that any other writes from Go get
+	// write barriers.
+	sp   uintptr
+	pc   uintptr
+	g    guintptr
+	ctxt unsafe.Pointer
+	ret  uintptr
+	lr   uintptr
+	bp   uintptr // for framepointer-enabled architectures
+}
+```
+gogo用于跳转到某个 g 执行：
+```go
+
+/*
+ *  go-routine
+ */
+
+// func gogo(buf *gobuf)
+// restore state from Gobuf; longjmp
+TEXT runtime·gogo(SB), NOSPLIT, $0-8
+	MOVQ	buf+0(FP), BX		// gobuf
+	MOVQ	gobuf_g(BX), DX     // gobuf 里放着 g 的上下文
+	MOVQ	0(DX), CX		// make sure g != nil
+	JMP	gogo<>(SB)
+
+TEXT gogo<>(SB), NOSPLIT, $0
+	get_tls(CX)       // 把 g 写到 m 绑定的 线程 的本地变量中
+	MOVQ	DX, g(CX) // 
+	MOVQ	DX, R14		// set the g register
+	MOVQ	gobuf_sp(BX), SP	// restore SP
+	MOVQ	gobuf_ret(BX), AX
+	MOVQ	gobuf_ctxt(BX), DX
+	MOVQ	gobuf_bp(BX), BP
+	MOVQ	$0, gobuf_sp(BX)	// clear to help garbage collector
+	MOVQ	$0, gobuf_ret(BX)
+	MOVQ	$0, gobuf_ctxt(BX)
+	MOVQ	$0, gobuf_bp(BX)
+	MOVQ	gobuf_pc(BX), BX
+	JMP	BX
+
+```
+gogo 函数 使用的地方：
+```go
+// Unwind the stack after a deferred function calls recover
+// after a panic. Then arrange to continue running as though
+// the caller of the deferred function returned normally.
+func recovery(gp *g) {
+	// Info about defer passed in G struct.
+	sp := gp.sigcode0
+	pc := gp.sigcode1
+
+	// d's arguments need to be in the stack.
+	if sp != 0 && (sp < gp.stack.lo || gp.stack.hi < sp) {
+		print("recover: ", hex(sp), " not in [", hex(gp.stack.lo), ", ", hex(gp.stack.hi), "]\n")
+		throw("bad recovery")
+	}
+
+	// Make the deferproc for this d return again,
+	// this time returning 1. The calling function will
+	// jump to the standard return epilogue.
+	gp.sched.sp = sp
+	gp.sched.pc = pc
+	gp.sched.lr = 0
+	gp.sched.ret = 1
+	gogo(&gp.sched)
+}
+```
+```go
+// Schedules gp to run on the current M.
+// If inheritTime is true, gp inherits the remaining time in the
+// current time slice. Otherwise, it starts a new time slice.
+// Never returns.
+//
+// Write barriers are allowed because this is called immediately after
+// acquiring a P in several places.
+//
+//go:yeswritebarrierrec
+func execute(gp *g, inheritTime bool) {
+	_g_ := getg()
+
+	// Assign gp.m before entering _Grunning so running Gs have an
+	// M.
+	_g_.m.curg = gp
+	gp.m = _g_.m
+	casgstatus(gp, _Grunnable, _Grunning)
+	gp.waitsince = 0
+	gp.preempt = false
+	gp.stackguard0 = gp.stack.lo + _StackGuard
+	if !inheritTime {
+		_g_.m.p.ptr().schedtick++
+	}
+
+	// Check whether the profiler needs to be turned on or off.
+	hz := sched.profilehz
+	if _g_.m.profilehz != hz {
+		setThreadCPUProfiler(hz)
+	}
+
+	if trace.enabled {
+		// GoSysExit has to happen when we have a P, but before GoStart.
+		// So we emit it here.
+		if gp.syscallsp != 0 && gp.sysblocktraced {
+			traceGoSysExit(gp.sysexitticks)
+		}
+		traceGoStart()
+	}
+
+	gogo(&gp.sched)
+}
+
+```
+
+
+[Go语言goroutine调度器初始化 (12)](https://zhuanlan.zhihu.com/p/64672362)
 
 下面我们详细来详细看一下settls函数是如何实现线程私有全局变量的。
 

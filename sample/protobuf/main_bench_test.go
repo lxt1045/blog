@@ -175,7 +175,30 @@ func BenchmarkEncode(b *testing.B) {
 	})
 }
 
+/*
+go test -benchmem -run=^$ -bench ^BenchmarkGogo$ github.com/lxt1045/blog/sample/protobuf -count=1 -v -cpuprofile cpu.prof -c
+go tool pprof ./json.test cpu.prof
+*/
+
 func BenchmarkGogo(b *testing.B) {
+	var msg gogoproto.Message = &gogogen2.Doc{}
+	bs, _ := gogoproto.Marshal(&doc)
+	gogoproto.Unmarshal(bs, msg)
+	b.Run("Marshal-gogo-"+strconv.Itoa(0), func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			gogoproto.Marshal(msg)
+		}
+	})
+	return
+	b.Run("Unmarshal-gogo-"+strconv.Itoa(0), func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			gogoproto.Unmarshal(bs, msg)
+		}
+	})
+
+}
+func BenchmarkGogo2(b *testing.B) {
 	list := []gogoproto.Message{
 		&gogogen.Doc{},
 		&gogogen2.Doc{},
@@ -183,13 +206,13 @@ func BenchmarkGogo(b *testing.B) {
 	for i, msg := range list {
 		bs, _ := gogoproto.Marshal(&doc)
 		gogoproto.Unmarshal(bs, msg)
-		b.Run("Encode-gogo-"+strconv.Itoa(i), func(b *testing.B) {
+		b.Run("Marshal-gogo-"+strconv.Itoa(i), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				gogoproto.Marshal(msg)
 			}
 		})
-		b.Run("Encode-gogo-"+strconv.Itoa(i), func(b *testing.B) {
+		b.Run("Unmarshal-gogo-"+strconv.Itoa(i), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				gogoproto.Unmarshal(bs, msg)
 			}

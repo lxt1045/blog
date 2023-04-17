@@ -3,12 +3,68 @@ package hashmap
 import (
 	"encoding/json"
 	"fmt"
+	"math/bits"
 	"math/rand"
 	"runtime"
 	"testing"
 	"time"
 	"unsafe"
 )
+
+func Test_FirstBitIdx(t *testing.T) {
+	idx := FirstBitIdx(0b010001000)
+	t.Logf("idx:%v", idx)
+
+	idx = runtime.FirstBitIdx(0b010001000)
+	t.Logf("runtime-idx:%v", idx)
+
+	idx = Ctz64(0b010001000)
+	t.Logf("idx:%v", idx)
+
+	idx = bits.Len64(0b010001000)
+	t.Logf("Len64:%v", idx)
+	idx = bits.LeadingZeros(0b010001000)
+	t.Logf("LeadingZeros:%v", idx)
+
+	t.Logf("deBruijn64ctz:%b", deBruijn64ctz)
+}
+
+func Benchmark_FirstBitIdx(b *testing.B) {
+	b.Run("FirstBitIdx", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			FirstBitIdx(0b010001000)
+		}
+	})
+
+	b.Run("runtime.FirstBitIdx", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			runtime.FirstBitIdx(0b010001000)
+		}
+	})
+
+	b.Run("bits.Len64", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			bits.Len64(0b010001000)
+		}
+	})
+
+	b.Run("Ctz64", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			Ctz64(0b010001000)
+		}
+	})
+
+	b.Run("gogoprotobuf-sovTest", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			sovTest(0b010001000)
+		}
+	})
+	b.Run("gogoprotobuf-sovTest-noinline", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			sovTest1(0b010001000)
+		}
+	})
+}
 
 type OperationHTTPResponse struct {
 	HTTPCode *int32 `thrift:"HttpCode,1" json:"HttpCode,omitempty"`

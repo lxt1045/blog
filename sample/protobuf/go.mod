@@ -2,11 +2,9 @@ module github.com/lxt1045/blog/sample/protobuf
 
 go 1.18
 
-replace github.com/lxt1045/blog/sample/protobuf/gen => /Users/bytedance/go/src/github.com/lxt1045/blog/sample/protobuf/gen
-
 require (
 	github.com/bytedance/sonic v1.8.2
-	github.com/gogo/protobuf v1.3.2
+	github.com/gogo/protobuf v1.3.3-0.20221024144010-f67b8970b736
 	github.com/golang/protobuf v1.5.3
 	github.com/lxt1045/json v0.0.0-20230406161715-3fd66395f845
 	github.com/mailru/easyjson v0.7.7
@@ -24,6 +22,8 @@ require (
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 )
 
-replace github.com/lxt1045/errors => /Users/bytedance/go/src/github.com/lxt1045/errors
-
-replace github.com/lxt1045/json => /Users/bytedance/go/src/github.com/lxt1045/json
+replace (
+	github.com/gogo/protobuf => github.com/lxt1045/protobuf v0.0.0-20221024144010-f67b8970b736
+	github.com/lxt1045/errors => /Users/bytedance/go/src/github.com/lxt1045/errors
+	github.com/lxt1045/json => /Users/bytedance/go/src/github.com/lxt1045/json
+)

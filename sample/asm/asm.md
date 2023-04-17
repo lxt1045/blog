@@ -38,7 +38,7 @@
 
 
 # 前言
-我们知道 Go 语的三位领导者中有两位来自 Plan 9 项目，这直接导致了 Go 语言的汇编采用了比较有个性的 Plan 9 风格。不过，我们不能因咽废食而放弃无所不能的汇编。
+我们知道 Go 语言的三位领导者中有两位来自 Plan 9 项目，这直接导致了 Go 语言的汇编采用了比较有个性的 Plan 9 风格。不过，我们不能因咽废食而放弃无所不能的汇编。
 
 # 1、 Go 汇编基础知识
 ## 1.1、通用寄存器
@@ -53,7 +53,7 @@ AMD64 有20多个可以直接在汇编代码中使用的寄存器，其中有几
 |程序计数寄存器|IP 寄存器（Go 中叫 PC 寄存器）用来存放下一条即将执行的指令的地址，这个寄存器决定了程序的执行流程| RIP | 64bit |
 |段寄存器|CS、DS、ES和SS在 AMD64 中已不用；FS 和 GS 一般用它来实现线程本地存储（TLS），比如AMD64 linux平台下 Go 语言使用 FS 寄存器来实现系统线程的TLS。| FS, GS, CS, DS, ES, SS | 16bit |
 
-上述这些寄存器除了 FS和 GS 段寄存器是16位的，其它都是64位的，也就是8个字节，其中的16个通用寄存器还可以作为32/16/8位寄存器使用，只是使用时需要换一个名字，比如可以用 EAX 这个名字来表示一个32位的寄存器，它使用的是 RAX 寄存器的低32位。
+上述这些寄存器除了段寄存器是16位的，其它都是64位的，也就是8个字节，其中的16个通用寄存器还可以作为32/16/8位寄存器使用，只是使用时需要换一个名字，比如可以用 EAX 这个名字来表示一个32位的寄存器，它使用的是 RAX 寄存器的低32位。
 
 AMD64的通用通用寄存器的名字在 plan9 中的对应关系:
 
@@ -78,7 +78,7 @@ Go语言中寄存器一般用途：
 -->
 
 ## 1.2、伪寄存器
-伪寄存器是plan9伪汇编中的一个助记符, 也是 Plan9 比较反人类的语法之一。\
+伪寄存器是plan9伪汇编中的一个助记符, 也是 Plan9 比较有个性的语法之一。\
 常见伪寄存器如下表所示：
 | 助记符 | 说明 |  |
 | :---- | :---- |  :---- | 
@@ -102,7 +102,26 @@ FP：用于标识函数参数、返回值。被调用者（callee）的FP实际�
 而且，反汇编二进制而生成的汇编代码中，只有物理 SP 寄存器。 即 go tool objdump/go tool compile -S 输出的汇编代码中，没有伪 SP 和 伪FP 寄存器，只有物理 SP 寄存器。
 
 另外还有1个比较特殊的伪寄存器：\
-TLS：存储当前 goroutine 的 g 结构体的指针。实际上，X86 和 AMD64 下的 TLS 是通过段寄存器 FS 实现的线程本地存储基地址，而当前 g 的指针是线程本地存储的第一个变量。
+TLS：存储当前 goroutine 的 g 结构体的指针。实际上，X86 和 AMD64 下的 TLS 是通过段寄存器 FS 或 GS 实现的线程本地存储基地址，而当前 g 的指针是线程本地存储的第一个变量。\
+比如 github.com/petermattis/goid.Get 函数的汇编实现如下：
+```asm
+// func Get() int64
+TEXT ·Get(SB),NOSPLIT,$0-8
+    MOVQ (TLS), R14
+    MOVQ g_goid(R14), R13
+    MOVQ R13, ret+0(FP)
+    RET
+```
+编译成二进制之后，再通过 go tool objdump 反编译成汇编（Go 1.18），得到如下代码： 
+```asm
+TEXT github.com/petermattis/goid.Get.abi0(SB) /Users/bytedance/go/pkg/mod/github.com/petermattis/goid@v0.0.0-20221215004737-a150e88a970d/goid_go1.5_amd64.s
+  goid_go1.5_amd64.s:28 0x108adc0   654c8b342530000000  MOVQ GS:0x30, R14 
+  goid_go1.5_amd64.s:29 0x108adc9   4d8bae98000000    MOVQ 0x98(R14), R13 
+  goid_go1.5_amd64.s:30 0x108add0   4c896c2408    MOVQ R13, 0x8(SP) 
+  goid_go1.5_amd64.s:31 0x108add5   c3      RET     
+```
+可以知道 MOVQ (TLS), R14 指令最终编译成了 MOVQ GS:0x30, R14 ，使用了 GS 段寄存器实现相关功能。
+
 
 操作系统对内存的一般划分如下图所示：
 ```
@@ -142,7 +161,7 @@ caller：函数调用者。\
 callee：函数被调用者。比如函数main中调用sum函数，那么main就是caller，而sum函数就是callee。\
 栈帧：stack frame，即执行中的函数所持有的、独立连续的栈区段。一般用来保存函数参数、返回值、局部变量、返回PC值等信息。golang 的 ABI 规定，由 caller 管理函数参数和返回值。
 
-下图是 golang 的调用栈，源于[曹春晖老师的github文章](https://github.com/cch123/asmshare/blob/master/layout.md#%E6%9F%A5%E7%9C%8B-go-%E8%AF%AD%E8%A8%80%E7%9A%84%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E8%A7%84%E7%BA%A6) ，做了简单修改:
+下图是 golang 的调用栈，源于曹春晖老师的github文章[《汇编 is so easy》](https://github.com/cch123/asmshare/blob/master/layout.md#%E6%9F%A5%E7%9C%8B-go-%E8%AF%AD%E8%A8%80%E7%9A%84%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E8%A7%84%E7%BA%A6) ，做了简单修改:
 ```
                                                                                                                               
                                        caller                                                                                 
@@ -229,6 +248,10 @@ const framepointer_enabled = GOARCH == "amd64" || GOARCH == "arm64"
   if frame.varp > frame.sp && framepointer_enabled {
     frame.varp -= goarch.PtrSize
   }
+```
+```go
+// Must agree with internal/buildcfg.FramePointerEnabled.
+const framepointer_enabled = GOARCH == "amd64" || GOARCH == "arm64"
 ```
 
 ## 1.4、golang常用汇编指令
@@ -348,7 +371,7 @@ TEXT ·someFunc(SB), NOSPLIT, $24-8
     RET
 ```
 链接器认为标记为 NOSPLIT 的函数，最多需要使用StackLimit字节空间，所以不需要插入栈分裂(溢出)检查，函数调用损耗更小。不过，使用该标志的时候要特别小心，万一发生意外容易导致栈溢出错误，溢出时会在执行期报 nosplit stack overflow 错。\
-[go/src/runtime/HACKING.md](https://github.com/golang/go/blob/master/src/runtime/HACKING.md#nosplit-functions) 中有如下说明：
+Go 1.18 标准库下 [go/src/runtime/HACKING.md](https://github.com/golang/go/blob/master/src/runtime/HACKING.md#nosplit-functions) 中有如下说明：
 ```md
 nosplit functions
 Most functions start with a prologue that inspects the stack pointer and the current G's stack bound and calls morestack if the stack needs to grow.
@@ -470,15 +493,15 @@ func doSth() {
 Go 语言汇编中，函数声明格式如下：
 ```asm
 告诉汇编器该数据放到TEXT区
-  ^             静态基地址指针(告诉汇编器这是基于静态地址的数据)
-  |                     ^    
-  |                     |   标签   函数入参+返回值占用空间大小
-  |                     |    ^      ^
-  |                     |    |      |
+  ^                        静态基地址指针(告诉汇编器这是基于静态地址的数据)
+  |                                 ^    
+  |                                 |   标签   函数入参+返回值占用空间大小
+  |                                 |    ^      ^
+  |                                 |    |      |
 TEXT pkgname·funcname<ABIInternal>(SB),TAG,$16-24
-     ^       ^       ^           ^
-     |       |       |           |
-函数所属包名  函数名  表示ABI类型   函数栈帧大小(本地变量占用空间大小)           
+       ^       ^       ^                    ^
+       |       |       |                    |
+函数所属包名  函数名  表示ABI类型        函数栈帧大小(本地变量占用空间大小)           
 ```
 |格式|描述|
 | :---- | :---- |
@@ -755,7 +778,7 @@ if newsize > maxstacksize || newsize > maxstackceiling {
 由拷贝栈的原理可知，拷贝栈对 Go 汇编是透明的。
 
 ## 3.2 GC 对汇编的影响
-由于 GC 会动态回收没有被引用的堆内存，而 goroutine 的调用栈在堆空间，所以如果调用栈中存了动态申请的内存，就需要告诉 GC 栈中含内存。上文中说到的伪指令 FUNCDATA、GO_RESULTS_INITIALIZED、NO_LOCAL_POINTERS 就是干这个事的。\
+由于 GC 会动态回收没有被引用的堆内存，而 goroutine 的调用栈在堆空间，所以如果调用栈中存了堆内存的指针，就需要告诉 GC 栈中含指针。上文中说到的伪指令 FUNCDATA、GO_RESULTS_INITIALIZED、NO_LOCAL_POINTERS 就是干这个事的。\
 由于 FUNCDATA 伪指令几乎只能由编译器维护，所以在手写的汇编函数本地内存栈中保存指向动态内存的指针几乎是一种奢望。
 
 # 4、 函数内联和汇编

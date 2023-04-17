@@ -2,10 +2,18 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/petermattis/goid"
 )
 
 // go tool compile -N  -S main.go >main.s
 var XXX = 8
+
+var gID int64
+
+func getG() {
+	gID = goid.Get()
+}
 
 // func main1() {
 // 	ForCheckptr0()
@@ -29,6 +37,8 @@ var XXX = 8
 // var closure = NewClosure()
 
 func main() {
+	getG()
+
 	var closure func()
 	closure = NewClosure()
 	closure()
