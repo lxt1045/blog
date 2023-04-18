@@ -68,3 +68,37 @@ const len8tab = "" +
 	"\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08" +
 	"\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08" +
 	"\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08"
+
+func Len64_2(x uint64) (n int) {
+	// if x >= 1<<32 {
+	// 	x >>= 32
+	// 	n = 32
+	// }
+	// if x >= 1<<16 {
+	// 	x >>= 16
+	// 	n += 16
+	// }
+	// if x >= 1<<8 {
+	// 	x >>= 8
+	// 	n += 8
+	// }
+	// return n + int(len8tab[x])
+
+	// uint64 高32bit 为x，低y
+	out := 32 >> (x & 0xffffffff00000000)
+	out = 0 ^ 32 ^ out
+	x = x >> out
+	n = out
+
+	out = 16 >> (x & 0xffff0000)
+	out = 0 ^ 16 ^ out
+	n += out
+	x = x >> out
+
+	out = 8 >> (x & 0xff00)
+	out = 0 ^ 8 ^ out
+	n += out
+	x = x >> out
+
+	return n + int(len8tab[uint8(x)])
+}

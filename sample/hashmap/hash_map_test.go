@@ -23,6 +23,10 @@ func Test_FirstBitIdx(t *testing.T) {
 
 	idx = bits.Len64(0b010001000)
 	t.Logf("Len64:%v", idx)
+
+	idx = Len64_2(0b010001000)
+	t.Logf("Len64_2:%v", idx)
+
 	idx = bits.LeadingZeros(0b010001000)
 	t.Logf("LeadingZeros:%v", idx)
 
@@ -30,38 +34,68 @@ func Test_FirstBitIdx(t *testing.T) {
 }
 
 func Benchmark_FirstBitIdx(b *testing.B) {
+
 	b.Run("FirstBitIdx", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			FirstBitIdx(0b010001000)
+			for j := int64(0); j < 1000; j++ {
+				FirstBitIdx(int64(j))
+			}
 		}
 	})
 
 	b.Run("runtime.FirstBitIdx", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			runtime.FirstBitIdx(0b010001000)
+			for j := int64(0); j < 1000; j++ {
+				runtime.FirstBitIdx(int64(j))
+			}
 		}
 	})
 
+	b.Run("Len64_2", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for j := uint64(0); j < 1000; j++ {
+				Len64_2(uint64(j))
+			}
+		}
+	})
 	b.Run("bits.Len64", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			bits.Len64(0b010001000)
+			for j := uint64(0); j < 1000; j++ {
+				bits.Len64(uint64(j))
+			}
 		}
 	})
 
 	b.Run("Ctz64", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			Ctz64(0b010001000)
+			for j := uint64(0); j < 1000; j++ {
+				Ctz64(uint64(j))
+			}
+		}
+	})
+
+	x := 0
+	_ = x
+	b.Run("x ^= i", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for j := 0; j < 1000; j++ {
+				x = j
+			}
 		}
 	})
 
 	b.Run("gogoprotobuf-sovTest", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			sovTest(0b010001000)
+			for j := uint64(0); j < 1000; j++ {
+				sovTest(uint64(j))
+			}
 		}
 	})
 	b.Run("gogoprotobuf-sovTest-noinline", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			sovTest1(0b010001000)
+			for j := uint64(0); j < 1000; j++ {
+				sovTest1(j)
+			}
 		}
 	})
 }
