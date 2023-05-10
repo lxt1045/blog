@@ -27,6 +27,9 @@ func Test_FirstBitIdx(t *testing.T) {
 	idx = Len64_2(0b010001000)
 	t.Logf("Len64_2:%v", idx)
 
+	idx = sovTest(0b010001000)
+	t.Logf("sovTest:%v", idx)
+
 	idx = bits.LeadingZeros(0b010001000)
 	t.Logf("LeadingZeros:%v", idx)
 

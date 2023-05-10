@@ -1,5 +1,7 @@
 package hashmap
 
+import "math/bits"
+
 func FirstBitIdx(in int64) int
 
 // Ctz64 counts trailing (low-order) zeroes,
@@ -26,7 +28,7 @@ var deBruijnIdx64ctz = [64]byte{
 }
 
 func sovTest(x uint64) (n int) {
-	return (Len64(x|1) + 6) / 7
+	return (bits.Len64(x|1) + 6) / 7
 }
 
 //go:noinline
